@@ -1,0 +1,234 @@
+version: '3.8'
+
+services:
+  # ═══════════════════════════════════════════════════
+  # OAuth2-Proxy (Azure AD Authentication)
+  # ═══════════════════════════════════════════════════
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    container_name: hudu-mcp-oauth2-proxy
+    restart: unless-stopped
+
+    command:
+      # Provider configuration
+      - "--provider=oidc"
+      - "--provider-display-name=Azure AD"
+      - "--oidc-issuer-url=https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0"
+      - "--client-id=${AZURE_CLIENT_ID}"
+      - "--client-secret=${AZURE_CLIENT_SECRET}"
+      - "--redirect-url=https://${MCP_HOSTNAME}/oauth2/callback"
+
+      # Cookie configuration
+      - "--cookie-name=_oauth2_proxy"
+      - "--cookie-secret=${OAUTH2_COOKIE_SECRET}"
+      - "--cookie-secure=true"
+      - "--cookie-httponly=true"
+      - "--cookie-samesite=lax"
+      - "--cookie-expire=${OAUTH2_COOKIE_EXPIRE:-168h}"
+      - "--cookie-refresh=${OAUTH2_COOKIE_REFRESH:-1h}"
+      - "--cookie-domain=${MCP_HOSTNAME}"
+
+      # Session configuration
+      - "--session-store-type=cookie"
+
+      # Email validation
+      - "--email-domain=${OAUTH2_EMAIL_DOMAINS}"
+      - "--skip-provider-button=true"
+
+      # Upstream configuration
+      - "--http-address=0.0.0.0:4180"
+      - "--upstream=http://hudu-mcp-server:3050"
+
+      # Reverse proxy configuration
+      - "--reverse-proxy=true"
+      - "--real-client-ip-header=X-Forwarded-For"
+
+      # Pass user information to upstream
+      - "--pass-access-token=true"
+      - "--pass-authorization-header=true"
+      - "--pass-user-headers=true"
+      - "--set-xauthrequest=true"
+      - "--set-authorization-header=true"
+
+      # Logging
+      - "--logging-filename="
+      - "--logging-local-time=false"
+      - "--standard-logging=true"
+      - "--auth-logging=true"
+      - "--request-logging=true"
+
+      # Scopes
+      - "--scope=openid profile email"
+      - "--oidc-groups-claim=groups"
+
+      # Allow API requests with Bearer tokens (for Claude Desktop)
+      - "--skip-auth-regex=^/mcp"
+      - "--skip-jwt-bearer-tokens=true"
+
+    environment:
+      - OAUTH2_PROXY_CLIENT_ID=${AZURE_CLIENT_ID}
+      - OAUTH2_PROXY_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_COOKIE_SECRET}
+
+    networks:
+      - hudu-mcp-network
+      - Internal  # Connect to your existing Traefik network
+
+    labels:
+      - "traefik.enable=true"
+
+      # Connect to your existing Traefik networks
+      - "traefik.docker.network=Internal"
+
+      # OAuth2-Proxy router for /oauth2 paths
+      - "traefik.http.routers.hudu-oauth2-proxy.rule=Host(`${MCP_HOSTNAME}`) && PathPrefix(`/oauth2`)"
+      - "traefik.http.routers.hudu-oauth2-proxy.entrypoints=websecure"
+      - "traefik.http.routers.hudu-oauth2-proxy.tls=true"
+      - "traefik.http.routers.hudu-oauth2-proxy.tls.certresolver=Cloudflare"
+      - "traefik.http.routers.hudu-oauth2-proxy.service=hudu-oauth2-proxy"
+      - "traefik.http.services.hudu-oauth2-proxy.loadbalancer.server.port=4180"
+
+      # ForwardAuth middleware for protecting other services
+      - "traefik.http.middlewares.hudu-oauth2-auth.forwardauth.address=http://oauth2-proxy:4180/oauth2/auth"
+      - "traefik.http.middlewares.hudu-oauth2-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.hudu-oauth2-auth.forwardauth.authResponseHeaders=X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token,Authorization"
+
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4180/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ═══════════════════════════════════════════════════
+  # Hudu MCP Server (with OAuth user context)
+  # ═══════════════════════════════════════════════════
+  hudu-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hudu-mcp-server
+    restart: unless-stopped
+
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - HUDU_BASE_URL=${HUDU_BASE_URL}
+      - HUDU_API_KEY=${HUDU_API_KEY}
+      - HUDU_TIMEOUT=${HUDU_TIMEOUT:-30000}
+      - MCP_SERVER_PORT=${MCP_SERVER_PORT:-3050}
+      # OAuth is handled by oauth2-proxy, MCP server receives user headers
+      - OAUTH_ENABLED=true
+
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config:ro
+
+    networks:
+      - hudu-mcp-network
+      - Internal  # Connect to your existing Traefik network
+
+    labels:
+      - "traefik.enable=true"
+
+      # Connect to your existing Traefik networks
+      - "traefik.docker.network=Internal"
+
+      # MCP Server router (protected by OAuth2-Proxy)
+      - "traefik.http.routers.hudu-mcp.rule=Host(`${MCP_HOSTNAME}`) && (PathPrefix(`/mcp`) || Path(`/health`) || Path(`/`))"
+      - "traefik.http.routers.hudu-mcp.entrypoints=websecure"
+      - "traefik.http.routers.hudu-mcp.tls=true"
+      - "traefik.http.routers.hudu-mcp.tls.certresolver=Cloudflare"
+      - "traefik.http.routers.hudu-mcp.middlewares=hudu-oauth2-auth,hudu-security-headers,hudu-rate-limit"
+      - "traefik.http.routers.hudu-mcp.service=hudu-mcp"
+      - "traefik.http.services.hudu-mcp.loadbalancer.server.port=3050"
+
+      # Security headers middleware
+      - "traefik.http.middlewares.hudu-security-headers.headers.customresponseheaders.X-Frame-Options=DENY"
+      - "traefik.http.middlewares.hudu-security-headers.headers.customresponseheaders.X-Content-Type-Options=nosniff"
+      - "traefik.http.middlewares.hudu-security-headers.headers.customresponseheaders.X-XSS-Protection=1; mode=block"
+      - "traefik.http.middlewares.hudu-security-headers.headers.customresponseheaders.Referrer-Policy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.hudu-security-headers.headers.sslredirect=true"
+      - "traefik.http.middlewares.hudu-security-headers.headers.stsincludesubdomains=true"
+      - "traefik.http.middlewares.hudu-security-headers.headers.stspreload=true"
+      - "traefik.http.middlewares.hudu-security-headers.headers.stsseconds=31536000"
+
+      # Rate limiting middleware (1000 requests per 15 minutes per IP)
+      - "traefik.http.middlewares.hudu-rate-limit.ratelimit.average=67"
+      - "traefik.http.middlewares.hudu-rate-limit.ratelimit.burst=100"
+      - "traefik.http.middlewares.hudu-rate-limit.ratelimit.period=1m"
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3050/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+
+  # ═══════════════════════════════════════════════════
+  # Token Portal (Self-Service Token Generation)
+  # ═══════════════════════════════════════════════════
+  token-portal:
+    build:
+      context: ./token-portal
+      dockerfile: Dockerfile
+    container_name: hudu-mcp-token-portal
+    restart: unless-stopped
+
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - MCP_HOSTNAME=${MCP_HOSTNAME}
+
+    networks:
+      - hudu-mcp-network
+      - Internal  # Connect to your existing Traefik network
+
+    labels:
+      - "traefik.enable=true"
+
+      # Connect to your existing Traefik networks
+      - "traefik.docker.network=Internal"
+
+      # Token portal router (protected by OAuth2-Proxy)
+      - "traefik.http.routers.hudu-token-portal.rule=Host(`${MCP_HOSTNAME}`) && Path(`/token`)"
+      - "traefik.http.routers.hudu-token-portal.entrypoints=websecure"
+      - "traefik.http.routers.hudu-token-portal.tls=true"
+      - "traefik.http.routers.hudu-token-portal.tls.certresolver=Cloudflare"
+      - "traefik.http.routers.hudu-token-portal.middlewares=hudu-oauth2-auth,hudu-security-headers"
+      - "traefik.http.routers.hudu-token-portal.service=hudu-token-portal"
+      - "traefik.http.services.hudu-token-portal.loadbalancer.server.port=3000"
+
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  # Internal network for Hudu MCP services to communicate
+  hudu-mcp-network:
+    driver: bridge
+    name: hudu-mcp-network
+
+  # Connect to your existing Traefik network
+  Internal:
+    external: true
