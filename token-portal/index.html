@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hudu MCP - Get Your Token</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .user-info {
+            background: #f7f9fc;
+            border-left: 4px solid #667eea;
+            padding: 15px 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .user-info p {
+            color: #333;
+            margin: 5px 0;
+        }
+
+        .user-info strong {
+            color: #667eea;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section h2::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            margin-right: 10px;
+        }
+
+        .token-box {
+            background: #f7f9fc;
+            border: 2px solid #e1e4e8;
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .token-text {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #333;
+            word-break: break-all;
+            line-height: 1.6;
+            user-select: all;
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .copy-btn.copied {
+            background: #48bb78;
+        }
+
+        .instructions {
+            background: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        .instructions h3 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            color: #666;
+        }
+
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .instructions code {
+            background: #f7f9fc;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #e83e8c;
+        }
+
+        .config-example {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .config-example .key {
+            color: #9cdcfe;
+        }
+
+        .config-example .string {
+            color: #ce9178;
+        }
+
+        .footer {
+            text-align: center;
+            color: #999;
+            font-size: 14px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e4e8;
+        }
+
+        .warning {
+            background: #fff5f5;
+            border-left: 4px solid #f56565;
+            padding: 15px 20px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        .warning p {
+            color: #c53030;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Your MCP Access Token</h1>
+            <p>Authenticated via Azure AD</p>
+        </div>
+
+        <div class="user-info">
+            <p><strong>User:</strong> {{USER_NAME}}</p>
+            <p><strong>Email:</strong> {{USER_EMAIL}}</p>
+        </div>
+
+        <div class="section">
+            <h2>Your Personal Access Token</h2>
+            <div class="token-box">
+                <div class="token-text" id="tokenText">{{ACCESS_TOKEN}}</div>
+                <button class="copy-btn" onclick="copyToken()">📋 Copy Token to Clipboard</button>
+            </div>
+        </div>
+
+        <div class="warning">
+            <p>⚠️ Keep this token secure! Do not share it with others. This token grants access to Hudu data on your behalf.</p>
+        </div>
+
+        <div class="instructions">
+            <h3>📝 Setup Instructions for Claude Desktop</h3>
+            <ol>
+                <li>Copy your access token using the button above</li>
+                <li>Open File Explorer and navigate to: <code>%APPDATA%\Claude</code></li>
+                <li>Open or create the file: <code>claude_desktop_config.json</code></li>
+                <li>Add the following configuration:</li>
+            </ol>
+
+            <div class="config-example">
+<span class="key">{</span>
+  <span class="key">"mcpServers"</span>: <span class="key">{</span>
+    <span class="key">"hudu"</span>: <span class="key">{</span>
+      <span class="key">"command"</span>: <span class="string">"npx"</span>,
+      <span class="key">"args"</span>: [
+        <span class="string">"mcp-remote"</span>,
+        <span class="string">"https://{{MCP_HOSTNAME}}/mcp"</span>,
+        <span class="string">"--header"</span>,
+        <span class="string">"Authorization: Bearer ${HUDU_MCP_TOKEN}"</span>
+      ],
+      <span class="key">"env"</span>: <span class="key">{</span>
+        <span class="key">"HUDU_MCP_TOKEN"</span>: <span class="string">"YOUR_TOKEN_HERE"</span>
+      <span class="key">}</span>
+    <span class="key">}</span>
+  <span class="key">}</span>
+<span class="key">}</span>
+            </div>
+
+            <ol start="5">
+                <li>Replace <code>YOUR_TOKEN_HERE</code> with your copied token</li>
+                <li>Save the file</li>
+                <li>Restart Claude Desktop</li>
+                <li>You should now see Hudu MCP tools available in Claude!</li>
+            </ol>
+        </div>
+
+        <div class="footer">
+            <p>Hudu MCP Server • Secured with Azure AD OAuth 2.0</p>
+            <p>Token valid for 7 days • Automatically refreshes on use</p>
+        </div>
+    </div>
+
+    <script>
+        function copyToken() {
+            const tokenText = document.getElementById('tokenText').textContent;
+            const button = event.target;
+
+            navigator.clipboard.writeText(tokenText).then(() => {
+                const originalText = button.textContent;
+                button.textContent = '✅ Token Copied!';
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 3000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy token. Please select and copy manually.');
+            });
+        }
+
+        // Show warning if token is empty
+        window.addEventListener('DOMContentLoaded', () => {
+            const tokenText = document.getElementById('tokenText').textContent.trim();
+            if (!tokenText || tokenText === '{{ACCESS_TOKEN}}') {
+                document.querySelector('.token-box').innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #f56565;">
+                        <p><strong>⚠️ No token available</strong></p>
+                        <p style="margin-top: 10px; font-size: 14px;">
+                            Please ensure you're accessing this page through the OAuth2-Proxy authentication flow.
+                        </p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
