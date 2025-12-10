@@ -75,8 +75,9 @@ Company-level filtering for MSPs managing multiple clients.
 > - ✅ IT documentation automation
 > - ✅ Specialized training and support
 >
-> 📞 **WhatsApp/Phone:** +55 63 3224-4925 - Brazil
-> 🌐 **Website:** skillsit.com.br 📧 **Email:** contato@skillsit.com.br
+> 📞 **WhatsApp/Phone:** +55 63 3224-4925 - Brazil 🇧🇷
+> 🌐 **Website:** [skillsit.com.br](https://skillsit.com.br)
+> 📧 **Email:** contato@skillsit.com.br
 >
 > *"Transforming infrastructure into intelligence"*
 
