@@ -120,43 +120,43 @@ import { foldersTool, foldersQueryTool, executeFoldersTool, executeFoldersQueryT
 export const WORKING_TOOLS: Record<string, Tool> = {
   // Core resources
   'articles': articlesTool,
-  'articles.query': articlesQueryTool,
+  'articles_query': articlesQueryTool,
   'companies': companiesTool,
-  'companies.query': companiesQueryTool,
+  'companies_query': companiesQueryTool,
   'assets': assetsTool,
-  'assets.query': assetsQueryTool,
+  'assets_query': assetsQueryTool,
   'passwords': passwordsTool,
-  'passwords.query': passwordsQueryTool,
+  'passwords_query': passwordsQueryTool,
   
   // Specialized resources
   'procedures': proceduresTool,
-  'procedures.query': proceduresQueryTool,
+  'procedures_query': proceduresQueryTool,
   'procedure_tasks': procedureTasksTool,
-  'procedure_tasks.query': procedureTasksQueryTool,
+  'procedure_tasks_query': procedureTasksQueryTool,
   
 
   // Folders
   'folders': foldersTool,
-  'folders.query': foldersQueryTool,
+  'folders_query': foldersQueryTool,
   // Network resources
   'networks': networksTool,
-  'networks.query': networksQueryTool,
+  'networks_query': networksQueryTool,
   'vlans': vlansTool,
-  'vlans.query': vlansQueryTool,
+  'vlans_query': vlansQueryTool,
   'vlan_zones': vlanZonesTool,
-  'vlan_zones.query': vlanZonesQueryTool,
+  'vlan_zones_query': vlanZonesQueryTool,
   'ip_addresses': ipAddressesTool,
-  'ip_addresses.query': ipAddressesQueryTool,
+  'ip_addresses_query': ipAddressesQueryTool,
   
   // Storage resources
   'uploads': uploadsTool,
-  'uploads.query': uploadsQueryTool,
+  'uploads_query': uploadsQueryTool,
   'rack_storages': rackStoragesTool,
-  'rack_storages.query': rackStoragesQueryTool,
+  'rack_storages_query': rackStoragesQueryTool,
   'rack_storage_items': rackStorageItemsTool,
-  'rack_storage_items.query': rackStorageItemsQueryTool,
+  'rack_storage_items_query': rackStorageItemsQueryTool,
   'public_photos': publicPhotosTool,
-  'public_photos.query': publicPhotosQueryTool,
+  'public_photos_query': publicPhotosQueryTool,
   
   // Utility tools
   'admin': adminTool,
@@ -168,43 +168,43 @@ export const WORKING_TOOLS: Record<string, Tool> = {
 export const WORKING_TOOL_EXECUTORS: Record<string, Function> = {
   // Core resources
   'articles': executeArticlesTool,
-  'articles.query': executeArticlesQueryTool,
+  'articles_query': executeArticlesQueryTool,
   'companies': executeCompaniesTool,
-  'companies.query': executeCompaniesQueryTool,
+  'companies_query': executeCompaniesQueryTool,
   'assets': executeAssetsTool,
-  'assets.query': executeAssetsQueryTool,
+  'assets_query': executeAssetsQueryTool,
   'passwords': executePasswordsTool,
-  'passwords.query': executePasswordsQueryTool,
+  'passwords_query': executePasswordsQueryTool,
   
   // Specialized resources
   'procedures': executeProceduresTool,
-  'procedures.query': executeProceduresQueryTool,
+  'procedures_query': executeProceduresQueryTool,
   'procedure_tasks': executeProcedureTasksTool,
-  'procedure_tasks.query': executeProcedureTasksQueryTool,
+  'procedure_tasks_query': executeProcedureTasksQueryTool,
   
 
   // Folders
   'folders': executeFoldersTool,
-  'folders.query': executeFoldersQueryTool,
+  'folders_query': executeFoldersQueryTool,
   // Network resources
   'networks': executeNetworksTool,
-  'networks.query': executeNetworksQueryTool,
+  'networks_query': executeNetworksQueryTool,
   'vlans': executeVlansTool,
-  'vlans.query': executeVlansQueryTool,
+  'vlans_query': executeVlansQueryTool,
   'vlan_zones': executeVlanZonesTool,
-  'vlan_zones.query': executeVlanZonesQueryTool,
+  'vlan_zones_query': executeVlanZonesQueryTool,
   'ip_addresses': executeIpAddressesTool,
-  'ip_addresses.query': executeIpAddressesQueryTool,
+  'ip_addresses_query': executeIpAddressesQueryTool,
   
   // Storage resources
   'uploads': executeUploadsTool,
-  'uploads.query': executeUploadsQueryTool,
+  'uploads_query': executeUploadsQueryTool,
   'rack_storages': executeRackStoragesTool,
-  'rack_storages.query': executeRackStoragesQueryTool,
+  'rack_storages_query': executeRackStoragesQueryTool,
   'rack_storage_items': executeRackStorageItemsTool,
-  'rack_storage_items.query': executeRackStorageItemsQueryTool,
+  'rack_storage_items_query': executeRackStorageItemsQueryTool,
   'public_photos': executePublicPhotosTool,
-  'public_photos.query': executePublicPhotosQueryTool,
+  'public_photos_query': executePublicPhotosQueryTool,
   
   // Utility tools
   'admin': executeAdminTool,

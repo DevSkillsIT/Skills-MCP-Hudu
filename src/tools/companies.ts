@@ -29,7 +29,7 @@ export const companiesTool: Tool = {
 
 // Companies query tool
 export const companiesQueryTool: Tool = {
-  name: 'companies.query',
+  name: 'companies_query',
   description: 'Search and filter Hudu companies with pagination',
   inputSchema: createQuerySchema({})
 };

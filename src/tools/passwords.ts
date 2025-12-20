@@ -28,7 +28,7 @@ export const passwordsTool: Tool = {
 
 // Passwords query tool
 export const passwordsQueryTool: Tool = {
-  name: 'passwords.query',
+  name: 'passwords_query',
   description: 'Search and filter Hudu passwords with pagination',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id

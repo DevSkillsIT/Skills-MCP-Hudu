@@ -31,7 +31,7 @@ export const foldersTool: Tool = {
  * Folders query tool - Search and filter folders with pagination
  */
 export const foldersQueryTool: Tool = {
-  name: 'folders.query',
+  name: 'folders_query',
   description: 'Search and filter Hudu folders with pagination',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id

@@ -25,7 +25,7 @@ export const articlesTool: Tool = {
 
 // Articles query tool
 export const articlesQueryTool: Tool = {
-  name: 'articles.query',
+  name: 'articles_query',
   description: 'Search and filter Hudu articles with pagination',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id,

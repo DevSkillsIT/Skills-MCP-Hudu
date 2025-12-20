@@ -44,7 +44,7 @@ export const networksTool: Tool = {
 
 // Networks query tool
 export const networksQueryTool: Tool = {
-  name: 'networks.query',
+  name: 'networks_query',
   description: 'Search and filter Hudu networks with pagination',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
@@ -72,7 +72,7 @@ export const vlansTool: Tool = {
 
 // VLANs query tool
 export const vlansQueryTool: Tool = {
-  name: 'vlans.query',
+  name: 'vlans_query',
   description: 'Search and filter VLANs with pagination',
   inputSchema: createQuerySchema({
     network_id: { type: 'number', description: 'Filter by network ID' }
@@ -100,7 +100,7 @@ export const vlanZonesTool: Tool = {
 
 // VLAN Zones query tool
 export const vlanZonesQueryTool: Tool = {
-  name: 'vlan_zones.query',
+  name: 'vlan_zones_query',
   description: 'Search and filter VLAN zones with pagination',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
@@ -128,7 +128,7 @@ export const ipAddressesTool: Tool = {
 
 // IP Addresses query tool
 export const ipAddressesQueryTool: Tool = {
-  name: 'ip_addresses.query',
+  name: 'ip_addresses_query',
   description: 'Search and filter IP addresses with pagination',
   inputSchema: createQuerySchema({
     address: { type: 'string', description: 'Filter by IP address' },
