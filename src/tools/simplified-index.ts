@@ -59,7 +59,7 @@ export const articlesTool: Tool = {
 };
 
 export const articlesQueryTool: Tool = {
-  name: 'articles.query',
+  name: 'articles_query',
   description: 'Search and filter Hudu articles with pagination',
   inputSchema: {
     type: 'object',
@@ -106,7 +106,7 @@ export const companiesTool: Tool = {
 };
 
 export const companiesQueryTool: Tool = {
-  name: 'companies.query',
+  name: 'companies_query',
   description: 'Search and filter Hudu companies with pagination',
   inputSchema: {
     type: 'object',
@@ -158,9 +158,9 @@ export const searchTool: Tool = {
 // Simplified tool registry
 export const SIMPLIFIED_TOOLS: Record<string, Tool> = {
   'articles': articlesTool,
-  'articles.query': articlesQueryTool,
+  'articles_query': articlesQueryTool,
   'companies': companiesTool,
-  'companies.query': companiesQueryTool,
+  'companies_query': companiesQueryTool,
   'admin': adminTool,
   'search': searchTool
 };
@@ -281,9 +281,9 @@ export async function executeSearchTool(args: any, client: HuduClient): Promise<
 // Simplified tool executors
 export const SIMPLIFIED_TOOL_EXECUTORS: Record<string, Function> = {
   'articles': executeArticlesTool,
-  'articles.query': executeArticlesQueryTool,
+  'articles_query': executeArticlesQueryTool,
   'companies': executeCompaniesTool,
-  'companies.query': executeCompaniesQueryTool,
+  'companies_query': executeCompaniesQueryTool,
   'admin': executeAdminTool,
   'search': executeSearchTool
 };

@@ -26,7 +26,7 @@ export const uploadsTool: Tool = {
 
 // Uploads query tool
 export const uploadsQueryTool: Tool = {
-  name: 'uploads.query',
+  name: 'uploads_query',
   description: 'Search and filter uploads with pagination',
   inputSchema: createQuerySchema({})
 };
@@ -52,7 +52,7 @@ export const rackStoragesTool: Tool = {
 
 // Rack Storage query tool
 export const rackStoragesQueryTool: Tool = {
-  name: 'rack_storages.query',
+  name: 'rack_storages_query',
   description: 'Search and filter rack storages with pagination',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
@@ -80,7 +80,7 @@ export const rackStorageItemsTool: Tool = {
 
 // Rack Storage Items query tool
 export const rackStorageItemsQueryTool: Tool = {
-  name: 'rack_storage_items.query',
+  name: 'rack_storage_items_query',
   description: 'Search and filter rack storage items with pagination',
   inputSchema: createQuerySchema({
     rack_storage_id: { type: 'number', description: 'Filter by rack storage ID' }
@@ -108,7 +108,7 @@ export const publicPhotosTool: Tool = {
 
 // Public Photos query tool
 export const publicPhotosQueryTool: Tool = {
-  name: 'public_photos.query',
+  name: 'public_photos_query',
   description: 'Search and filter public photos with pagination',
   inputSchema: createQuerySchema({})
 };

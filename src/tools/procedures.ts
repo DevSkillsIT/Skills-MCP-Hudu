@@ -27,7 +27,7 @@ export const proceduresTool: Tool = {
 
 // Procedures query tool
 export const proceduresQueryTool: Tool = {
-  name: 'procedures.query',
+  name: 'procedures_query',
   description: 'Search and filter Hudu procedures with pagination',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
@@ -60,7 +60,7 @@ export const procedureTasksTool: Tool = {
 
 // Procedure tasks query tool
 export const procedureTasksQueryTool: Tool = {
-  name: 'procedure_tasks.query',
+  name: 'procedure_tasks_query',
   description: 'Search and filter procedure tasks with pagination',
   inputSchema: createQuerySchema({
     procedure_id: { type: 'number', description: 'Filter by procedure ID' }

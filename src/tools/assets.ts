@@ -25,7 +25,7 @@ export const assetsTool: Tool = {
 
 // Assets query tool
 export const assetsQueryTool: Tool = {
-  name: 'assets.query',
+  name: 'assets_query',
   description: 'Search and filter Hudu assets with pagination',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id,

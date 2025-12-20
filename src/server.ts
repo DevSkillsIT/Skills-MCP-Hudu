@@ -22,6 +22,7 @@ import { HuduClient } from './hudu-client.js';
 import { FilteredHuduClient } from './filtered-hudu-client.js';
 import { HuduConfig } from './types.js';
 import { WORKING_TOOLS, WORKING_TOOL_EXECUTORS, type ToolResponse } from './tools/working-index.js';
+import { HUDU_PROMPTS_LIST, getHuduPromptText } from './prompts.js';
 
 export interface HuduMcpServerConfig {
   huduConfig: HuduConfig;
@@ -412,8 +413,9 @@ export class HuduMcpServer {
     // Prompts handler - proper MCP SDK pattern
     this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
       this.logger.debug('Listing available prompts');
-      
+
       const prompts = [
+        // Prompts originais (2)
         {
           name: 'hudu_security_audit',
           description: 'Generate a comprehensive security audit report based on Hudu data',
@@ -435,11 +437,161 @@ export class HuduMcpServer {
               required: false
             }
           ]
+        },
+        // Novos prompts gestor (5)
+        {
+          name: 'hudu_executive_dashboard',
+          description: 'Dashboard executivo de documentação com métricas de compliance',
+          arguments: [
+            {
+              name: 'company_id',
+              description: 'Company ID (opcional)',
+              required: false
+            }
+          ]
+        },
+        {
+          name: 'hudu_documentation_coverage',
+          description: 'Análise de cobertura de documentação com gaps identificados',
+          arguments: [
+            {
+              name: 'company_id',
+              description: 'Company ID (opcional)',
+              required: false
+            }
+          ]
+        },
+        {
+          name: 'hudu_asset_depreciation',
+          description: 'Ativos próximos de EOL (End of Life) com planejamento de substituição',
+          arguments: [
+            {
+              name: 'company_id',
+              description: 'Company ID (opcional)',
+              required: false
+            },
+            {
+              name: 'warning_months',
+              description: 'Meses de antecedência para alerta (padrão: 6)',
+              required: false
+            }
+          ]
+        },
+        {
+          name: 'hudu_compliance_gaps',
+          description: 'Gaps de compliance e documentação obrigatória faltante',
+          arguments: [
+            {
+              name: 'company_id',
+              description: 'Company ID (opcional)',
+              required: false
+            }
+          ]
+        },
+        {
+          name: 'hudu_client_maturity',
+          description: 'Análise de maturidade TI do cliente com recomendações',
+          arguments: [
+            {
+              name: 'company_id',
+              description: 'Company ID',
+              required: true
+            }
+          ]
+        },
+        // Novos prompts analista (8)
+        {
+          name: 'hudu_quick_search',
+          description: 'Busca rápida multi-recurso (assets, passwords, articles, companies)',
+          arguments: [
+            {
+              name: 'query',
+              description: 'Termo de busca',
+              required: true
+            }
+          ]
+        },
+        {
+          name: 'hudu_password_lookup',
+          description: 'Busca de credenciais com filtros de segurança',
+          arguments: [
+            {
+              name: 'search_term',
+              description: 'Nome do serviço ou recurso',
+              required: true
+            }
+          ]
+        },
+        {
+          name: 'hudu_asset_history',
+          description: 'Histórico de mudanças de ativo com auditoria',
+          arguments: [
+            {
+              name: 'asset_id',
+              description: 'ID do ativo',
+              required: true
+            }
+          ]
+        },
+        {
+          name: 'hudu_new_client_setup',
+          description: 'Checklist de onboarding e setup inicial de novo cliente',
+          arguments: [
+            {
+              name: 'company_name',
+              description: 'Nome da empresa',
+              required: true
+            }
+          ]
+        },
+        {
+          name: 'hudu_documentation_checklist',
+          description: 'Checklist de documentação obrigatória para cliente',
+          arguments: [
+            {
+              name: 'company_id',
+              description: 'Company ID',
+              required: true
+            }
+          ]
+        },
+        {
+          name: 'hudu_troubleshooting_wiki',
+          description: 'Wiki de troubleshooting com soluções documentadas',
+          arguments: [
+            {
+              name: 'search_query',
+              description: 'Termo de busca no knowledge base',
+              required: true
+            }
+          ]
+        },
+        {
+          name: 'hudu_contact_directory',
+          description: 'Diretório de contatos técnicos e comerciais',
+          arguments: [
+            {
+              name: 'company_id',
+              description: 'Company ID (opcional)',
+              required: false
+            }
+          ]
+        },
+        {
+          name: 'hudu_recent_changes',
+          description: 'Mudanças recentes em documentação e ativos',
+          arguments: [
+            {
+              name: 'hours',
+              description: 'Últimas X horas (padrão: 24)',
+              required: false
+            }
+          ]
         }
       ];
 
-      this.logger.info('Prompts listed successfully', { 
-        count: prompts.length 
+      this.logger.info('Prompts listed successfully', {
+        count: prompts.length
       });
 
       return { prompts };
@@ -448,58 +600,17 @@ export class HuduMcpServer {
     // Prompt get handler - proper MCP SDK pattern
     this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
-      
+
       this.logger.info('Prompt requested', { name, arguments: args });
 
-      switch (name) {
-        case 'hudu_security_audit':
-          const companyId = args?.company_id;
-          return {
-            description: 'Security audit prompt for Hudu data',
-            messages: [
-              {
-                role: 'user',
-                content: {
-                  type: 'text',
-                  text: `Perform a comprehensive security audit${companyId ? ` for company ID ${companyId}` : ' across all companies'}. Review assets, passwords, and documentation for security compliance. Focus on:
-
-1. Password strength and rotation policies
-2. Asset inventory completeness
-3. Documentation coverage
-4. Access controls and permissions
-5. Compliance with security standards
-
-Provide actionable recommendations for improvement.`
-                }
-              }
-            ]
-          };
-
-        case 'hudu_asset_report':
-          const reportCompanyId = args?.company_id;
-          return {
-            description: 'Asset inventory report prompt for Hudu data',
-            messages: [
-              {
-                role: 'user',
-                content: {
-                  type: 'text',
-                  text: `Generate a comprehensive asset inventory report${reportCompanyId ? ` for company ID ${reportCompanyId}` : ' across all companies'}. Include:
-
-1. Total asset count by type
-2. Assets requiring updates
-3. Missing documentation
-4. Asset relationships and dependencies
-5. Compliance status
-
-Format as a professional report with executive summary.`
-                }
-              }
-            ]
-          };
-
-        default:
-          throw new McpError(ErrorCode.InvalidRequest, `Unknown prompt: ${name}`);
+      try {
+        return getHuduPromptText(name, args);
+      } catch (error: any) {
+        this.logger.error('Prompt get error', {
+          name,
+          error: error.message
+        });
+        throw new McpError(ErrorCode.InvalidRequest, error.message);
       }
     });
 
@@ -850,89 +961,12 @@ Format as a professional report with executive summary.`
             break;
             
           case 'prompts/list':
-            result = {
-              prompts: [
-                {
-                  name: 'hudu_security_audit',
-                  description: 'Generate a comprehensive security audit report based on Hudu data',
-                  arguments: [
-                    {
-                      name: 'company_id',
-                      description: 'Company ID to audit (optional)',
-                      required: false
-                    }
-                  ]
-                },
-                {
-                  name: 'hudu_asset_report',
-                  description: 'Generate an asset inventory report',
-                  arguments: [
-                    {
-                      name: 'company_id',
-                      description: 'Company ID to report on (optional)',
-                      required: false
-                    }
-                  ]
-                }
-              ]
-            };
+            result = { prompts: HUDU_PROMPTS_LIST };
             break;
-            
+
           case 'prompts/get':
             const { name: promptName, arguments: promptArgs } = params;
-            
-            switch (promptName) {
-              case 'hudu_security_audit':
-                const companyId = promptArgs?.company_id;
-                result = {
-                  description: 'Security audit prompt for Hudu data',
-                  messages: [
-                    {
-                      role: 'user',
-                      content: {
-                        type: 'text',
-                        text: `Perform a comprehensive security audit${companyId ? ` for company ID ${companyId}` : ' across all companies'}. Review assets, passwords, and documentation for security compliance. Focus on:
-
-1. Password strength and rotation policies
-2. Asset inventory completeness
-3. Documentation coverage
-4. Access controls and permissions
-5. Compliance with security standards
-
-Provide actionable recommendations for improvement.`
-                      }
-                    }
-                  ]
-                };
-                break;
-                
-              case 'hudu_asset_report':
-                const reportCompanyId = promptArgs?.company_id;
-                result = {
-                  description: 'Asset inventory report prompt for Hudu data',
-                  messages: [
-                    {
-                      role: 'user',
-                      content: {
-                        type: 'text',
-                        text: `Generate a comprehensive asset inventory report${reportCompanyId ? ` for company ID ${reportCompanyId}` : ' across all companies'}. Include:
-
-1. Total asset count by type
-2. Assets requiring updates
-3. Missing documentation
-4. Asset relationships and dependencies
-5. Compliance status
-
-Format as a professional report with executive summary.`
-                      }
-                    }
-                  ]
-                };
-                break;
-                
-              default:
-                throw new Error(`Unknown prompt: ${promptName}`);
-            }
+            result = getHuduPromptText(promptName, promptArgs);
             break;
             
           case "notifications/initialized":
