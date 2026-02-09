@@ -32,11 +32,11 @@ RUN mkdir -p /app/logs && chown -R hudu:nodejs /app/logs
 USER hudu
 
 # Expose the port (though MCP typically uses stdio)
-EXPOSE 3050
+EXPOSE 3100
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:3050/health || exit 1
+  CMD curl -f http://localhost:3100/health || exit 1
 
 # Set environment variables
 ENV NODE_ENV=production

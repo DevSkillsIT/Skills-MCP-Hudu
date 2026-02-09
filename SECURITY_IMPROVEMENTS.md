@@ -225,7 +225,7 @@ Before deploying to network:
 - [x] Rebuild Docker image
 - [x] Update .gitignore for secrets
 - [ ] **Implement authentication** (REQUIRED before production)
-- [ ] Configure firewall to restrict port 3050 to internal network
+- [ ] Configure firewall to restrict port 3100 to internal network
 - [ ] Set up log monitoring
 - [ ] Test with multiple clients
 - [ ] Document token distribution process
@@ -237,17 +237,17 @@ Before deploying to network:
 
 ### Network Firewall Rules
 
-Restrict Docker port 3050 to internal network only:
+Restrict Docker port 3100 to internal network only:
 
 **Windows Firewall:**
 ```powershell
-New-NetFirewallRule -DisplayName "Hudu MCP Server" -Direction Inbound -LocalPort 3050 -Protocol TCP -Action Allow -RemoteAddress 192.168.0.0/16,10.0.0.0/8
+New-NetFirewallRule -DisplayName "Hudu MCP Server" -Direction Inbound -LocalPort 3100 -Protocol TCP -Action Allow -RemoteAddress 192.168.0.0/16,10.0.0.0/8
 ```
 
 **Linux iptables:**
 ```bash
-iptables -A INPUT -p tcp --dport 3050 -s 192.168.0.0/16 -j ACCEPT
-iptables -A INPUT -p tcp --dport 3050 -j DROP
+iptables -A INPUT -p tcp --dport 3100 -s 192.168.0.0/16 -j ACCEPT
+iptables -A INPUT -p tcp --dport 3100 -j DROP
 ```
 
 ### Docker Compose Production Settings
@@ -313,7 +313,7 @@ If you suspect unauthorized access:
 ### CLAUDE.md Requirements:
 
 - ✅ Latest MCP SDK (1.20.1)
-- ✅ HTTP-only transport (port 3050)
+- ✅ HTTP-only transport (port 3100)
 - ✅ Environment-based configuration
 - ✅ No secrets in code
 - ✅ Docker non-root user

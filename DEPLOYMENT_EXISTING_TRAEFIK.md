@@ -66,7 +66,7 @@ MCP_HOSTNAME=mcp.hudu.example.com
 MCP_SERVER_IP=10.0.0.10
 
 # MCP Server settings
-MCP_SERVER_PORT=3050
+MCP_SERVER_PORT=3100
 NODE_ENV=production
 LOG_LEVEL=info
 ```
@@ -276,7 +276,7 @@ docker logs traefik -f
 {
   "level": "info",
   "message": "Tool execution started",
-  "toolName": "companies.query",
+  "toolName": "hudu_search_company_information",
   "user": "admin@yourcompany.com",
   "userGroups": ["IT-Admins"],
   "timestamp": "2025-10-24T10:30:00.000Z"
@@ -392,7 +392,7 @@ docker network inspect hudu-mcp-network
 
 **Test connectivity:**
 ```bash
-docker exec hudu-mcp-oauth2-proxy wget -O- http://hudu-mcp-server:3050/health
+docker exec hudu-mcp-oauth2-proxy wget -O- http://hudu-mcp-server:3100/health
 # Expected: {"status":"healthy",...}
 ```
 

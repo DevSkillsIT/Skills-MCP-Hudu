@@ -4,19 +4,19 @@ import { createActionSchema, createFieldsSchema, createQuerySchema, standardActi
 import type { HuduClient } from '../hudu-client.js';
 
 export const assetsTool: Tool = {
-  name: 'assets',
-  description: 'Create and manage Hudu IT assets',
+  name: 'hudu_manage_it_asset_inventory',
+  description: 'Ativos de TI, equipamentos e dispositivos no inventário do Hudu — operações CRUD completas incluindo arquivamento. Use quando precisar cadastrar, editar ou excluir servidores, estações e hardware no Hudu. Requer company_id e asset_layout_id para criação. Aceita action (create, get, update, delete, archive, unarchive). Retorna JSON.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(standardActions),
+      action: createActionSchema(standardActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID), archive (arquivar por ID), unarchive (desarquivar por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Asset name' },
-        asset_type: { type: 'string', description: 'Asset type' },
-        company_id: { ...commonProperties.company_id, description: 'Company ID (required for create)' },
-        asset_layout_id: { type: 'number', description: 'Asset layout ID (required for create)' },
-        fields: { type: 'array', items: {}, description: 'Asset field values based on layout' }
+        name: { type: 'string', description: 'Nome do ativo (obrigatório para criação)' },
+        asset_type: { type: 'string', description: 'Tipo do ativo (ex: servidor, estação, switch)' },
+        company_id: { ...commonProperties.company_id, description: 'ID da empresa associada (obrigatório para criação)' },
+        asset_layout_id: { type: 'number', description: 'ID do layout de ativo (obrigatório para criação)' },
+        fields: { type: 'array', items: {}, description: 'Valores dos campos personalizados conforme o layout do ativo' }
       })
     },
     required: ['action']
@@ -25,12 +25,12 @@ export const assetsTool: Tool = {
 
 // Assets query tool
 export const assetsQueryTool: Tool = {
-  name: 'assets_query',
-  description: 'Search and filter Hudu assets with pagination',
+  name: 'hudu_search_it_asset_inventory',
+  description: 'Ativos de TI, equipamentos e dispositivos no inventário do Hudu — busca e filtragem com paginação. Use quando precisar localizar servidores, estações ou hardware por texto, empresa ou layout no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos ativos encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id,
-    asset_layout_id: { type: 'number', description: 'Filter by asset layout ID' },
-    archived: { type: 'boolean', description: 'Include archived assets' }
+    asset_layout_id: { type: 'number', description: 'Filtrar por ID do layout de ativo' },
+    archived: { type: 'boolean', description: 'Incluir ativos arquivados nos resultados' }
   })
 };
 

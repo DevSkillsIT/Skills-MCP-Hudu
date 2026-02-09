@@ -4,22 +4,22 @@ import { createActionSchema, createFieldsSchema, createQuerySchema, standardActi
 import type { HuduClient } from '../hudu-client.js';
 
 export const passwordsTool: Tool = {
-  name: 'passwords',
-  description: 'Create and manage Hudu passwords and credentials',
+  name: 'hudu_manage_password_credentials',
+  description: 'Senhas, credenciais e acessos armazenados no cofre do Hudu — operações CRUD completas incluindo arquivamento. Use quando precisar cadastrar, editar ou excluir logins e chaves de acesso no Hudu. Requer permissões elevadas de API. Aceita action (create, get, update, delete, archive, unarchive). Retorna JSON.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(standardActions),
+      action: createActionSchema(standardActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID), archive (arquivar por ID), unarchive (desarquivar por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Password name' },
-        password: { type: 'string', description: 'Password value' },
-        username: { type: 'string', description: 'Username' },
-        url: { type: 'string', description: 'URL' },
+        name: { type: 'string', description: 'Nome identificador da credencial (obrigatório para criação)' },
+        password: { type: 'string', description: 'Valor da senha (obrigatório para criação)' },
+        username: { type: 'string', description: 'Nome de usuário ou login associado' },
+        url: { type: 'string', description: 'URL do serviço ou sistema relacionado' },
         description: commonProperties.description,
         company_id: commonProperties.company_id,
-        passwordable_type: { type: 'string', description: 'Passwordable type' },
-        passwordable_id: { type: 'number', description: 'Passwordable ID' }
+        passwordable_type: { type: 'string', description: 'Tipo do recurso pai vinculado à credencial' },
+        passwordable_id: { type: 'number', description: 'ID do recurso pai vinculado à credencial' }
       })
     },
     required: ['action']
@@ -28,8 +28,8 @@ export const passwordsTool: Tool = {
 
 // Passwords query tool
 export const passwordsQueryTool: Tool = {
-  name: 'passwords_query',
-  description: 'Search and filter Hudu passwords with pagination',
+  name: 'hudu_search_password_credentials',
+  description: 'Senhas, credenciais e acessos armazenados no cofre do Hudu — busca e filtragem com paginação. Use quando precisar localizar logins ou chaves de acesso por texto ou empresa no Hudu. Requer permissões elevadas de API. Consulta somente leitura. Retorna lista paginada em JSON com metadados das credenciais.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
   })

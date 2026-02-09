@@ -37,7 +37,7 @@ services:
 
       # Upstream configuration
       - "--http-address=0.0.0.0:4180"
-      - "--upstream=http://hudu-mcp-server:3050"
+      - "--upstream=http://hudu-mcp-server:3100"
 
       # Reverse proxy configuration
       - "--reverse-proxy=true"
@@ -116,7 +116,7 @@ services:
       - HUDU_BASE_URL=${HUDU_BASE_URL}
       - HUDU_API_KEY=${HUDU_API_KEY}
       - HUDU_TIMEOUT=${HUDU_TIMEOUT:-30000}
-      - MCP_SERVER_PORT=${MCP_SERVER_PORT:-3050}
+      - MCP_SERVER_PORT=${MCP_SERVER_PORT:-3100}
       # OAuth is handled by oauth2-proxy, MCP server receives user headers
       - OAUTH_ENABLED=true
 
@@ -141,7 +141,7 @@ services:
       - "traefik.http.routers.hudu-mcp.tls.certresolver=Cloudflare"
       - "traefik.http.routers.hudu-mcp.middlewares=hudu-oauth2-auth,hudu-security-headers,hudu-rate-limit"
       - "traefik.http.routers.hudu-mcp.service=hudu-mcp"
-      - "traefik.http.services.hudu-mcp.loadbalancer.server.port=3050"
+      - "traefik.http.services.hudu-mcp.loadbalancer.server.port=3100"
 
       # Security headers middleware
       - "traefik.http.middlewares.hudu-security-headers.headers.customresponseheaders.X-Frame-Options=DENY"
@@ -159,7 +159,7 @@ services:
       - "traefik.http.middlewares.hudu-rate-limit.ratelimit.period=1m"
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3050/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3100/health"]
       interval: 30s
       timeout: 10s
       retries: 3

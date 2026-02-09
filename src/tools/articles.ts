@@ -4,19 +4,19 @@ import { createActionSchema, createFieldsSchema, createQuerySchema, standardActi
 import type { HuduClient } from '../hudu-client.js';
 
 export const articlesTool: Tool = {
-  name: 'articles',
-  description: 'Create and manage Hudu knowledge base articles',
+  name: 'hudu_manage_knowledge_articles',
+  description: 'Artigos, documentos e procedimentos da base de conhecimento no Hudu — operações CRUD completas incluindo arquivamento. Use quando precisar criar, editar ou excluir artigos técnicos, guias e runbooks no Hudu. Aceita action (create, get, update, delete, archive, unarchive). Retorna JSON com dados do artigo.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(standardActions),
+      action: createActionSchema(standardActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID), archive (arquivar por ID), unarchive (desarquivar por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Article name' },
-        content: { type: 'string', description: 'Article content (HTML/Markdown)' },
+        name: { type: 'string', description: 'Nome do artigo (obrigatório para criação)' },
+        content: { type: 'string', description: 'Conteúdo do artigo em HTML ou Markdown' },
         company_id: commonProperties.company_id,
         folder_id: commonProperties.folder_id,
-        enable_sharing: { type: 'boolean', description: 'Enable public sharing' }
+        enable_sharing: { type: 'boolean', description: 'Habilitar compartilhamento público do artigo' }
       })
     },
     required: ['action']
@@ -25,11 +25,11 @@ export const articlesTool: Tool = {
 
 // Articles query tool
 export const articlesQueryTool: Tool = {
-  name: 'articles_query',
-  description: 'Search and filter Hudu articles with pagination',
+  name: 'hudu_search_knowledge_articles',
+  description: 'Artigos, documentos e procedimentos da base de conhecimento no Hudu — busca e filtragem com paginação. Use quando precisar localizar guias, runbooks ou documentação técnica por texto ou empresa no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos artigos encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id,
-    draft: { type: 'boolean', description: 'Filter by draft status' }
+    draft: { type: 'boolean', description: 'Filtrar por status de rascunho (true = apenas rascunhos)' }
   })
 };
 

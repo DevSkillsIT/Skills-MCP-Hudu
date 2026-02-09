@@ -5,19 +5,19 @@ import type { HuduClient } from '../hudu-client.js';
 
 // Uploads resource tool
 export const uploadsTool: Tool = {
-  name: 'uploads',
-  description: 'Create and manage file uploads',
+  name: 'hudu_manage_file_upload_records',
+  description: 'Uploads, anexos e arquivos vinculados a recursos no Hudu — operações CRUD para registros de arquivos. Use quando precisar anexar, editar ou excluir documentos e arquivos associados a ativos ou empresas no Hudu. Requer name e filename. Aceita action (create, get, update, delete). Retorna JSON do upload.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions),
+      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Upload name' },
-        filename: { type: 'string', description: 'File name' },
-        content_type: { type: 'string', description: 'Content type' },
-        uploadable_type: { type: 'string', description: 'Uploadable type' },
-        uploadable_id: { type: 'number', description: 'Uploadable ID' }
+        name: { type: 'string', description: 'Nome do upload (obrigatório para criação)' },
+        filename: { type: 'string', description: 'Nome do arquivo com extensão (obrigatório para criação)' },
+        content_type: { type: 'string', description: 'Tipo MIME do arquivo, ex: application/pdf' },
+        uploadable_type: { type: 'string', description: 'Tipo do recurso pai ao qual o arquivo será vinculado' },
+        uploadable_id: { type: 'number', description: 'ID do recurso pai ao qual o arquivo será vinculado' }
       })
     },
     required: ['action']
@@ -26,23 +26,23 @@ export const uploadsTool: Tool = {
 
 // Uploads query tool
 export const uploadsQueryTool: Tool = {
-  name: 'uploads_query',
-  description: 'Search and filter uploads with pagination',
+  name: 'hudu_search_file_upload_records',
+  description: 'Uploads, anexos e arquivos vinculados a recursos no Hudu — busca e filtragem com paginação. Use quando precisar localizar documentos ou arquivos anexados a ativos e empresas no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos uploads encontrados.',
   inputSchema: createQuerySchema({})
 };
 
 // Rack Storage resource tool
 export const rackStoragesTool: Tool = {
-  name: 'rack_storages',
-  description: 'Create and manage rack storage locations',
+  name: 'hudu_manage_rack_storage_locations',
+  description: 'Racks, armários e locais de armazenamento físico em datacenters documentados no Hudu — operações CRUD completas. Use quando precisar cadastrar, editar ou excluir racks e gabinetes de infraestrutura no Hudu. Aceita action (create, get, update, delete). Retorna JSON com dados do rack processado.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions),
+      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Rack storage name' },
-        location: { type: 'string', description: 'Rack storage location' },
+        name: { type: 'string', description: 'Nome do rack (obrigatório para criação)' },
+        location: { type: 'string', description: 'Localização física do rack no datacenter' },
         company_id: commonProperties.company_id
       })
     },
@@ -52,8 +52,8 @@ export const rackStoragesTool: Tool = {
 
 // Rack Storage query tool
 export const rackStoragesQueryTool: Tool = {
-  name: 'rack_storages_query',
-  description: 'Search and filter rack storages with pagination',
+  name: 'hudu_search_rack_storage_locations',
+  description: 'Racks, armários e locais de armazenamento físico em datacenters documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar racks ou gabinetes por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos racks encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
   })
@@ -61,17 +61,17 @@ export const rackStoragesQueryTool: Tool = {
 
 // Rack Storage Items resource tool
 export const rackStorageItemsTool: Tool = {
-  name: 'rack_storage_items',
-  description: 'Create and manage items within rack storage',
+  name: 'hudu_manage_rack_storage_items',
+  description: 'Equipamentos, servidores e dispositivos montados em racks no Hudu — operações CRUD para itens de rack. Use quando precisar cadastrar, editar ou excluir hardware instalado em um rack específico no Hudu. Requer name e rack_storage_id. Aceita action (create, get, update, delete). Retorna JSON do item.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions),
+      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Rack storage item name' },
-        position: { type: 'string', description: 'Position in rack storage' },
-        rack_storage_id: { type: 'number', description: 'Rack storage ID' }
+        name: { type: 'string', description: 'Nome do equipamento no rack (obrigatório para criação)' },
+        position: { type: 'string', description: 'Posição do item dentro do rack (ex: U1-U4)' },
+        rack_storage_id: { type: 'number', description: 'ID do rack onde o item está instalado (obrigatório para criação)' }
       })
     },
     required: ['action']
@@ -80,25 +80,25 @@ export const rackStorageItemsTool: Tool = {
 
 // Rack Storage Items query tool
 export const rackStorageItemsQueryTool: Tool = {
-  name: 'rack_storage_items_query',
-  description: 'Search and filter rack storage items with pagination',
+  name: 'hudu_search_rack_storage_items',
+  description: 'Equipamentos, servidores e dispositivos montados em racks no Hudu — busca e filtragem com paginação. Use quando precisar localizar hardware instalado em um rack específico por rack_storage_id no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos itens encontrados.',
   inputSchema: createQuerySchema({
-    rack_storage_id: { type: 'number', description: 'Filter by rack storage ID' }
+    rack_storage_id: { type: 'number', description: 'Filtrar por ID do rack' }
   })
 };
 
 // Public Photos resource tool
 export const publicPhotosTool: Tool = {
-  name: 'public_photos',
-  description: 'Create and manage public photos',
+  name: 'hudu_manage_public_photo_gallery',
+  description: 'Fotos públicas, imagens e capturas de tela compartilháveis na galeria do Hudu — operações CRUD completas. Use quando precisar publicar, editar ou excluir imagens acessíveis publicamente no Hudu. Aceita action (create, get, update, delete) e campos como nome e URL. Retorna JSON da foto processada.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions),
+      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Photo name' },
-        file_url: { type: 'string', description: 'Photo file URL' },
+        name: { type: 'string', description: 'Nome da foto (obrigatório para criação)' },
+        file_url: { type: 'string', description: 'URL do arquivo de imagem' },
         description: commonProperties.description
       })
     },
@@ -108,8 +108,8 @@ export const publicPhotosTool: Tool = {
 
 // Public Photos query tool
 export const publicPhotosQueryTool: Tool = {
-  name: 'public_photos_query',
-  description: 'Search and filter public photos with pagination',
+  name: 'hudu_search_public_photo_gallery',
+  description: 'Fotos públicas, imagens e capturas de tela compartilháveis na galeria do Hudu — busca e filtragem com paginação. Use quando precisar localizar imagens publicadas por texto no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados das fotos encontradas na galeria.',
   inputSchema: createQuerySchema({})
 };
 

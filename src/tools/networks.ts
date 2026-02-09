@@ -22,19 +22,19 @@ function filterNetworkQueryParams(args: any): any {
 
 // Networks resource tool
 export const networksTool: Tool = {
-  name: 'networks',
-  description: 'Create and manage Hudu network documentation',
+  name: 'hudu_manage_network_documentation',
+  description: 'Redes, sub-redes e segmentos de infraestrutura documentados no Hudu — operações CRUD para registros de rede. Use quando precisar cadastrar, editar ou excluir redes e seus ranges de IP no Hudu. Requer name, network_type, network e mask. Aceita action (create, get, update, delete). Retorna JSON da rede.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions),
+      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Network name' },
-        network_type: { type: 'string', description: 'Network type (required for create)' },
-        network: { type: 'string', description: 'Network address (required for create)' },
-        mask: { type: 'string', description: 'Network mask (required for create)' },
-        gateway: { type: 'string', description: 'Gateway address' },
+        name: { type: 'string', description: 'Nome da rede (obrigatório para criação)' },
+        network_type: { type: 'string', description: 'Tipo da rede (obrigatório para criação)' },
+        network: { type: 'string', description: 'Endereço de rede, ex: 192.168.1.0 (obrigatório para criação)' },
+        mask: { type: 'string', description: 'Máscara de rede, ex: 255.255.255.0 (obrigatório para criação)' },
+        gateway: { type: 'string', description: 'Endereço do gateway padrão da rede' },
         company_id: commonProperties.company_id
       })
     },
@@ -44,8 +44,8 @@ export const networksTool: Tool = {
 
 // Networks query tool
 export const networksQueryTool: Tool = {
-  name: 'networks_query',
-  description: 'Search and filter Hudu networks with pagination',
+  name: 'hudu_search_network_documentation',
+  description: 'Redes, sub-redes e segmentos de infraestrutura documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar redes ou ranges de IP por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados das redes encontradas no inventário de infraestrutura.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
   })
@@ -53,17 +53,17 @@ export const networksQueryTool: Tool = {
 
 // VLANs resource tool
 export const vlansTool: Tool = {
-  name: 'vlans',
-  description: 'Create and manage VLANs within networks',
+  name: 'hudu_manage_network_vlan_records',
+  description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — operações CRUD para registros de VLAN. Use quando precisar cadastrar, editar ou excluir VLANs associadas a redes no Hudu. Requer name e vid (VLAN ID numérico). Aceita action (create, get, update, delete). Retorna JSON da VLAN.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions),
+      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'VLAN name' },
-        vid: { type: 'number', description: 'VLAN ID number (required for create)' },
-        network_id: { type: 'number', description: 'Network ID' }
+        name: { type: 'string', description: 'Nome da VLAN (obrigatório para criação)' },
+        vid: { type: 'number', description: 'Número identificador da VLAN (obrigatório para criação)' },
+        network_id: { type: 'number', description: 'ID da rede associada à VLAN' }
       })
     },
     required: ['action']
@@ -72,24 +72,24 @@ export const vlansTool: Tool = {
 
 // VLANs query tool
 export const vlansQueryTool: Tool = {
-  name: 'vlans_query',
-  description: 'Search and filter VLANs with pagination',
+  name: 'hudu_search_network_vlan_records',
+  description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — busca e filtragem com paginação. Use quando precisar localizar VLANs de uma rede específica por network_id no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados das VLANs encontradas.',
   inputSchema: createQuerySchema({
-    network_id: { type: 'number', description: 'Filter by network ID' }
+    network_id: { type: 'number', description: 'Filtrar por ID da rede' }
   })
 };
 
 // VLAN Zones resource tool
 export const vlanZonesTool: Tool = {
-  name: 'vlan_zones',
-  description: 'Create and manage VLAN zones',
+  name: 'hudu_manage_network_vlan_zones',
+  description: 'Zonas de VLAN, perímetros e agrupamentos lógicos de segmentação no Hudu — operações CRUD completas. Use quando precisar criar, editar ou excluir zonas para organizar VLANs no Hudu. Aceita action (create, get, update, delete) e campos como nome. Retorna JSON da zona de VLAN processada.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions),
+      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Zone name' },
+        name: { type: 'string', description: 'Nome da zona de VLAN (obrigatório para criação)' },
         description: commonProperties.description,
         company_id: commonProperties.company_id
       })
@@ -100,8 +100,8 @@ export const vlanZonesTool: Tool = {
 
 // VLAN Zones query tool
 export const vlanZonesQueryTool: Tool = {
-  name: 'vlan_zones_query',
-  description: 'Search and filter VLAN zones with pagination',
+  name: 'hudu_search_network_vlan_zones',
+  description: 'Zonas de VLAN, perímetros e agrupamentos lógicos de segmentação no Hudu — busca e filtragem com paginação. Use quando precisar localizar zonas de organização de VLANs por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados das zonas encontradas.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
   })
@@ -109,17 +109,17 @@ export const vlanZonesQueryTool: Tool = {
 
 // IP Addresses resource tool
 export const ipAddressesTool: Tool = {
-  name: 'ip_addresses',
-  description: 'Create and manage IP address assignments',
+  name: 'hudu_manage_ip_address_records',
+  description: 'Endereços IP, atribuições e reservas de rede documentados no Hudu — operações CRUD para registros de IP. Use quando precisar cadastrar, editar ou excluir IPs associados a redes no Hudu. Requer campo address para criação. Aceita action (create, get, update, delete). Retorna JSON do endereço IP.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions),
+      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        address: { type: 'string', description: 'IP address (required for create)' },
-        hostname: { type: 'string', description: 'Hostname' },
-        network_id: { type: 'number', description: 'Network ID' }
+        address: { type: 'string', description: 'Endereço IP, ex: 192.168.1.10 (obrigatório para criação)' },
+        hostname: { type: 'string', description: 'Nome do host associado ao endereço IP' },
+        network_id: { type: 'number', description: 'ID da rede à qual o IP pertence' }
       })
     },
     required: ['action']
@@ -128,11 +128,11 @@ export const ipAddressesTool: Tool = {
 
 // IP Addresses query tool
 export const ipAddressesQueryTool: Tool = {
-  name: 'ip_addresses_query',
-  description: 'Search and filter IP addresses with pagination',
+  name: 'hudu_search_ip_address_records',
+  description: 'Endereços IP, atribuições e reservas de rede documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar IPs por endereço ou rede específica no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos endereços IP encontrados no inventário.',
   inputSchema: createQuerySchema({
-    address: { type: 'string', description: 'Filter by IP address' },
-    network_id: { type: 'number', description: 'Filter by network ID' }
+    address: { type: 'string', description: 'Filtrar por endereço IP exato ou parcial' },
+    network_id: { type: 'number', description: 'Filtrar por ID da rede' }
   })
 };
 

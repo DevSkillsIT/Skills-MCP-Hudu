@@ -620,7 +620,7 @@ export class HuduMcpServer {
   // STDIO transport removed as per CLAUDE.md requirements - HTTP ONLY
 
   async runHttp(): Promise<void> {
-    const port = this.config.port || 3050;
+    const port = this.config.port || 3100;
     this.logger.info('Starting MCP server with Streamable HTTP transport', { port });
 
     const app = express();

@@ -4,23 +4,23 @@ import { createActionSchema, createFieldsSchema, createQuerySchema, standardActi
 import type { HuduClient } from '../hudu-client.js';
 
 export const companiesTool: Tool = {
-  name: 'companies',
-  description: 'Create and manage Hudu companies',
+  name: 'hudu_manage_company_information',
+  description: 'Empresas, clientes e organizações cadastradas no Hudu — operações CRUD completas incluindo arquivamento. Use quando precisar criar, editar ou excluir registros de contas e empresas clientes no Hudu. Aceita action (create, get, update, delete, archive, unarchive). Retorna JSON com dados da empresa processada.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(standardActions),
+      action: createActionSchema(standardActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID), archive (arquivar por ID), unarchive (desarquivar por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Company name' },
-        nickname: { type: 'string', description: 'Company nickname' },
-        company_type: { type: 'string', description: 'Company type' },
-        website: { type: 'string', description: 'Company website URL' },
-        phone_number: { type: 'string', description: 'Phone number' },
-        address_line_1: { type: 'string', description: 'Address line 1' },
-        city: { type: 'string', description: 'City' },
-        state: { type: 'string', description: 'State' },
-        zip: { type: 'string', description: 'ZIP code' }
+        name: { type: 'string', description: 'Nome da empresa (obrigatório para criação)' },
+        nickname: { type: 'string', description: 'Apelido ou nome curto da empresa' },
+        company_type: { type: 'string', description: 'Tipo de empresa (ex: cliente, fornecedor, parceiro)' },
+        website: { type: 'string', description: 'URL do site da empresa' },
+        phone_number: { type: 'string', description: 'Número de telefone principal' },
+        address_line_1: { type: 'string', description: 'Endereço linha 1' },
+        city: { type: 'string', description: 'Cidade' },
+        state: { type: 'string', description: 'Estado ou UF' },
+        zip: { type: 'string', description: 'CEP ou código postal' }
       })
     },
     required: ['action']
@@ -29,8 +29,8 @@ export const companiesTool: Tool = {
 
 // Companies query tool
 export const companiesQueryTool: Tool = {
-  name: 'companies_query',
-  description: 'Search and filter Hudu companies with pagination',
+  name: 'hudu_search_company_information',
+  description: 'Empresas, clientes e organizações cadastradas no Hudu — busca e filtragem com paginação por nome. Use quando precisar listar ou localizar contas e empresas clientes sem saber o ID exato no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com dados resumidos das empresas encontradas.',
   inputSchema: createQuerySchema({})
 };
 

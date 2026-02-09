@@ -4,18 +4,18 @@ import type { HuduClient } from '../hudu-client.js';
 
 // Global search tool
 export const searchTool: Tool = {
-  name: 'search',
-  description: 'Global search across all Hudu content types',
+  name: 'hudu_search_all_resource_types',
+  description: 'Busca global unificada em todos os recursos do Hudu — artigos, ativos, senhas e empresas simultaneamente. Use quando precisar localizar qualquer informação sem saber o tipo exato do recurso no Hudu. Permite filtrar por tipo e company_id. Retorna JSON consolidado com resultados agrupados por tipo de recurso.',
   inputSchema: {
     type: 'object',
     properties: {
-      query: { type: 'string', description: 'Search query text' },
-      type: { 
-        type: 'string', 
-        enum: ['articles', 'assets', 'passwords', 'companies'], 
-        description: 'Specific content type to search' 
+      query: { type: 'string', description: 'Texto de busca para localizar recursos' },
+      type: {
+        type: 'string',
+        enum: ['articles', 'assets', 'passwords', 'companies'],
+        description: 'Tipo de recurso para busca. Valores: articles (artigos da base de conhecimento), assets (ativos de TI), passwords (credenciais armazenadas), companies (empresas cadastradas). Opcional - sem valor busca em todos os tipos simultaneamente'
       },
-      company_id: { type: 'number', description: 'Filter results by company ID' }
+      company_id: { type: 'number', description: 'Filtrar resultados por ID da empresa' }
     },
     required: ['query']
   }

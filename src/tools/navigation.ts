@@ -5,18 +5,18 @@ import type { HuduClient } from '../hudu-client.js';
 // Navigation operations tool
 
 export const navigationTool: Tool = {
-  name: 'navigation',
-  description: 'Navigation operations for jumping to specific Hudu locations',
+  name: 'hudu_navigate_to_resource_by_name',
+  description: 'Navegação rápida e acesso direto a recursos e registros no Hudu — saltar para fichas, consultar registros e acessar empresas por nome. Use quando precisar acessar diretamente um recurso específico pelo nome no Hudu. Aceita action (card_jump, card_lookup, company_jump). Retorna JSON com dados do recurso localizado.',
   inputSchema: {
     type: 'object',
     properties: {
       action: {
         type: 'string',
         enum: ['card_jump', 'card_lookup', 'company_jump'],
-        description: 'Navigation action to perform'
+        description: 'Ação de navegação. Valores: card_jump (saltar diretamente para um registro/ficha pelo nome, retorna URL do recurso), card_lookup (buscar registros/fichas correspondentes ao nome informado), company_jump (saltar para página da empresa pelo nome)'
       },
-      name: { type: 'string', description: 'Name for searching/jumping' },
-      company_id: { type: 'number', description: 'Company ID for filtering' }
+      name: { type: 'string', description: 'Nome do recurso ou empresa para busca ou navegação direta' },
+      company_id: { type: 'number', description: 'ID da empresa para filtrar resultados' }
     },
     required: ['action']
   }

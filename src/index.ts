@@ -13,7 +13,7 @@ const envSchema = z.object({
   HUDU_BASE_URL: z.string().url('HUDU_BASE_URL must be a valid URL'),
   HUDU_TIMEOUT: z.coerce.number().positive().optional().default(30000),
   HUDU_ALLOWED_COMPANY_IDS: z.string().optional().default('ALL'),
-  MCP_SERVER_PORT: z.coerce.number().positive().optional().default(3050),
+  MCP_SERVER_PORT: z.coerce.number().positive().optional().default(3100),
   MCP_TRANSPORT: z.enum(['stdio', 'http']).optional(),
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).optional().default('info'),
   NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('development')
@@ -59,7 +59,7 @@ async function main(): Promise<void> {
       console.error('   HUDU_BASE_URL - Your Hudu instance URL (e.g., https://company.huducloud.com)');
       console.error('\n⚙️  Optional environment variables:');
       console.error('   HUDU_TIMEOUT      - API request timeout in milliseconds (default: 30000)');
-      console.error('   MCP_SERVER_PORT   - HTTP server port (default: 3050, required for HTTP-only transport)');
+      console.error('   MCP_SERVER_PORT   - HTTP server port (default: 3100, required for HTTP-only transport)');
       console.error('   LOG_LEVEL         - Logging level: error, warn, info, debug (default: info)');
       console.error('   NODE_ENV          - Environment: development, production, test (default: development)');
       console.error('\n💡 Server configuration:');
