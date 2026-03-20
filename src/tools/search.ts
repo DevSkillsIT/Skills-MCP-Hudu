@@ -5,7 +5,7 @@ import type { HuduClient } from '../hudu-client.js';
 // Global search tool
 export const searchTool: Tool = {
   name: 'hudu_search_all_resource_types',
-  description: 'Busca global unificada em todos os recursos do Hudu — artigos, ativos, senhas e empresas simultaneamente. Use quando precisar localizar qualquer informação sem saber o tipo exato do recurso no Hudu. Permite filtrar por tipo e company_id. Retorna JSON consolidado com resultados agrupados por tipo de recurso.',
+  description: 'Busca global unificada em todos os recursos do Hudu — artigos, ativos, senhas e empresas simultaneamente. Use quando precisar localizar qualquer informação sem saber o tipo exato do recurso no Hudu. Permite filtrar por tipo e company_id. Retorna Markdown consolidado com resultados agrupados por tipo de recurso.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -18,6 +18,11 @@ export const searchTool: Tool = {
       company_id: { type: 'number', description: 'Filtrar resultados por ID da empresa' }
     },
     required: ['query']
+  },
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
   }
 };
 
@@ -30,12 +35,6 @@ export async function executeSearchTool(args: any, client: HuduClient): Promise<
   }
   
   try {
-    const searchParams = {
-      query: query.trim(),
-      type,
-      company_id
-    };
-    
     // Perform search across multiple endpoints based on type
     let results: any = {};
     

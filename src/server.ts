@@ -1,5 +1,4 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -23,6 +22,8 @@ import { FilteredHuduClient } from './filtered-hudu-client.js';
 import { HuduConfig } from './types.js';
 import { WORKING_TOOLS, WORKING_TOOL_EXECUTORS, type ToolResponse } from './tools/working-index.js';
 import { HUDU_PROMPTS_LIST, getHuduPromptText } from './prompts.js';
+import { formatToolResponse } from './formatters/response-formatter.js';
+import { listResources, readResource } from './resources.js';
 
 export interface HuduMcpServerConfig {
   huduConfig: HuduConfig;
@@ -46,6 +47,56 @@ declare global {
     }
   }
 }
+
+const SERVER_INSTRUCTIONS = `Servidor MCP Hudu - Documentacao e Gerenciamento de TI
+
+=== TOOLS DISPONIVEIS (43+) ===
+
+RECURSOS PRINCIPAIS:
+- hudu_manage_knowledge_articles / hudu_search_knowledge_articles: Artigos KB
+- hudu_manage_company_information / hudu_search_company_information: Empresas
+- hudu_manage_it_asset_inventory / hudu_search_it_asset_inventory: Ativos de TI
+- hudu_manage_password_credentials / hudu_search_password_credentials: Senhas
+
+MONITORAMENTO E AUDITORIA:
+- hudu_search_expiration_tracking: Vencimentos (dominios, SSL, garantias)
+- hudu_manage_website_monitoring / hudu_search_website_monitoring: Websites
+- hudu_search_activity_audit_logs: Logs de auditoria
+
+TEMPLATES E LAYOUTS:
+- hudu_manage_asset_layout_templates / hudu_search_asset_layout_templates: Templates
+
+RELACOES E DASHBOARD:
+- hudu_manage_entity_relations / hudu_search_entity_relations: Relacoes
+- hudu_manage_dashboard_widgets / hudu_search_dashboard_widgets: Magic Dash
+
+REDE E INFRAESTRUTURA:
+- hudu_manage/search_network_documentation: Redes
+- hudu_manage/search_network_vlan_records: VLANs
+- hudu_manage/search_network_vlan_zones: Zonas de VLAN
+- hudu_manage/search_ip_address_records: Enderecos IP
+
+PROCEDIMENTOS E PASTAS:
+- hudu_manage/search_workflow_procedures: Procedimentos
+- hudu_manage/search_procedure_task_items: Tarefas
+- hudu_manage/search_kb_article_folders: Pastas
+
+ARMAZENAMENTO:
+- hudu_manage/search_file_upload_records: Uploads
+- hudu_manage/search_rack_storage_locations: Racks
+- hudu_manage/search_rack_storage_items: Itens em racks
+- hudu_manage/search_public_photo_gallery: Fotos
+
+UTILITARIOS:
+- hudu_admin_instance_operations: Info da API
+- hudu_search_all_resource_types: Busca global
+- hudu_navigate_to_resource_by_name: Navegacao rapida
+
+=== COMO USAR ===
+Busca: Use tools search_* com parametro "search" para texto livre.
+CRUD: Use tools manage_* com parametro "action" (create, get, update, delete).
+Paginacao: Use "page" e "page_size" (padrao: 25, maximo: 100).
+Filtros: A maioria das buscas aceita "company_id" para filtrar por empresa.`;
 
 export class HuduMcpServer {
   private server: Server;
@@ -74,6 +125,7 @@ export class HuduMcpServer {
           resources: {},
           prompts: {},
         },
+        instructions: SERVER_INSTRUCTIONS,
       }
     );
 
@@ -286,7 +338,7 @@ export class HuduMcpServer {
           return {
             content: [{
               type: 'text',
-              text: JSON.stringify(result.data || { success: true, message: result.message }, null, 2)
+              text: formatToolResponse(name, result.data, args) || result.message || 'Operacao realizada com sucesso.'
             }]
           };
         } else {
@@ -317,96 +369,19 @@ export class HuduMcpServer {
 
     // Resources handler - proper MCP SDK pattern
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
-      this.logger.debug('Listing available resources');
-      
-      const resources = [
-        {
-          uri: 'hudu://articles',
-          name: 'Hudu Articles',
-          description: 'Knowledge base articles from Hudu',
-          mimeType: 'application/json'
-        },
-        {
-          uri: 'hudu://assets',
-          name: 'Hudu Assets',
-          description: 'IT assets inventory from Hudu',
-          mimeType: 'application/json'
-        },
-        {
-          uri: 'hudu://companies',
-          name: 'Hudu Companies',
-          description: 'Company information from Hudu',
-          mimeType: 'application/json'
-        },
-        {
-          uri: 'hudu://passwords',
-          name: 'Hudu Passwords',
-          description: 'Password entries from Hudu',
-          mimeType: 'application/json'
-        }
-      ];
-
-      this.logger.info('Resources listed successfully', { 
-        count: resources.length 
-      });
-
+      const resources = listResources();
+      this.logger.info('Resources listed', { count: resources.length });
       return { resources };
     });
 
     // Resource read handler - proper MCP SDK pattern
     this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-      const { uri } = request.params;
-      const requestId = Math.random().toString(36).substring(7);
-      
-      this.logger.info('Resource read started', {
-        requestId,
-        uri
-      });
-
       try {
-        let data: any[] = [];
-        
-        switch (uri) {
-          case 'hudu://articles':
-            data = await this.huduClient.getArticles({});
-            break;
-          case 'hudu://assets':
-            data = await this.huduClient.getAssets({});
-            break;
-          case 'hudu://companies':
-            data = await this.huduClient.getCompanies({});
-            break;
-          case 'hudu://passwords':
-            data = await this.huduClient.getAssetPasswords({});
-            break;
-          default:
-            throw new McpError(ErrorCode.InvalidRequest, `Unknown resource URI: ${uri}`);
-        }
-
-        this.logger.info('Resource read completed', {
-          requestId,
-          uri,
-          dataSize: JSON.stringify(data).length
-        });
-
-        return {
-          contents: [{
-            uri,
-            mimeType: 'application/json',
-            text: JSON.stringify(data, null, 2)
-          }]
-        };
+        const content = await readResource(request.params.uri, this.huduClient as HuduClient);
+        return { contents: [content] };
       } catch (error: any) {
-        this.logger.error('Resource read error', {
-          requestId,
-          uri,
-          error: error.message
-        });
-        
-        if (error instanceof McpError) {
-          throw error;
-        }
-        throw new McpError(ErrorCode.InternalError, `Failed to read resource: ${error.message}`);
+        this.logger.error('Resource read failed', { uri: request.params.uri, error: error.message });
+        throw new McpError(ErrorCode.InvalidRequest, error.message);
       }
     });
 
@@ -723,7 +698,7 @@ export class HuduMcpServer {
     });
 
     // Health check endpoint
-    app.get('/health', (req, res) => {
+    app.get('/health', (_req, res) => {
       res.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
@@ -731,9 +706,9 @@ export class HuduMcpServer {
         transport: 'streamable-http'
       });
     });
-    
+
     // Info endpoint
-    app.get('/', (req, res) => {
+    app.get('/', (_req, res) => {
       res.json({
         name: 'hudu-mcp-server',
         version: '1.1.0',
@@ -842,7 +817,8 @@ export class HuduMcpServer {
               serverInfo: {
                 name: 'hudu-mcp-server',
                 version: '1.1.0'
-              }
+              },
+              instructions: SERVER_INSTRUCTIONS
             };
             break;
             
@@ -886,7 +862,7 @@ export class HuduMcpServer {
               result = {
                 content: [{
                   type: 'text',
-                  text: JSON.stringify(toolResult.data || { success: true, message: toolResult.message }, null, 2)
+                  text: formatToolResponse(name, toolResult.data, args) || toolResult.message || 'Operacao realizada com sucesso.'
                 }]
               };
             } else {
@@ -900,64 +876,13 @@ export class HuduMcpServer {
             break;
             
           case 'resources/list':
-            result = {
-              resources: [
-                {
-                  uri: 'hudu://articles',
-                  name: 'Hudu Articles',
-                  description: 'Knowledge base articles from Hudu',
-                  mimeType: 'application/json'
-                },
-                {
-                  uri: 'hudu://assets',
-                  name: 'Hudu Assets',
-                  description: 'IT assets inventory from Hudu',
-                  mimeType: 'application/json'
-                },
-                {
-                  uri: 'hudu://companies',
-                  name: 'Hudu Companies',
-                  description: 'Company information from Hudu',
-                  mimeType: 'application/json'
-                },
-                {
-                  uri: 'hudu://passwords',
-                  name: 'Hudu Passwords',
-                  description: 'Password entries from Hudu',
-                  mimeType: 'application/json'
-                }
-              ]
-            };
+            result = { resources: listResources() };
             break;
-            
+
           case 'resources/read':
             const { uri } = params;
-            let data: any[] = [];
-            
-            switch (uri) {
-              case 'hudu://articles':
-                data = await this.huduClient.getArticles({});
-                break;
-              case 'hudu://assets':
-                data = await this.huduClient.getAssets({});
-                break;
-              case 'hudu://companies':
-                data = await this.huduClient.getCompanies({});
-                break;
-              case 'hudu://passwords':
-                data = await this.huduClient.getAssetPasswords({});
-                break;
-              default:
-                throw new Error(`Unknown resource URI: ${uri}`);
-            }
-            
-            result = {
-              contents: [{
-                uri,
-                mimeType: 'application/json',
-                text: JSON.stringify(data, null, 2)
-              }]
-            };
+            const resourceContent = await readResource(uri, this.huduClient as HuduClient);
+            result = { contents: [resourceContent] };
             break;
             
           case 'prompts/list':

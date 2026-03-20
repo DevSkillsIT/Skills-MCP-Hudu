@@ -6,7 +6,7 @@ import type { HuduClient } from '../hudu-client.js';
 
 export const navigationTool: Tool = {
   name: 'hudu_navigate_to_resource_by_name',
-  description: 'Navegação rápida e acesso direto a recursos e registros no Hudu — saltar para fichas, consultar registros e acessar empresas por nome. Use quando precisar acessar diretamente um recurso específico pelo nome no Hudu. Aceita action (card_jump, card_lookup, company_jump). Retorna JSON com dados do recurso localizado.',
+  description: 'Navegação rápida e acesso direto a recursos e registros no Hudu — saltar para fichas, consultar registros e acessar empresas por nome. Use quando precisar acessar diretamente um recurso específico pelo nome no Hudu. Aceita action (card_jump, card_lookup, company_jump). Retorna Markdown com dados do recurso localizado.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -19,6 +19,11 @@ export const navigationTool: Tool = {
       company_id: { type: 'number', description: 'ID da empresa para filtrar resultados' }
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
   }
 };
 

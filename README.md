@@ -2,7 +2,7 @@
 
 # 🚀 Skills MCP Hudu
 
-### Complete Hudu MCP Server with 33 Tools, HTTP Transport, and Multi-Tenant Support
+### Complete Hudu MCP Server with 43 Tools, Markdown Output, MCP Resources, and Multi-Tenant Support
 
 [![MCP Protocol](https://img.shields.io/badge/MCP-2024--11--05-blue)](https://modelcontextprotocol.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue)](https://www.typescriptlang.org/)
@@ -14,7 +14,7 @@
 
 **Connect Claude Code, Gemini CLI, ChatGPT, VS Code Copilot, and Cursor to your Hudu instance**
 
-[Features](#-key-features) • [Installation](#-installation) • [33 Tools](#-33-tools) • [Quick Start](#-quick-start) • [Support](#-support)
+[Features](#-key-features) • [Installation](#-installation) • [43 Tools](#-43-tools) • [Quick Start](#-quick-start) • [Support](#-support)
 
 </div>
 
@@ -30,14 +30,21 @@ Built specifically for **MSPs and IT teams** who need AI-powered access to their
 
 | Feature | Description |
 |---------|-------------|
-| **33 Tools** | Complete coverage of Hudu API ✨ |
-| **IT Documentation** | Full company, asset, and article management |
-| **Password Management** | Secure credential access and storage |
-| **Procedures & Checklists** | Automated workflow integration |
+| **43 Tools** | Complete Hudu API coverage with 10 new tool categories |
+| **Markdown Output** | All responses formatted as Markdown tables (not raw JSON) |
+| **MCP Resources** | 6 native `hudu://` URIs for direct data access |
+| **Tool Annotations** | `readOnlyHint`, `destructiveHint`, `openWorldHint` on all tools |
+| **IT Documentation** | Full company, asset, article, and knowledge base management |
+| **Password Management** | Secure credential access with masked output |
+| **Expiration Tracking** | Monitor domain, SSL, warranty, and license expirations |
+| **Website Monitoring** | DNS, SSL, WHOIS monitoring management |
 | **Network Infrastructure** | Networks, VLANs, IP addresses, rack storage |
+| **Activity Audit Logs** | Full audit trail with user, resource, and action filters |
+| **Asset Layout Templates** | Manage custom field structures for asset types |
+| **Relations & Magic Dash** | Entity relationships and dashboard widgets |
+| **Auto-Pagination** | `fetchAll` retrieves up to 500 records across pages |
 | **HTTP-Only Transport** | Modern streamable HTTP (no STDIO) |
 | **Multi-Tenant Ready** | Company filtering for MSP environments |
-| **MCP Resources** | Native resource URIs for direct data access |
 | **Pre-built Prompts** | Security audits and asset reports |
 
 ---
@@ -59,7 +66,16 @@ Complete network documentation including VLANs, IP addresses, and rack storage.
 ### 5. 🔍 Global Search
 Powerful search across all Hudu resources with single queries.
 
-### 6. 🏢 Multi-Tenant Support
+### 6. 📊 Markdown Formatted Output
+All tool responses return human-readable Markdown tables instead of raw JSON, powered by a centralized response formatter interceptor.
+
+### 7. 📅 Expiration Tracking & Website Monitoring
+Track domain, SSL certificate, warranty, and license expirations. Monitor website DNS, SSL, and WHOIS status.
+
+### 8. 📋 Activity Audit Logs
+Complete audit trail with filters by user, resource type, action, and date range.
+
+### 9. 🏢 Multi-Tenant Support
 Company-level filtering for MSPs managing multiple clients.
 
 ---
@@ -244,12 +260,14 @@ curl -X POST http://localhost:3100/mcp \
 
 ---
 
-## 🧰 33 Tools
+## 🧰 43 Tools
 
 All tools follow a standardized naming convention optimized for ToolRAG systems:
 - **Prefix:** `hudu_` (server namespace)
 - **Verbs:** `manage` (CRUD) or `search` (read-only queries)
-- **Descriptions:** Portuguese (pt-BR), noun-first for embedding similarity
+- **Descriptions:** Portuguese (pt-BR), noun-first for embedding similarity, 250-350 chars
+- **Annotations:** All tools have MCP annotations (`readOnlyHint`, `destructiveHint`, `openWorldHint`)
+- **Output:** Markdown formatted tables and detail views (not raw JSON)
 
 ### 📊 Companies (2 tools)
 
@@ -321,6 +339,46 @@ All tools follow a standardized naming convention optimized for ToolRAG systems:
 | `hudu_manage_public_photo_gallery` | Image management |
 | `hudu_search_public_photo_gallery` | List photos with filters |
 
+### 📅 Expiration Tracking (1 tool) — *NEW*
+
+| Tool | Description |
+|------|-------------|
+| `hudu_search_expiration_tracking` | Track domain, SSL, warranty, and license expirations |
+
+### 🌐 Website Monitoring (2 tools) — *NEW*
+
+| Tool | Description |
+|------|-------------|
+| `hudu_manage_website_monitoring` | CRUD for monitored websites (DNS, SSL, WHOIS) |
+| `hudu_search_website_monitoring` | Search monitored websites by company, name |
+
+### 🏗️ Asset Layout Templates (2 tools) — *NEW*
+
+| Tool | Description |
+|------|-------------|
+| `hudu_manage_asset_layout_templates` | Create and update asset field templates (no delete) |
+| `hudu_search_asset_layout_templates` | Search asset layout templates |
+
+### 📋 Activity Audit Logs (1 tool) — *NEW*
+
+| Tool | Description |
+|------|-------------|
+| `hudu_search_activity_audit_logs` | Audit trail with user, resource, action, and date filters |
+
+### 🔗 Entity Relations (2 tools) — *NEW*
+
+| Tool | Description |
+|------|-------------|
+| `hudu_manage_entity_relations` | CRUD for relationships between entities (Asset→Company, etc.) |
+| `hudu_search_entity_relations` | Search entity relationships |
+
+### 📊 Magic Dash Widgets (2 tools) — *NEW*
+
+| Tool | Description |
+|------|-------------|
+| `hudu_manage_dashboard_widgets` | CRUD for Magic Dash dashboard widgets |
+| `hudu_search_dashboard_widgets` | Search dashboard widgets by company |
+
 ### 🔍 Utilities (3 tools)
 
 | Tool | Description |
@@ -369,6 +427,31 @@ Hudu, list IP addresses in network ID 456
 Hudu, document rack storage in datacenter
 ```
 
+### Expiration Tracking & Website Monitoring
+
+```
+Hudu, show all expiring SSL certificates
+Hudu, list domain expirations for company "Acme Corporation"
+Hudu, show monitored websites and their DNS/SSL status
+Hudu, add website monitoring for https://acme.com
+```
+
+### Audit & Activity Logs
+
+```
+Hudu, show recent activity logs for user admin@acme.com
+Hudu, list all changes to assets in the last week
+Hudu, who modified company "Acme Corporation" recently?
+```
+
+### Dashboard & Relations
+
+```
+Hudu, list all Magic Dash widgets for company "Acme"
+Hudu, create a dashboard widget showing backup status
+Hudu, show relations between asset ID 100 and other entities
+```
+
 ### Global Search
 
 ```
@@ -380,19 +463,23 @@ Hudu, find anything related to "backup server"
 
 ## 🔐 MCP Resources
 
-Direct data access through MCP resource URIs:
+Direct data access through native MCP resource URIs. All resources return Markdown-formatted content.
 
-| URI | Description |
-|-----|-------------|
-| `hudu://companies` | Company/client information |
-| `hudu://assets` | IT asset inventory |
-| `hudu://articles` | Knowledge base articles |
-| `hudu://passwords` | Credential entries |
+| URI | Name | Description |
+|-----|------|-------------|
+| `hudu://companies` | Empresas Hudu | Companies, clients, and organizations — full list with name, type, address, and status |
+| `hudu://companies/{id}` | Empresa Hudu por ID | Complete details for a specific company — address, phone, notes, and registration info |
+| `hudu://assets` | Ativos de TI Hudu | IT assets, equipment, and devices — full inventory with model, serial, and custom fields |
+| `hudu://assets/{id}` | Ativo Hudu por ID | Complete details for a specific IT asset — custom fields, company, and layout info |
+| `hudu://articles` | Artigos KB Hudu | Knowledge base articles and documents — list with title, company, and publication status |
+| `hudu://articles/{id}` | Artigo KB Hudu por ID | Complete article content rendered as clean Markdown (HTML stripped) |
 
 **Example usage in Claude Code:**
 
 ```
 Show me the contents of hudu://companies
+Read hudu://assets/42
+What does hudu://articles/15 contain?
 ```
 
 ---
@@ -600,8 +687,11 @@ npm run build
 ### Testing Commands
 
 ```bash
-# Run all tests
+# Run all tests (179 tests, 12 suites)
 npm test
+
+# Run with verbose output
+NODE_OPTIONS='--experimental-vm-modules' npx jest --verbose
 
 # Type checking
 npm run type-check
@@ -613,6 +703,23 @@ npm run lint
 npm run build
 ```
 
+### Test Coverage
+
+| Suite | Tests | Description |
+|-------|-------|-------------|
+| html-stripper | 25 | HTML stripping, truncation, Markdown escaping |
+| markdown formatters | 30 | All 29 formatters + pagination helpers |
+| response-formatter | 13 | Global interceptor for all 43 tools |
+| tools-registry | 8 | Tool count, registration, naming conventions |
+| annotations | 7 | readOnlyHint, destructiveHint, openWorldHint compliance |
+| expirations | 8 | Expiration tracking executor with filters |
+| websites | 17 | Website CRUD + query with validation |
+| asset-layouts | 14 | Layout CRUD (no delete) + query |
+| activity-logs | 9 | Audit log filters and error handling |
+| relations | 17 | Relation CRUD + query with validation |
+| magic-dash | 17 | Dashboard widget CRUD + query |
+| resources | 13 | MCP Resources URI parsing and data retrieval |
+
 ---
 
 ## 📁 Project Structure
@@ -621,12 +728,17 @@ npm run build
 Skills-MCP-Hudu/
 ├── src/
 │   ├── index.ts              # Entry point
-│   ├── server.ts             # MCP HTTP server
-│   ├── hudu-client.ts        # Hudu API client
-│   ├── types.ts              # TypeScript definitions
+│   ├── server.ts             # MCP HTTP server + instructions + resource handlers
+│   ├── hudu-client.ts        # Hudu API client (941 lines, all endpoints + fetchAll)
+│   ├── resources.ts          # MCP Resources handler (6 hudu:// URIs) — NEW
+│   ├── types.ts              # TypeScript definitions + HuduPagedResponse<T>
+│   ├── utils/
+│   │   └── html-stripper.ts  # HTML cleanup: stripHtml, truncate, escapeMarkdown — NEW
+│   ├── formatters/
+│   │   ├── markdown.ts       # 29 Markdown formatters for all entity types — NEW
+│   │   └── response-formatter.ts  # Global interceptor: Markdown for all 43 tools — NEW
 │   └── tools/
-│       ├── working-index.ts  # Primary tool registry (33 tools)
-│       ├── index.ts          # Secondary registry
+│       ├── working-index.ts  # Primary tool registry (43 tools)
 │       ├── base.ts           # Response helpers
 │       ├── schema-utils.ts   # Shared schemas and properties
 │       ├── companies.ts      # Company management (2 tools)
@@ -637,10 +749,24 @@ Skills-MCP-Hudu/
 │       ├── folders.ts        # Folder organization (2 tools)
 │       ├── networks.ts       # Networks, VLANs, IPs (8 tools)
 │       ├── storage.ts        # Uploads, racks, photos (8 tools)
+│       ├── expirations.ts    # Expiration tracking (1 tool) — NEW
+│       ├── websites.ts       # Website monitoring (2 tools) — NEW
+│       ├── asset-layouts.ts  # Asset layout templates (2 tools) — NEW
+│       ├── activity-logs.ts  # Activity audit logs (1 tool) — NEW
+│       ├── relations.ts      # Entity relations (2 tools) — NEW
+│       ├── magic-dash.ts     # Dashboard widgets (2 tools) — NEW
 │       ├── admin.ts          # Instance administration (1 tool)
 │       ├── search.ts         # Global unified search (1 tool)
 │       └── navigation.ts     # Quick navigation (1 tool)
+├── src/__tests__/            # 179 tests across 12 suites — NEW
+│   ├── utils/                # html-stripper tests
+│   ├── formatters/           # markdown + response-formatter tests
+│   ├── tools/                # Tool executor tests (6 files)
+│   ├── integration/          # Registry + annotation compliance tests
+│   └── resources.test.ts     # MCP Resources tests
 ├── dist/                     # Compiled JavaScript (generated)
+├── jest.config.ts            # Jest configuration (ESM + ts-jest) — NEW
+├── tsconfig.test.json        # TypeScript config for tests — NEW
 ├── hudu.json                 # Hudu OpenAPI spec (reference)
 ├── Dockerfile                # Multi-stage Docker build
 ├── docker-compose.yml        # Docker Compose configuration
@@ -738,7 +864,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 *We are an MSP empowering other MSPs with intelligent automation.*
 
-**Version:** 1.2.0 | **Last Updated:** February 2026
+**Version:** 1.2.0 | **Last Updated:** March 2026
 
 🇧🇷 **Proudly Made in Brazil**
 

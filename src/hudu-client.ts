@@ -1,7 +1,6 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import {
   HuduConfig,
-  HuduApiResponse,
   HuduArticle,
   HuduAsset,
   HuduAssetPassword,
@@ -53,14 +52,14 @@ function extractArrayResponse<T>(data: T[] | { [key: string]: T[] }, key: string
 export class HuduClient {
   private client: AxiosInstance;
 
-  constructor(private config: HuduConfig) {
+  constructor(private _config: HuduConfig) {
     this.client = axios.create({
-      baseURL: `${config.baseUrl}/api/v1`,
+      baseURL: `${_config.baseUrl}/api/v1`,
       headers: {
-        'x-api-key': config.apiKey,
+        'x-api-key': _config.apiKey,
         'Content-Type': 'application/json',
       },
-      timeout: config.timeout,
+      timeout: _config.timeout,
     });
   }
 
@@ -937,5 +936,42 @@ export class HuduClient {
   }): Promise<HuduCompany[]> {
     const response = await this.client.get<HuduCompany[] | { companies: HuduCompany[] }>('/companies/jump', { params });
     return extractArrayResponse(response.data, 'companies');
+  }
+
+  /**
+   * Fetch all records from a paginated endpoint by iterating through pages.
+   * Stops when: a page returns fewer items than pageSize, or maxRecords is reached.
+   * Safety cap: maximum 20 pages to prevent infinite loops.
+   *
+   * @param listMethod - Bound list method from this client (e.g., this.getCompanies.bind(this))
+   * @param params - Optional filter parameters (page will be overridden)
+   * @param maxRecords - Maximum records to collect (default: 500)
+   * @param pageSize - Expected page size from API (default: 25)
+   * @returns Array of all collected records, truncated to maxRecords
+   */
+  async fetchAll<T>(
+    listMethod: (params: any) => Promise<T[]>,
+    params?: Record<string, any>,
+    maxRecords: number = 500,
+    pageSize: number = 25
+  ): Promise<T[]> {
+    const allRecords: T[] = [];
+    let currentPage = 1;
+    const maxPages = Math.ceil(maxRecords / pageSize);
+    const safeMaxPages = Math.min(maxPages, 20);
+
+    while (currentPage <= safeMaxPages) {
+      const pageParams = { ...params, page: currentPage, page_size: pageSize };
+      const results = await listMethod(pageParams);
+
+      allRecords.push(...results);
+
+      if (results.length < pageSize) break;
+      if (allRecords.length >= maxRecords) break;
+
+      currentPage++;
+    }
+
+    return allRecords.slice(0, maxRecords);
   }
 }

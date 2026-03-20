@@ -5,7 +5,7 @@ import type { HuduClient } from '../hudu-client.js';
 
 export const passwordsTool: Tool = {
   name: 'hudu_manage_password_credentials',
-  description: 'Senhas, credenciais e acessos armazenados no cofre do Hudu — operações CRUD completas incluindo arquivamento. Use quando precisar cadastrar, editar ou excluir logins e chaves de acesso no Hudu. Requer permissões elevadas de API. Aceita action (create, get, update, delete, archive, unarchive). Retorna JSON.',
+  description: 'Senhas, credenciais e acessos armazenados no cofre do Hudu — operações CRUD completas incluindo arquivamento. Use quando precisar cadastrar, editar ou excluir logins e chaves de acesso no Hudu. Requer permissões elevadas de API. Aceita action (create, get, update, delete, archive, unarchive). Retorna Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -23,16 +23,26 @@ export const passwordsTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // Passwords query tool
 export const passwordsQueryTool: Tool = {
   name: 'hudu_search_password_credentials',
-  description: 'Senhas, credenciais e acessos armazenados no cofre do Hudu — busca e filtragem com paginação. Use quando precisar localizar logins ou chaves de acesso por texto ou empresa no Hudu. Requer permissões elevadas de API. Consulta somente leitura. Retorna lista paginada em JSON com metadados das credenciais.',
+  description: 'Senhas, credenciais e acessos armazenados no cofre do Hudu — busca e filtragem com paginação. Use quando precisar localizar logins ou chaves de acesso por texto ou empresa no Hudu. Requer permissões elevadas de API. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das credenciais.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
-  })
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // Tool execution functions

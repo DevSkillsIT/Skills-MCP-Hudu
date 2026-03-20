@@ -25,11 +25,15 @@ export interface HuduArticle {
   id: number;
   name: string;
   content: string;
-  slug: string;
+  slug?: string;
   company_id?: number;
+  company_name?: string;
   folder_id?: number;
+  draft?: boolean;
   archived: boolean;
   enable_sharing: boolean;
+  share_url?: string;
+  url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -37,17 +41,24 @@ export interface HuduArticle {
 export interface HuduAsset {
   id: number;
   name: string;
-  asset_type: string;
+  asset_type?: string;
   company_id: number;
+  company_name?: string;
   asset_layout_id: number;
-  slug: string;
+  slug?: string;
   archived: boolean;
+  primary_serial?: string;
+  primary_model?: string;
+  primary_manufacturer?: string;
+  url?: string;
   created_at: string;
   updated_at: string;
   fields: Array<{
+    id?: number;
     label: string;
-    value: any;
-    field_type: string;
+    value: string | number | boolean | null;
+    field_type?: string;
+    position?: number;
   }>;
 }
 
@@ -59,6 +70,7 @@ export interface HuduAssetPassword {
   url?: string;
   description?: string;
   company_id?: number;
+  company_name?: string;
   passwordable_type?: string;
   passwordable_id?: number;
   password_type?: string;
@@ -82,6 +94,7 @@ export interface HuduCompany {
   fax_number?: string;
   website?: string;
   id_number?: string;
+  notes?: string;
   archived: boolean;
   created_at: string;
   updated_at: string;
@@ -90,14 +103,14 @@ export interface HuduCompany {
 export interface HuduAssetLayout {
   id: number;
   name: string;
-  icon: string;
-  color: string;
-  icon_color: string;
+  icon?: string;
+  color?: string;
+  icon_color?: string;
   active: boolean;
-  include_passwords: boolean;
-  include_photos: boolean;
-  include_comments: boolean;
-  include_files: boolean;
+  include_passwords?: boolean;
+  include_photos?: boolean;
+  include_comments?: boolean;
+  include_files?: boolean;
   fields: Array<{
     id?: number;
     label: string;
@@ -106,15 +119,20 @@ export interface HuduAssetLayout {
     show_in_list: boolean;
     position: number;
     options?: string[];
+    hint?: string | null;
   }>;
 }
 
 export interface HuduActivityLog {
   id: number;
   user_id?: number;
+  user_name?: string;
   user_email?: string;
   resource_id: number;
   resource_type: string;
+  record_type?: string;
+  record_name?: string;
+  action: string;
   action_message: string;
   created_at: string;
 }
@@ -133,10 +151,12 @@ export interface HuduFolder {
 export interface HuduUser {
   id: number;
   email: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
   admin: boolean;
   active: boolean;
+  security_level?: string;
+  archived?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -146,8 +166,12 @@ export interface HuduProcedure {
   name: string;
   description?: string;
   company_id?: number;
+  company_name?: string;
   folder_id?: number;
   archived: boolean;
+  total?: number;
+  completed?: number;
+  completion_percentage?: string | null;
   created_at: string;
   updated_at: string;
   tasks?: HuduProcedureTask[];
@@ -167,9 +191,11 @@ export interface HuduProcedureTask {
 export interface HuduNetwork {
   id: number;
   name: string;
-  network_type: string;
-  network: string;
-  mask: string;
+  network_type?: string;
+  network?: string;
+  address?: string;
+  cidr?: string;
+  mask?: string;
   gateway?: string;
   company_id?: number;
   created_at: string;
@@ -203,7 +229,17 @@ export interface HuduWebsite {
   name: string;
   url: string;
   company_id?: number;
+  company_name?: string;
   paused: boolean;
+  status?: string;
+  monitoring_status?: string;
+  disable_dns?: boolean;
+  disable_ssl?: boolean;
+  disable_whois?: boolean;
+  enable_dmarc_tracking?: boolean;
+  enable_dkim_tracking?: boolean;
+  enable_spf_tracking?: boolean;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -211,7 +247,8 @@ export interface HuduWebsite {
 export interface HuduVlan {
   id: number;
   name: string;
-  vid: number;
+  vid?: number;
+  description?: string;
   network_id?: number;
   created_at: string;
   updated_at: string;
@@ -230,6 +267,9 @@ export interface HuduIpAddress {
   id: number;
   address: string;
   hostname?: string;
+  fqdn?: string;
+  status?: string;
+  description?: string;
   network_id?: number;
   created_at: string;
   updated_at: string;
@@ -266,6 +306,7 @@ export interface HuduGroup {
   name: string;
   description?: string;
   permissions: Array<string>;
+  member_count?: number;
   created_at: string;
   updated_at: string;
 }
@@ -273,9 +314,14 @@ export interface HuduGroup {
 export interface HuduMagicDash {
   id: number;
   name: string;
+  title?: string;
   description?: string;
+  message?: string;
+  content?: string;
+  content_link?: string;
   dashboard_url?: string;
   company_id?: number;
+  company_name?: string;
   created_at: string;
   updated_at: string;
 }
@@ -294,9 +340,14 @@ export interface HuduExpiration {
   id: number;
   name: string;
   expiration_date: string;
+  expiration_type?: string;
   item_type: string;
   item_id: number;
   company_id?: number;
+  company_name?: string;
+  expirationable_type?: string;
+  expirationable_id?: number;
+  date?: string;
   created_at: string;
 }
 
@@ -346,6 +397,13 @@ export interface HuduCard {
   company_id?: number;
   created_at: string;
   updated_at: string;
+}
+
+// Paged response wrapper for Markdown formatters
+export interface HuduPagedResponse<T> {
+  records: T[];
+  page: number;
+  hasMore: boolean;
 }
 
 // MCP Resource Types

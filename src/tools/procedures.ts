@@ -8,7 +8,7 @@ const procedureActions = ['create', 'get', 'update', 'delete', 'kickoff', 'dupli
 
 export const proceduresTool: Tool = {
   name: 'hudu_manage_workflow_procedures',
-  description: 'Procedimentos, rotinas e checklists operacionais no Hudu — CRUD avançado com execução e duplicação. Use quando precisar criar, editar, iniciar ou duplicar fluxos de trabalho e runbooks no Hudu. Aceita action (create, get, update, delete, kickoff, duplicate, create_from_template). Retorna JSON do procedimento.',
+  description: 'Procedimentos, rotinas e checklists operacionais no Hudu — CRUD avançado com execução e duplicação. Use quando precisar criar, editar, iniciar ou duplicar fluxos de trabalho e runbooks no Hudu. Aceita action (create, get, update, delete, kickoff, duplicate, create_from_template). Retorna Markdown do procedimento.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -22,16 +22,26 @@ export const proceduresTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // Procedures query tool
 export const proceduresQueryTool: Tool = {
   name: 'hudu_search_workflow_procedures',
-  description: 'Procedimentos, rotinas e checklists operacionais no Hudu — busca e filtragem com paginação. Use quando precisar localizar fluxos de trabalho ou runbooks por texto ou empresa no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos procedimentos encontrados.',
+  description: 'Procedimentos, rotinas e checklists operacionais no Hudu — busca e filtragem com paginação. Use quando precisar localizar fluxos de trabalho ou runbooks por texto ou empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos procedimentos encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
-  })
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // Procedure tasks tool
@@ -39,7 +49,7 @@ const taskActions = ['create', 'get', 'update', 'delete'];
 
 export const procedureTasksTool: Tool = {
   name: 'hudu_manage_procedure_task_items',
-  description: 'Tarefas, etapas e passos dentro de procedimentos no Hudu — operações CRUD para itens individuais de checklists. Use quando precisar criar, editar ou excluir etapas de um fluxo de trabalho específico no Hudu. Requer procedure_id. Aceita action (create, get, update, delete). Retorna JSON da tarefa.',
+  description: 'Tarefas, etapas e passos dentro de procedimentos no Hudu — operações CRUD para itens individuais de checklists. Use quando precisar criar, editar ou excluir etapas de um fluxo de trabalho específico no Hudu. Requer procedure_id. Aceita action (create, get, update, delete). Retorna Markdown da tarefa.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -55,16 +65,26 @@ export const procedureTasksTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // Procedure tasks query tool
 export const procedureTasksQueryTool: Tool = {
   name: 'hudu_search_procedure_task_items',
-  description: 'Tarefas, etapas e passos dentro de procedimentos no Hudu — busca e filtragem com paginação. Use quando precisar listar itens de um checklist ou fluxo de trabalho específico no Hudu. Filtra por procedure_id. Consulta somente leitura. Retorna lista paginada em JSON com dados das tarefas encontradas.',
+  description: 'Tarefas, etapas e passos dentro de procedimentos no Hudu — busca e filtragem com paginação. Use quando precisar listar itens de um checklist ou fluxo de trabalho específico no Hudu. Filtra por procedure_id. Consulta somente leitura. Retorna lista paginada em Markdown com dados das tarefas encontradas.',
   inputSchema: createQuerySchema({
     procedure_id: { type: 'number', description: 'Filtrar por ID do procedimento' }
-  })
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // Tool execution functions
@@ -140,7 +160,7 @@ export async function executeProceduresQueryTool(args: any, client: HuduClient):
 }
 
 export async function executeProcedureTasksTool(args: any, client: HuduClient): Promise<ToolResponse> {
-  const { action, id, procedure_id, fields } = args;
+  const { action, id, fields } = args;
   
   try {
     switch (action) {

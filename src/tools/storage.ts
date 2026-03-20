@@ -6,7 +6,7 @@ import type { HuduClient } from '../hudu-client.js';
 // Uploads resource tool
 export const uploadsTool: Tool = {
   name: 'hudu_manage_file_upload_records',
-  description: 'Uploads, anexos e arquivos vinculados a recursos no Hudu — operações CRUD para registros de arquivos. Use quando precisar anexar, editar ou excluir documentos e arquivos associados a ativos ou empresas no Hudu. Requer name e filename. Aceita action (create, get, update, delete). Retorna JSON do upload.',
+  description: 'Uploads, anexos e arquivos vinculados a recursos no Hudu — operações CRUD para registros de arquivos. Use quando precisar anexar, editar ou excluir documentos e arquivos associados a ativos ou empresas no Hudu. Requer name e filename. Aceita action (create, get, update, delete). Retorna Markdown do upload.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -21,20 +21,30 @@ export const uploadsTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // Uploads query tool
 export const uploadsQueryTool: Tool = {
   name: 'hudu_search_file_upload_records',
-  description: 'Uploads, anexos e arquivos vinculados a recursos no Hudu — busca e filtragem com paginação. Use quando precisar localizar documentos ou arquivos anexados a ativos e empresas no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos uploads encontrados.',
-  inputSchema: createQuerySchema({})
+  description: 'Uploads, anexos e arquivos vinculados a recursos no Hudu — busca e filtragem com paginação. Use quando precisar localizar documentos ou arquivos anexados a ativos e empresas no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos uploads encontrados.',
+  inputSchema: createQuerySchema({}),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // Rack Storage resource tool
 export const rackStoragesTool: Tool = {
   name: 'hudu_manage_rack_storage_locations',
-  description: 'Racks, armários e locais de armazenamento físico em datacenters documentados no Hudu — operações CRUD completas. Use quando precisar cadastrar, editar ou excluir racks e gabinetes de infraestrutura no Hudu. Aceita action (create, get, update, delete). Retorna JSON com dados do rack processado.',
+  description: 'Racks, armários e locais de armazenamento físico em datacenters documentados no Hudu — operações CRUD completas. Use quando precisar cadastrar, editar ou excluir racks e gabinetes de infraestrutura no Hudu. Aceita action (create, get, update, delete). Retorna Markdown com dados do rack processado.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -47,22 +57,32 @@ export const rackStoragesTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // Rack Storage query tool
 export const rackStoragesQueryTool: Tool = {
   name: 'hudu_search_rack_storage_locations',
-  description: 'Racks, armários e locais de armazenamento físico em datacenters documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar racks ou gabinetes por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos racks encontrados.',
+  description: 'Racks, armários e locais de armazenamento físico em datacenters documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar racks ou gabinetes por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos racks encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
-  })
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // Rack Storage Items resource tool
 export const rackStorageItemsTool: Tool = {
   name: 'hudu_manage_rack_storage_items',
-  description: 'Equipamentos, servidores e dispositivos montados em racks no Hudu — operações CRUD para itens de rack. Use quando precisar cadastrar, editar ou excluir hardware instalado em um rack específico no Hudu. Requer name e rack_storage_id. Aceita action (create, get, update, delete). Retorna JSON do item.',
+  description: 'Equipamentos, servidores e dispositivos montados em racks no Hudu — operações CRUD para itens de rack. Use quando precisar cadastrar, editar ou excluir hardware instalado em um rack específico no Hudu. Requer name e rack_storage_id. Aceita action (create, get, update, delete). Retorna Markdown do item.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -75,22 +95,32 @@ export const rackStorageItemsTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // Rack Storage Items query tool
 export const rackStorageItemsQueryTool: Tool = {
   name: 'hudu_search_rack_storage_items',
-  description: 'Equipamentos, servidores e dispositivos montados em racks no Hudu — busca e filtragem com paginação. Use quando precisar localizar hardware instalado em um rack específico por rack_storage_id no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos itens encontrados.',
+  description: 'Equipamentos, servidores e dispositivos montados em racks no Hudu — busca e filtragem com paginação. Use quando precisar localizar hardware instalado em um rack específico por rack_storage_id no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos itens encontrados.',
   inputSchema: createQuerySchema({
     rack_storage_id: { type: 'number', description: 'Filtrar por ID do rack' }
-  })
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // Public Photos resource tool
 export const publicPhotosTool: Tool = {
   name: 'hudu_manage_public_photo_gallery',
-  description: 'Fotos públicas, imagens e capturas de tela compartilháveis na galeria do Hudu — operações CRUD completas. Use quando precisar publicar, editar ou excluir imagens acessíveis publicamente no Hudu. Aceita action (create, get, update, delete) e campos como nome e URL. Retorna JSON da foto processada.',
+  description: 'Fotos públicas, imagens e capturas de tela compartilháveis na galeria do Hudu — operações CRUD completas. Use quando precisar publicar, editar ou excluir imagens acessíveis publicamente no Hudu. Aceita action (create, get, update, delete) e campos como nome e URL. Retorna Markdown da foto processada.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -103,14 +133,24 @@ export const publicPhotosTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // Public Photos query tool
 export const publicPhotosQueryTool: Tool = {
   name: 'hudu_search_public_photo_gallery',
-  description: 'Fotos públicas, imagens e capturas de tela compartilháveis na galeria do Hudu — busca e filtragem com paginação. Use quando precisar localizar imagens publicadas por texto no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados das fotos encontradas na galeria.',
-  inputSchema: createQuerySchema({})
+  description: 'Fotos públicas, imagens e capturas de tela compartilháveis na galeria do Hudu — busca e filtragem com paginação. Use quando precisar localizar imagens publicadas por texto no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das fotos encontradas na galeria.',
+  inputSchema: createQuerySchema({}),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // Tool execution functions

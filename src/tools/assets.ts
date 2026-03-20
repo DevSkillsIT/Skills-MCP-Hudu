@@ -5,7 +5,7 @@ import type { HuduClient } from '../hudu-client.js';
 
 export const assetsTool: Tool = {
   name: 'hudu_manage_it_asset_inventory',
-  description: 'Ativos de TI, equipamentos e dispositivos no inventário do Hudu — operações CRUD completas incluindo arquivamento. Use quando precisar cadastrar, editar ou excluir servidores, estações e hardware no Hudu. Requer company_id e asset_layout_id para criação. Aceita action (create, get, update, delete, archive, unarchive). Retorna JSON.',
+  description: 'Ativos de TI, equipamentos e dispositivos no inventário do Hudu — operações CRUD completas incluindo arquivamento. Use quando precisar cadastrar, editar ou excluir servidores, estações e hardware no Hudu. Requer company_id e asset_layout_id para criação. Aceita action (create, get, update, delete, archive, unarchive). Retorna Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -20,18 +20,28 @@ export const assetsTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // Assets query tool
 export const assetsQueryTool: Tool = {
   name: 'hudu_search_it_asset_inventory',
-  description: 'Ativos de TI, equipamentos e dispositivos no inventário do Hudu — busca e filtragem com paginação. Use quando precisar localizar servidores, estações ou hardware por texto, empresa ou layout no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos ativos encontrados.',
+  description: 'Ativos de TI, equipamentos e dispositivos no inventário do Hudu — busca e filtragem com paginação. Use quando precisar localizar servidores, estações ou hardware por texto, empresa ou layout no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos ativos encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id,
     asset_layout_id: { type: 'number', description: 'Filtrar por ID do layout de ativo' },
     archived: { type: 'boolean', description: 'Incluir ativos arquivados nos resultados' }
-  })
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // Tool execution functions

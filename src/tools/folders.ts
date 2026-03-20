@@ -1,6 +1,6 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, basicActions, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, createQuerySchema, commonProperties } from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 /**
@@ -9,7 +9,7 @@ import type { HuduClient } from '../hudu-client.js';
  */
 export const foldersTool: Tool = {
   name: 'hudu_manage_kb_article_folders',
-  description: 'Pastas, diretórios e categorias de organização da base de conhecimento no Hudu — operações CRUD com suporte a hierarquia. Use quando precisar criar, editar ou excluir pastas para estruturar artigos no Hudu. Suporta aninhamento via parent_folder_id. Aceita action (create, get, update, delete). Retorna JSON da pasta.',
+  description: 'Pastas, diretórios e categorias de organização da base de conhecimento no Hudu — operações CRUD com suporte a hierarquia. Use quando precisar criar, editar ou excluir pastas para estruturar artigos no Hudu. Suporta aninhamento via parent_folder_id. Aceita action (create, get, update, delete). Retorna Markdown da pasta.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -24,6 +24,11 @@ export const foldersTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
@@ -32,10 +37,15 @@ export const foldersTool: Tool = {
  */
 export const foldersQueryTool: Tool = {
   name: 'hudu_search_kb_article_folders',
-  description: 'Pastas, diretórios e categorias de organização da base de conhecimento no Hudu — busca e filtragem com paginação. Use quando precisar listar a estrutura de pastas que organizam artigos por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados das pastas encontradas.',
+  description: 'Pastas, diretórios e categorias de organização da base de conhecimento no Hudu — busca e filtragem com paginação. Use quando precisar listar a estrutura de pastas que organizam artigos por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das pastas encontradas.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
-  })
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 /**

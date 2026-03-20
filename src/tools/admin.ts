@@ -1,21 +1,10 @@
-import { z } from 'zod';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import { PaginationSchema, createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
+import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
 import type { HuduClient } from '../hudu-client.js';
-
-// Admin operations tool with various administrative functions
-const AdminActionSchema = z.enum([
-  'get_api_info',
-  'get_activity_logs',
-  'delete_activity_logs',
-  'get_exports',
-  'get_s3_exports',
-  'get_expirations'
-]);
 
 export const adminTool: Tool = {
   name: 'hudu_admin_instance_operations',
-  description: 'Administração, auditoria e monitoramento da instância do Hudu — info da API, logs, exportações e expirações. Use quando precisar consultar versão, auditar atividades ou verificar itens expirados no Hudu. Aceita action (get_api_info, get_activity_logs, delete_activity_logs, get_exports, get_s3_exports, get_expirations). Retorna JSON.',
+  description: 'Administração, auditoria e monitoramento da instância do Hudu — info da API, logs, exportações e expirações. Use quando precisar consultar versão, auditar atividades ou verificar itens expirados no Hudu. Aceita action (get_api_info, get_activity_logs, delete_activity_logs, get_exports, get_s3_exports, get_expirations). Retorna Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -35,6 +24,11 @@ export const adminTool: Tool = {
       page_size: { type: 'number', minimum: 1, maximum: 100, default: 25, description: 'Quantidade de resultados por página (máximo 100)' }
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
   }
 };
 

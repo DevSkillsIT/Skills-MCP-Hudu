@@ -1,6 +1,5 @@
 // Working consolidated tools - fully implemented
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import type { HuduClient } from '../hudu-client.js';
 
 // Re-export from working tool files
 export { articlesTool, articlesQueryTool, executeArticlesTool, executeArticlesQueryTool } from './articles.js';
@@ -115,6 +114,24 @@ import { adminTool, executeAdminTool } from './admin.js';
 import { searchTool, executeSearchTool } from './search.js';
 import { navigationTool, executeNavigationTool } from './navigation.js';
 import { foldersTool, foldersQueryTool, executeFoldersTool, executeFoldersQueryTool } from './folders.js';
+import {
+  expirationsTool, executeExpirationsTool
+} from './expirations.js';
+import {
+  websitesTool, websitesQueryTool, executeWebsitesTool, executeWebsitesQueryTool
+} from './websites.js';
+import {
+  assetLayoutsTool, assetLayoutsQueryTool, executeAssetLayoutsTool, executeAssetLayoutsQueryTool
+} from './asset-layouts.js';
+import {
+  activityLogsTool, executeActivityLogsTool
+} from './activity-logs.js';
+import {
+  relationsTool, relationsQueryTool, executeRelationsTool, executeRelationsQueryTool
+} from './relations.js';
+import {
+  magicDashTool, magicDashQueryTool, executeMagicDashTool, executeMagicDashQueryTool
+} from './magic-dash.js';
 
 // Working tool registry
 export const WORKING_TOOLS: Record<string, Tool> = {
@@ -161,7 +178,24 @@ export const WORKING_TOOLS: Record<string, Tool> = {
   // Utility tools
   'hudu_admin_instance_operations': adminTool,
   'hudu_search_all_resource_types': searchTool,
-  'hudu_navigate_to_resource_by_name': navigationTool
+  'hudu_navigate_to_resource_by_name': navigationTool,
+
+  // Expirations
+  'hudu_search_expiration_tracking': expirationsTool,
+  // Websites
+  'hudu_manage_website_monitoring': websitesTool,
+  'hudu_search_website_monitoring': websitesQueryTool,
+  // Asset Layouts
+  'hudu_manage_asset_layout_templates': assetLayoutsTool,
+  'hudu_search_asset_layout_templates': assetLayoutsQueryTool,
+  // Activity Logs
+  'hudu_search_activity_audit_logs': activityLogsTool,
+  // Relations
+  'hudu_manage_entity_relations': relationsTool,
+  'hudu_search_entity_relations': relationsQueryTool,
+  // Magic Dash
+  'hudu_manage_dashboard_widgets': magicDashTool,
+  'hudu_search_dashboard_widgets': magicDashQueryTool,
 };
 
 // Working tool executors
@@ -209,5 +243,22 @@ export const WORKING_TOOL_EXECUTORS: Record<string, Function> = {
   // Utility tools
   'hudu_admin_instance_operations': executeAdminTool,
   'hudu_search_all_resource_types': executeSearchTool,
-  'hudu_navigate_to_resource_by_name': executeNavigationTool
+  'hudu_navigate_to_resource_by_name': executeNavigationTool,
+
+  // Expirations
+  'hudu_search_expiration_tracking': executeExpirationsTool,
+  // Websites
+  'hudu_manage_website_monitoring': executeWebsitesTool,
+  'hudu_search_website_monitoring': executeWebsitesQueryTool,
+  // Asset Layouts
+  'hudu_manage_asset_layout_templates': executeAssetLayoutsTool,
+  'hudu_search_asset_layout_templates': executeAssetLayoutsQueryTool,
+  // Activity Logs
+  'hudu_search_activity_audit_logs': executeActivityLogsTool,
+  // Relations
+  'hudu_manage_entity_relations': executeRelationsTool,
+  'hudu_search_entity_relations': executeRelationsQueryTool,
+  // Magic Dash
+  'hudu_manage_dashboard_widgets': executeMagicDashTool,
+  'hudu_search_dashboard_widgets': executeMagicDashQueryTool,
 };

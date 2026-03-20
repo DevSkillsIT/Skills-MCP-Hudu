@@ -8,7 +8,7 @@ import type { HuduClient } from '../hudu-client.js';
  * A API de networks/vlans/etc não aceita page_size, search e outros.
  */
 function filterNetworkQueryParams(args: any): any {
-  const { name, company_id, network_id, address, page } = args;
+  const { name, company_id, network_id, address } = args;
   const filtered: any = {};
   if (name) filtered.name = name;
   if (company_id) filtered.company_id = company_id;
@@ -23,7 +23,7 @@ function filterNetworkQueryParams(args: any): any {
 // Networks resource tool
 export const networksTool: Tool = {
   name: 'hudu_manage_network_documentation',
-  description: 'Redes, sub-redes e segmentos de infraestrutura documentados no Hudu — operações CRUD para registros de rede. Use quando precisar cadastrar, editar ou excluir redes e seus ranges de IP no Hudu. Requer name, network_type, network e mask. Aceita action (create, get, update, delete). Retorna JSON da rede.',
+  description: 'Redes, sub-redes e segmentos de infraestrutura documentados no Hudu — operações CRUD para registros de rede. Use quando precisar cadastrar, editar ou excluir redes e seus ranges de IP no Hudu. Requer name, network_type, network e mask. Aceita action (create, get, update, delete). Retorna Markdown da rede.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -39,22 +39,32 @@ export const networksTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // Networks query tool
 export const networksQueryTool: Tool = {
   name: 'hudu_search_network_documentation',
-  description: 'Redes, sub-redes e segmentos de infraestrutura documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar redes ou ranges de IP por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados das redes encontradas no inventário de infraestrutura.',
+  description: 'Redes, sub-redes e segmentos de infraestrutura documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar redes ou ranges de IP por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das redes encontradas no inventário de infraestrutura.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
-  })
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // VLANs resource tool
 export const vlansTool: Tool = {
   name: 'hudu_manage_network_vlan_records',
-  description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — operações CRUD para registros de VLAN. Use quando precisar cadastrar, editar ou excluir VLANs associadas a redes no Hudu. Requer name e vid (VLAN ID numérico). Aceita action (create, get, update, delete). Retorna JSON da VLAN.',
+  description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — operações CRUD para registros de VLAN. Use quando precisar cadastrar, editar ou excluir VLANs associadas a redes no Hudu. Requer name e vid (VLAN ID numérico). Aceita action (create, get, update, delete). Retorna Markdown da VLAN.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -67,22 +77,32 @@ export const vlansTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // VLANs query tool
 export const vlansQueryTool: Tool = {
   name: 'hudu_search_network_vlan_records',
-  description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — busca e filtragem com paginação. Use quando precisar localizar VLANs de uma rede específica por network_id no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados das VLANs encontradas.',
+  description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — busca e filtragem com paginação. Use quando precisar localizar VLANs de uma rede específica por network_id no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das VLANs encontradas.',
   inputSchema: createQuerySchema({
     network_id: { type: 'number', description: 'Filtrar por ID da rede' }
-  })
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // VLAN Zones resource tool
 export const vlanZonesTool: Tool = {
   name: 'hudu_manage_network_vlan_zones',
-  description: 'Zonas de VLAN, perímetros e agrupamentos lógicos de segmentação no Hudu — operações CRUD completas. Use quando precisar criar, editar ou excluir zonas para organizar VLANs no Hudu. Aceita action (create, get, update, delete) e campos como nome. Retorna JSON da zona de VLAN processada.',
+  description: 'Zonas de VLAN, perímetros e agrupamentos lógicos de segmentação no Hudu — operações CRUD completas. Use quando precisar criar, editar ou excluir zonas para organizar VLANs no Hudu. Aceita action (create, get, update, delete) e campos como nome. Retorna Markdown da zona de VLAN processada.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -95,22 +115,32 @@ export const vlanZonesTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // VLAN Zones query tool
 export const vlanZonesQueryTool: Tool = {
   name: 'hudu_search_network_vlan_zones',
-  description: 'Zonas de VLAN, perímetros e agrupamentos lógicos de segmentação no Hudu — busca e filtragem com paginação. Use quando precisar localizar zonas de organização de VLANs por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados das zonas encontradas.',
+  description: 'Zonas de VLAN, perímetros e agrupamentos lógicos de segmentação no Hudu — busca e filtragem com paginação. Use quando precisar localizar zonas de organização de VLANs por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das zonas encontradas.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
-  })
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // IP Addresses resource tool
 export const ipAddressesTool: Tool = {
   name: 'hudu_manage_ip_address_records',
-  description: 'Endereços IP, atribuições e reservas de rede documentados no Hudu — operações CRUD para registros de IP. Use quando precisar cadastrar, editar ou excluir IPs associados a redes no Hudu. Requer campo address para criação. Aceita action (create, get, update, delete). Retorna JSON do endereço IP.',
+  description: 'Endereços IP, atribuições e reservas de rede documentados no Hudu — operações CRUD para registros de IP. Use quando precisar cadastrar, editar ou excluir IPs associados a redes no Hudu. Requer campo address para criação. Aceita action (create, get, update, delete). Retorna Markdown do endereço IP.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -123,17 +153,27 @@ export const ipAddressesTool: Tool = {
       })
     },
     required: ['action']
+  },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true
   }
 };
 
 // IP Addresses query tool
 export const ipAddressesQueryTool: Tool = {
   name: 'hudu_search_ip_address_records',
-  description: 'Endereços IP, atribuições e reservas de rede documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar IPs por endereço ou rede específica no Hudu. Consulta somente leitura. Retorna lista paginada em JSON com metadados dos endereços IP encontrados no inventário.',
+  description: 'Endereços IP, atribuições e reservas de rede documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar IPs por endereço ou rede específica no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos endereços IP encontrados no inventário.',
   inputSchema: createQuerySchema({
     address: { type: 'string', description: 'Filtrar por endereço IP exato ou parcial' },
     network_id: { type: 'number', description: 'Filtrar por ID da rede' }
-  })
+  }),
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: true
+  }
 };
 
 // Tool execution functions
