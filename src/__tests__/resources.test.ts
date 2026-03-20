@@ -1,5 +1,5 @@
 import { jest, describe, test, expect } from '@jest/globals';
-import { listResources, readResource } from '../resources.js';
+import { InvalidResourceUriError, listResources, readResource } from '../resources.js';
 import type { HuduClient } from '../hudu-client.js';
 
 const createMockClient = (overrides: Partial<Record<string, ReturnType<typeof jest.fn>>> = {}) =>
@@ -171,6 +171,36 @@ describe('readResource', () => {
       }
       expect(caughtError).toBeDefined();
       expect(caughtError?.message).toBeDefined();
+    });
+
+    test('throws InvalidResourceUriError for invalid URI', async () => {
+      const client = createMockClient();
+      try {
+        await readResource('hudu://passwords', client);
+        // Should not reach here
+        expect(true).toBe(false);
+      } catch (err: unknown) {
+        expect((err as Error).name).toBe('InvalidResourceUriError');
+        expect(err).toBeInstanceOf(InvalidResourceUriError);
+      }
+    });
+
+    test('InvalidResourceUriError message lists valid patterns', async () => {
+      const client = createMockClient();
+      try {
+        await readResource('hudu://nonexistent', client);
+        expect(true).toBe(false);
+      } catch (err: unknown) {
+        const msg = (err as Error).message;
+        expect(msg).toContain('hudu://companies');
+        expect(msg).toContain('hudu://assets');
+        expect(msg).toContain('hudu://articles');
+      }
+    });
+
+    test('throws InvalidResourceUriError for non-numeric ID', async () => {
+      const client = createMockClient();
+      await expect(readResource('hudu://companies/abc', client)).rejects.toThrow(InvalidResourceUriError);
     });
   });
 });

@@ -23,7 +23,7 @@ import { HuduConfig } from './types.js';
 import { WORKING_TOOLS, WORKING_TOOL_EXECUTORS, type ToolResponse } from './tools/working-index.js';
 import { HUDU_PROMPTS_LIST, getHuduPromptText } from './prompts.js';
 import { formatToolResponse } from './formatters/response-formatter.js';
-import { listResources, readResource } from './resources.js';
+import { InvalidResourceUriError, listResources, readResource } from './resources.js';
 
 export interface HuduMcpServerConfig {
   huduConfig: HuduConfig;
@@ -48,55 +48,106 @@ declare global {
   }
 }
 
-const SERVER_INSTRUCTIONS = `Servidor MCP Hudu - Documentacao e Gerenciamento de TI
+const SERVER_INSTRUCTIONS = `Servidor MCP Hudu - documentacao e gerenciamento de TI em pt-BR.
 
-=== TOOLS DISPONIVEIS (43+) ===
+=== CATEGORIAS DE TOOLS ===
 
-RECURSOS PRINCIPAIS:
-- hudu_manage_knowledge_articles / hudu_search_knowledge_articles: Artigos KB
-- hudu_manage_company_information / hudu_search_company_information: Empresas
-- hudu_manage_it_asset_inventory / hudu_search_it_asset_inventory: Ativos de TI
-- hudu_manage_password_credentials / hudu_search_password_credentials: Senhas
+Recursos principais:
+- hudu_manage_knowledge_articles / hudu_search_knowledge_articles
+- hudu_manage_company_information / hudu_search_company_information
+- hudu_manage_it_asset_inventory / hudu_search_it_asset_inventory
+- hudu_manage_password_credentials / hudu_search_password_credentials
 
-MONITORAMENTO E AUDITORIA:
-- hudu_search_expiration_tracking: Vencimentos (dominios, SSL, garantias)
-- hudu_manage_website_monitoring / hudu_search_website_monitoring: Websites
-- hudu_search_activity_audit_logs: Logs de auditoria
+Monitoramento e auditoria:
+- hudu_search_expiration_tracking
+- hudu_manage_website_monitoring / hudu_search_website_monitoring
+- hudu_search_activity_audit_logs
 
-TEMPLATES E LAYOUTS:
-- hudu_manage_asset_layout_templates / hudu_search_asset_layout_templates: Templates
+Templates, relacoes e dashboard:
+- hudu_manage_asset_layout_templates / hudu_search_asset_layout_templates
+- hudu_manage_entity_relations / hudu_search_entity_relations
+- hudu_manage_dashboard_widgets / hudu_search_dashboard_widgets
 
-RELACOES E DASHBOARD:
-- hudu_manage_entity_relations / hudu_search_entity_relations: Relacoes
-- hudu_manage_dashboard_widgets / hudu_search_dashboard_widgets: Magic Dash
+Rede, procedimentos e armazenamento:
+- hudu_manage_network_documentation / hudu_search_network_documentation
+- hudu_manage_network_vlan_records / hudu_search_network_vlan_records
+- hudu_manage_network_vlan_zones / hudu_search_network_vlan_zones
+- hudu_manage_ip_address_records / hudu_search_ip_address_records
+- hudu_manage_workflow_procedures / hudu_search_workflow_procedures
+- hudu_manage_procedure_task_items / hudu_search_procedure_task_items
+- hudu_manage_kb_article_folders / hudu_search_kb_article_folders
+- hudu_manage_file_upload_records / hudu_search_file_upload_records
+- hudu_manage_rack_storage_locations / hudu_search_rack_storage_locations
+- hudu_manage_rack_storage_items / hudu_search_rack_storage_items
+- hudu_manage_public_photo_gallery / hudu_search_public_photo_gallery
 
-REDE E INFRAESTRUTURA:
-- hudu_manage/search_network_documentation: Redes
-- hudu_manage/search_network_vlan_records: VLANs
-- hudu_manage/search_network_vlan_zones: Zonas de VLAN
-- hudu_manage/search_ip_address_records: Enderecos IP
+Utilitarios:
+- hudu_admin_instance_operations
+- hudu_search_all_resource_types
+- hudu_navigate_to_resource_by_name
 
-PROCEDIMENTOS E PASTAS:
-- hudu_manage/search_workflow_procedures: Procedimentos
-- hudu_manage/search_procedure_task_items: Tarefas
-- hudu_manage/search_kb_article_folders: Pastas
+=== FORMATO DE PARAMETROS ===
+- Tools search_*: use search ou name, opcionalmente company_id, page e page_size.
+- Tools manage_*: use action e, quando necessario, id e fields.
+- Paginacao: page padrao 1, page_size padrao 25, maximo 100.
 
-ARMAZENAMENTO:
-- hudu_manage/search_file_upload_records: Uploads
-- hudu_manage/search_rack_storage_locations: Racks
-- hudu_manage/search_rack_storage_items: Itens em racks
-- hudu_manage/search_public_photo_gallery: Fotos
+=== EXEMPLOS PRATICOS ===
+- Buscar empresas por nome:
+  {"name":"hudu_search_company_information","arguments":{"search":"Skills","page":1,"page_size":25}}
+- Consultar website por ID:
+  {"name":"hudu_manage_website_monitoring","arguments":{"action":"get","id":10}}
+- Criar relacao entre ativos:
+  {"name":"hudu_manage_entity_relations","arguments":{"action":"create","fields":{"fromable_type":"Asset","fromable_id":100,"toable_type":"Asset","toable_id":200}}}
+- Listar expiracoes por empresa:
+  {"name":"hudu_search_expiration_tracking","arguments":{"company_id":42,"page":1}}
 
-UTILITARIOS:
-- hudu_admin_instance_operations: Info da API
-- hudu_search_all_resource_types: Busca global
-- hudu_navigate_to_resource_by_name: Navegacao rapida
+=== DICAS ===
+- Todas as respostas de tool sao entregues em Markdown.
+- Use resources hudu://companies, hudu://assets e hudu://articles para leitura direta.
+- Prefira filtros por company_id em ambientes MSP com varios clientes.`;
 
-=== COMO USAR ===
-Busca: Use tools search_* com parametro "search" para texto livre.
-CRUD: Use tools manage_* com parametro "action" (create, get, update, delete).
-Paginacao: Use "page" e "page_size" (padrao: 25, maximo: 100).
-Filtros: A maioria das buscas aceita "company_id" para filtrar por empresa.`;
+function listRegisteredTools() {
+  return Object.values(WORKING_TOOLS);
+}
+
+function toJsonRpcError(error: unknown): { code: number; message: string } {
+  if (error instanceof McpError) {
+    return {
+      code: error.code,
+      message: error.message
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      code: ErrorCode.InternalError,
+      message: error.message
+    };
+  }
+
+  return {
+    code: ErrorCode.InternalError,
+    message: 'Internal server error'
+  };
+}
+
+function toResourceReadError(error: unknown): McpError {
+  // URIs invalidas sao erro de parametros; falhas do backend continuam
+  // sendo tratadas como erro interno para nao mascarar problemas reais.
+  if (error instanceof McpError) {
+    return error;
+  }
+
+  if (error instanceof InvalidResourceUriError) {
+    return new McpError(ErrorCode.InvalidParams, error.message);
+  }
+
+  if (error instanceof Error) {
+    return new McpError(ErrorCode.InternalError, error.message);
+  }
+
+  return new McpError(ErrorCode.InternalError, 'Resource read failed');
+}
 
 export class HuduMcpServer {
   private server: Server;
@@ -285,11 +336,7 @@ export class HuduMcpServer {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       this.logger.debug('Listing available tools');
       
-      const tools = Object.values(WORKING_TOOLS).map(tool => ({
-        name: tool.name,
-        description: tool.description,
-        inputSchema: tool.inputSchema
-      }));
+      const tools = listRegisteredTools();
 
       this.logger.info('Tools listed successfully', { 
         count: tools.length,
@@ -379,9 +426,13 @@ export class HuduMcpServer {
       try {
         const content = await readResource(request.params.uri, this.huduClient as HuduClient);
         return { contents: [content] };
-      } catch (error: any) {
-        this.logger.error('Resource read failed', { uri: request.params.uri, error: error.message });
-        throw new McpError(ErrorCode.InvalidRequest, error.message);
+      } catch (error: unknown) {
+        const resourceError = toResourceReadError(error);
+        this.logger.error('Resource read failed', {
+          uri: request.params.uri,
+          error: resourceError.message
+        });
+        throw resourceError;
       }
     });
 
@@ -823,11 +874,7 @@ export class HuduMcpServer {
             break;
             
           case 'tools/list':
-            const tools = Object.values(WORKING_TOOLS).map(tool => ({
-              name: tool.name,
-              description: tool.description,
-              inputSchema: tool.inputSchema
-            }));
+            const tools = listRegisteredTools();
             result = { tools };
             break;
             
@@ -840,7 +887,7 @@ export class HuduMcpServer {
                 toolName: name,
                 user: req.user?.email || 'anonymous'
               });
-              throw new Error(`Unknown tool: ${name}`);
+              throw new McpError(ErrorCode.InvalidRequest, `Unknown tool: ${name}`);
             }
 
             this.logger.info('Tool execution started', {
@@ -871,7 +918,7 @@ export class HuduMcpServer {
                 user: req.user?.email || 'anonymous',
                 error: toolResult.error
               });
-              throw new Error(toolResult.error || 'Tool execution failed');
+              throw new McpError(ErrorCode.InternalError, toolResult.error || 'Tool execution failed');
             }
             break;
             
@@ -880,9 +927,13 @@ export class HuduMcpServer {
             break;
 
           case 'resources/read':
-            const { uri } = params;
-            const resourceContent = await readResource(uri, this.huduClient as HuduClient);
-            result = { contents: [resourceContent] };
+            try {
+              const { uri } = params;
+              const resourceContent = await readResource(uri, this.huduClient as HuduClient);
+              result = { contents: [resourceContent] };
+            } catch (error: unknown) {
+              throw toResourceReadError(error);
+            }
             break;
             
           case 'prompts/list':
@@ -901,7 +952,7 @@ export class HuduMcpServer {
             break;
 
           default:
-            throw new Error(`Unsupported method: ${method}`);
+            throw new McpError(ErrorCode.InvalidRequest, `Unsupported method: ${method}`);
         }
         
         res.json({
@@ -912,18 +963,19 @@ export class HuduMcpServer {
         
         this.logger.info('MCP HTTP request completed', { method, id });
         
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const jsonRpcError = toJsonRpcError(error);
         this.logger.error('MCP HTTP request failed', { 
-          error: error.message,
-          stack: error.stack
+          error: jsonRpcError.message,
+          stack: error instanceof Error ? error.stack : undefined
         });
         
         res.json({
           jsonrpc: req.body?.jsonrpc || '2.0',
           id: req.body?.id,
           error: {
-            code: -32000,
-            message: error.message
+            code: jsonRpcError.code,
+            message: jsonRpcError.message
           }
         });
       }

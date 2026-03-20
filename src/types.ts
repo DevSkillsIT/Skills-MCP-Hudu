@@ -406,8 +406,17 @@ export interface HuduPagedResponse<T> {
   hasMore: boolean;
 }
 
-// MCP Resource Types
+// MCP Resource URI Types
 export const MCP_RESOURCE_TYPES = {
+  // Canonical resource URIs exposed by this server
+  COMPANIES: 'hudu://companies',
+  COMPANY_DETAIL: 'hudu://companies/{id}',
+  ASSETS: 'hudu://assets',
+  ASSET_DETAIL: 'hudu://assets/{id}',
+  ARTICLES: 'hudu://articles',
+  ARTICLE_DETAIL: 'hudu://articles/{id}',
+
+  // Legacy single-resource aliases kept for backwards compatibility
   ARTICLE: 'hudu://article',
   ASSET: 'hudu://asset', 
   PASSWORD: 'hudu://password',

@@ -24,14 +24,15 @@ import {
   formatAssetLayoutDetail,
   formatActivityLogList,
   formatRelationList,
+  formatRelationDetail,
   formatMagicDashList,
   formatMagicDashDetail,
-  formatUserList,
-  formatGroupList,
   toPagedResponse,
 } from './markdown.js';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Tool payloads variam bastante entre CRUD, buscas e utilitarios.
+// O formatter central aceita `any` de forma intencional para preservar
+// compatibilidade com todos os executors existentes sem refatorar suas assinaturas.
 const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
   // Companies
   'hudu_manage_company_information': (data, args) => {
@@ -219,7 +220,7 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
     if (!data) return 'Operação realizada com sucesso.';
     if (Array.isArray(data))
       return formatRelationList(toPagedResponse(data, args?.page, args?.page_size));
-    return JSON.stringify(data, null, 2);
+    return formatRelationDetail(data);
   },
   'hudu_search_entity_relations': (data, args) =>
     formatRelationList(toPagedResponse(data, args?.page, args?.page_size)),
@@ -233,33 +234,12 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
   },
   'hudu_search_dashboard_widgets': (data, args) =>
     formatMagicDashList(toPagedResponse(data, args?.page, args?.page_size)),
-
-  // Users (Phase 3 tools)
-  'hudu_manage_user_accounts': (data, args) => {
-    if (!data) return 'Operação realizada com sucesso.';
-    if (Array.isArray(data))
-      return formatUserList(toPagedResponse(data, args?.page, args?.page_size));
-    return JSON.stringify(data, null, 2);
-  },
-  'hudu_search_user_accounts': (data, args) =>
-    formatUserList(toPagedResponse(data, args?.page, args?.page_size)),
-
-  // Groups (Phase 3 tools)
-  'hudu_manage_user_groups': (data, args) => {
-    if (!data) return 'Operação realizada com sucesso.';
-    if (Array.isArray(data))
-      return formatGroupList(toPagedResponse(data, args?.page, args?.page_size));
-    return JSON.stringify(data, null, 2);
-  },
-  'hudu_search_user_groups': (data, args) =>
-    formatGroupList(toPagedResponse(data, args?.page, args?.page_size)),
 };
 
 /**
  * Converts a tool response to a Markdown-formatted string.
  * Falls back to JSON.stringify for unknown tools or plain strings.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function formatToolResponse(toolName: string, data: any, args: any): string {
   if (typeof data === 'string') return data;
   if (data === null || data === undefined) return '';

@@ -10,6 +10,8 @@ export interface ToolResponse<T = any> {
   message?: string;
 }
 
+export type SimplifiedToolExecutor = (args: any, client: HuduClient) => Promise<ToolResponse>;
+
 // Helper functions
 export function createErrorResponse(error: string): ToolResponse {
   return {
@@ -256,19 +258,13 @@ export async function executeAdminTool(args: any, client: HuduClient): Promise<T
 }
 
 export async function executeSearchTool(args: any, client: HuduClient): Promise<ToolResponse> {
-  const { query, type, company_id } = args;
+  const { query } = args;
   
   if (!query || query.trim() === '') {
     return createErrorResponse('Search query is required');
   }
   
   try {
-    const searchParams = {
-      query: query.trim(),
-      type,
-      company_id
-    };
-    
     // For now, use getArticles as a placeholder for search
     const results = await client.getArticles({ search: query });
     
@@ -279,7 +275,7 @@ export async function executeSearchTool(args: any, client: HuduClient): Promise<
 }
 
 // Simplified tool executors
-export const SIMPLIFIED_TOOL_EXECUTORS: Record<string, Function> = {
+export const SIMPLIFIED_TOOL_EXECUTORS: Record<string, SimplifiedToolExecutor> = {
   'articles': executeArticlesTool,
   'articles_query': executeArticlesQueryTool,
   'companies': executeCompaniesTool,

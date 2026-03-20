@@ -21,6 +21,8 @@ export interface ToolResponse<T = any> {
   message?: string;
 }
 
+export type ToolExecutor = (args: any, client: any) => Promise<ToolResponse>;
+
 // Helper function to create consistent error responses
 export function createErrorResponse(error: string): ToolResponse {
   return {

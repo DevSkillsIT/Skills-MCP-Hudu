@@ -59,9 +59,10 @@ export {
 export { adminTool, executeAdminTool } from './admin.js';
 export { searchTool, executeSearchTool } from './search.js';
 export { navigationTool, executeNavigationTool } from './navigation.js';
-export { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
+export { createErrorResponse, createSuccessResponse, type ToolResponse, type ToolExecutor } from './base.js';
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolExecutor } from './base.js';
 
 // Import tools for registry
 import { articlesTool, articlesQueryTool } from './articles.js';
@@ -161,7 +162,7 @@ export const CONSOLIDATED_TOOLS: Record<string, Tool> = {
 };
 
 // Tool execution function registry
-export const TOOL_EXECUTORS: Record<string, Function> = {
+export const TOOL_EXECUTORS: Record<string, ToolExecutor> = {
   // Core resources
   'hudu_manage_knowledge_articles': executeArticlesTool,
   'hudu_search_knowledge_articles': executeArticlesQueryTool,

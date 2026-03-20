@@ -3,13 +3,36 @@ import typescriptParser from "@typescript-eslint/parser";
 
 export default [
   {
-    files: ["**/*.ts", "**/*.tsx"],
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    ignores: ["src/__tests__/**/*.ts"],
     languageOptions: {
       parser: typescriptParser,
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: "module",
         project: "./tsconfig.json"
+      }
+    },
+    plugins: {
+      "@typescript-eslint": typescriptEslint
+    },
+    rules: {
+      ...typescriptEslint.configs.recommended.rules,
+      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/explicit-module-boundary-types": "off",
+      "@typescript-eslint/no-inferrable-types": "off"
+    }
+  },
+  {
+    files: ["src/__tests__/**/*.ts"],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: "module",
+        project: "./tsconfig.test.json"
       }
     },
     plugins: {

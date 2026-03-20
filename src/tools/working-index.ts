@@ -56,7 +56,7 @@ export { adminTool, executeAdminTool } from './admin.js';
 export { searchTool, executeSearchTool } from './search.js';
 export { navigationTool, executeNavigationTool } from './navigation.js';
 export { foldersTool, foldersQueryTool, executeFoldersTool, executeFoldersQueryTool } from './folders.js';
-export { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
+export { createErrorResponse, createSuccessResponse, type ToolResponse, type ToolExecutor } from './base.js';
 
 import { 
   articlesTool, articlesQueryTool, executeArticlesTool, executeArticlesQueryTool 
@@ -132,6 +132,7 @@ import {
 import {
   magicDashTool, magicDashQueryTool, executeMagicDashTool, executeMagicDashQueryTool
 } from './magic-dash.js';
+import type { ToolExecutor } from './base.js';
 
 // Working tool registry
 export const WORKING_TOOLS: Record<string, Tool> = {
@@ -199,7 +200,7 @@ export const WORKING_TOOLS: Record<string, Tool> = {
 };
 
 // Working tool executors
-export const WORKING_TOOL_EXECUTORS: Record<string, Function> = {
+export const WORKING_TOOL_EXECUTORS: Record<string, ToolExecutor> = {
   // Core resources
   'hudu_manage_knowledge_articles': executeArticlesTool,
   'hudu_search_knowledge_articles': executeArticlesQueryTool,

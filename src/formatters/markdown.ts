@@ -386,6 +386,22 @@ export function formatRelationList(paged: HuduPagedResponse<HuduRelation>): stri
   ].join('\n');
 }
 
+export function formatRelationDetail(r: HuduRelation): string {
+  return [
+    `# Relacao: ${esc(r.name) || `${esc(r.fromable_type)}#${r.fromable_id} -> ${esc(r.toable_type)}#${r.toable_id}`}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${r.id} |`,
+    `| Nome | ${esc(r.name) || '-'} |`,
+    `| Origem | ${esc(r.fromable_type)}#${r.fromable_id} |`,
+    `| Destino | ${esc(r.toable_type)}#${r.toable_id} |`,
+    `| Criado em | ${r.created_at ?? ''} |`,
+    `| Atualizado em | ${r.updated_at ?? ''} |`,
+    ...(r.description ? ['', '## Descricao', '', truncate(r.description, 2000)] : []),
+  ].join('\n');
+}
+
 // ---- Procedures ----
 
 export function formatProcedureList(paged: HuduPagedResponse<HuduProcedure>): string {
