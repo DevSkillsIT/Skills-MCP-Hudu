@@ -27,33 +27,35 @@ const createMockClient = (overrides: Partial<Record<string, ReturnType<typeof je
 
 describe('executeWebsitesTool (CRUD)', () => {
   describe('create action', () => {
-    test('creates website with valid name and url', async () => {
+    test('creates website with valid name (URL)', async () => {
       const client = createMockClient();
       const result = await executeWebsitesTool(
-        { action: 'create', fields: { name: 'SKILLS IT Site', url: 'https://skillsit.com.br' } },
+        { action: 'create', fields: { name: 'https://skillsit.com.br', company_id: 1 } },
         client
       );
       expect(result.success).toBe(true);
       expect(client.createWebsite).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'SKILLS IT Site', url: 'https://skillsit.com.br' })
+        expect.objectContaining({ name: 'https://skillsit.com.br' })
       );
+    });
+
+    test('strips url field before sending to API (Hudu uses name as URL)', async () => {
+      const client = createMockClient();
+      const result = await executeWebsitesTool(
+        { action: 'create', fields: { name: 'https://example.com', url: 'https://example.com' } },
+        client
+      );
+      expect(result.success).toBe(true);
+      // url field should be stripped, only name sent
+      const callArgs = (client.createWebsite as any).mock.calls[0][0];
+      expect(callArgs).not.toHaveProperty('url');
+      expect(callArgs.name).toBe('https://example.com');
     });
 
     test('returns error when name is missing', async () => {
       const client = createMockClient();
       const result = await executeWebsitesTool(
-        { action: 'create', fields: { url: 'https://skillsit.com.br' } },
-        client
-      );
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-      expect(client.createWebsite).not.toHaveBeenCalled();
-    });
-
-    test('returns error when url is missing', async () => {
-      const client = createMockClient();
-      const result = await executeWebsitesTool(
-        { action: 'create', fields: { name: 'SKILLS IT Site' } },
+        { action: 'create', fields: { company_id: 1 } },
         client
       );
       expect(result.success).toBe(false);

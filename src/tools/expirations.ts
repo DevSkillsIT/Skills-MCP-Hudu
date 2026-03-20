@@ -26,7 +26,8 @@ export async function executeExpirationsTool(args: any, client: HuduClient): Pro
       item_type,
       page: page || 1
     });
-    return createSuccessResponse(results, `Found ${results.length} expirations`);
+    const data = results || [];
+    return createSuccessResponse(data, `Found ${data.length} expirations`);
   } catch (error: any) {
     return createErrorResponse(`Failed to search expirations: ${error.message}`);
   }

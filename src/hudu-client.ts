@@ -269,8 +269,8 @@ export class HuduClient {
     start_date?: string;
     page_size?: number;
   }): Promise<HuduActivityLog[]> {
-    const response = await this.client.get<{ activity_logs: HuduActivityLog[] }>('/activity_logs', { params });
-    return response.data.activity_logs;
+    const response = await this.client.get<HuduActivityLog[] | { activity_logs: HuduActivityLog[] }>('/activity_logs', { params });
+    return extractArrayResponse(response.data, 'activity_logs');
   }
 
   async deleteActivityLogs(datetime: string, deleteUnassignedLogs?: boolean): Promise<void> {
@@ -511,8 +511,8 @@ export class HuduClient {
     company_id?: number;
     page?: number;
   }): Promise<HuduWebsite[]> {
-    const response = await this.client.get<{ websites: HuduWebsite[] }>('/websites', { params });
-    return response.data.websites;
+    const response = await this.client.get<HuduWebsite[] | { websites: HuduWebsite[] }>('/websites', { params });
+    return extractArrayResponse(response.data, 'websites');
   }
 
   async getWebsite(id: number): Promise<HuduWebsite> {
@@ -715,8 +715,8 @@ export class HuduClient {
     company_id?: number;
     page?: number;
   }): Promise<HuduMagicDash[]> {
-    const response = await this.client.get<{ magic_dash: HuduMagicDash[] }>('/magic_dash', { params });
-    return response.data.magic_dash;
+    const response = await this.client.get<HuduMagicDash[] | { magic_dash: HuduMagicDash[] }>('/magic_dash', { params });
+    return extractArrayResponse(response.data, 'magic_dash');
   }
 
   async getMagicDash(id: number): Promise<HuduMagicDash> {
@@ -725,8 +725,13 @@ export class HuduClient {
   }
 
   async createMagicDash(magicDash: Partial<HuduMagicDash>): Promise<HuduMagicDash> {
-    const response = await this.client.post<{ magic_dash: HuduMagicDash }>('/magic_dash', { magic_dash: magicDash });
-    return response.data.magic_dash;
+    // Magic Dash API expects fields at root level, not nested in { magic_dash: {...} }
+    const response = await this.client.post<HuduMagicDash | { magic_dash: HuduMagicDash }>('/magic_dash', magicDash);
+    const data = response.data;
+    if (data && typeof data === 'object' && 'magic_dash' in data) {
+      return (data as { magic_dash: HuduMagicDash }).magic_dash;
+    }
+    return data as HuduMagicDash;
   }
 
   async updateMagicDash(id: number, magicDash: Partial<HuduMagicDash>): Promise<HuduMagicDash> {
@@ -773,8 +778,8 @@ export class HuduClient {
     item_type?: string;
     page?: number;
   }): Promise<HuduExpiration[]> {
-    const response = await this.client.get<{ expirations: HuduExpiration[] }>('/expirations', { params });
-    return response.data.expirations;
+    const response = await this.client.get<HuduExpiration[] | { expirations: HuduExpiration[] }>('/expirations', { params });
+    return extractArrayResponse(response.data, 'expirations');
   }
 
   // Exports

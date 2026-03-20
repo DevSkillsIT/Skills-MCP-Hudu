@@ -13,8 +13,7 @@ export const websitesTool: Tool = {
       action: createActionSchema(basicActions, 'Acao a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Nome do site (obrigatorio para criacao)' },
-        url: { type: 'string', description: 'URL completa do site, ex: https://exemplo.com (obrigatorio para criacao)' },
+        name: { type: 'string', description: 'URL do site para monitoramento, ex: https://exemplo.com (obrigatorio para criacao). No Hudu, o campo name E a URL do website.' },
         company_id: commonProperties.company_id,
         disable_dns: { type: 'boolean', description: 'Desabilitar verificacao de DNS' },
         disable_ssl: { type: 'boolean', description: 'Desabilitar verificacao de certificado SSL' },
@@ -54,12 +53,11 @@ export async function executeWebsitesTool(args: any, client: HuduClient): Promis
     switch (action) {
       case 'create':
         if (!fields?.name) {
-          return createErrorResponse('Website name is required for creating websites');
+          return createErrorResponse('Website name (URL) is required for creating websites. The name field should contain the website URL (e.g. https://example.com)');
         }
-        if (!fields?.url) {
-          return createErrorResponse('Website URL is required for creating websites');
-        }
-        const newWebsite = await client.createWebsite(fields);
+        // Hudu API: 'name' is the website URL. Remove 'url' field to avoid 422.
+        const { url: _url, ...createFields } = fields;
+        const newWebsite = await client.createWebsite(createFields);
         return createSuccessResponse(newWebsite, 'Website created successfully');
 
       case 'get':
