@@ -516,8 +516,9 @@ export class HuduClient {
   }
 
   async getWebsite(id: number): Promise<HuduWebsite> {
-    const response = await this.client.get<{ website: HuduWebsite }>(`/websites/${id}`);
-    return response.data.website;
+    const response = await this.client.get<any>(`/websites/${id}`);
+    // API returns raw object directly (not wrapped in { website: {...} })
+    return response.data.website || response.data;
   }
 
   async createWebsite(website: Partial<HuduWebsite>): Promise<HuduWebsite> {

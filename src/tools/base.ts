@@ -5,7 +5,7 @@ export const BaseActionSchema = z.enum(['create', 'get', 'update', 'delete', 'ar
 
 export const PaginationSchema = z.object({
   page: z.number().min(1).default(1).optional(),
-  page_size: z.number().min(1).max(100).default(25).optional()
+  page_size: z.number().min(1).max(25).default(25).optional()
 });
 
 export const SearchSchema = z.object({

@@ -42,7 +42,7 @@ describe('executeWebsitesTool (CRUD)', () => {
     test('strips url field before sending to API (Hudu uses name as URL)', async () => {
       const client = createMockClient();
       const result = await executeWebsitesTool(
-        { action: 'create', fields: { name: 'https://example.com', url: 'https://example.com' } },
+        { action: 'create', fields: { name: 'https://example.com', url: 'https://example.com', company_id: 1 } },
         client
       );
       expect(result.success).toBe(true);

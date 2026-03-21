@@ -13,8 +13,8 @@ export const websitesTool: Tool = {
       action: createActionSchema(basicActions, 'Acao a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'URL do site para monitoramento, ex: https://exemplo.com (obrigatorio para criacao). No Hudu, o campo name E a URL do website.' },
-        company_id: commonProperties.company_id,
+        name: { type: 'string', description: 'URL do website para monitoramento, ex: https://exemplo.com (obrigatorio para criacao). No Hudu, o campo name recebe a URL do site.' },
+        company_id: { ...commonProperties.company_id, description: 'ID da empresa associada (OBRIGATORIO para criacao)' },
         disable_dns: { type: 'boolean', description: 'Desabilitar verificacao de DNS' },
         disable_ssl: { type: 'boolean', description: 'Desabilitar verificacao de certificado SSL' },
         disable_whois: { type: 'boolean', description: 'Desabilitar verificacao de WHOIS e expiracao de dominio' },
@@ -55,6 +55,9 @@ export async function executeWebsitesTool(args: any, client: HuduClient): Promis
         if (!fields?.name) {
           return createErrorResponse('Website name (URL) is required for creating websites. The name field should contain the website URL (e.g. https://example.com)');
         }
+        if (!fields?.company_id) {
+          return createErrorResponse('company_id is required for creating websites');
+        }
         // Hudu API: 'name' is the website URL. Remove 'url' field to avoid 422.
         const { url: _url, ...createFields } = fields;
         const newWebsite = await client.createWebsite(createFields);
@@ -71,7 +74,9 @@ export async function executeWebsitesTool(args: any, client: HuduClient): Promis
         if (!id) {
           return createErrorResponse('Website ID is required for update operation');
         }
-        const updatedWebsite = await client.updateWebsite(id, fields || {});
+        // Remove 'url' field if present to avoid 422 - Hudu uses 'name' as the URL
+        const { url: _updateUrl, ...updateFields } = fields || {};
+        const updatedWebsite = await client.updateWebsite(id, updateFields);
         return createSuccessResponse(updatedWebsite, 'Website updated successfully');
 
       case 'delete':

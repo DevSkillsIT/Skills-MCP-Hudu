@@ -242,6 +242,14 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
  */
 export function formatToolResponse(toolName: string, data: any, args: any): string {
   if (typeof data === 'string') return data;
+
+  // For search/query tools, treat null/undefined as empty array so the
+  // formatter can return "Nenhum X encontrado." instead of falling through
+  // to the generic success message in server.ts.
+  if ((data === null || data === undefined) && toolName.includes('search_')) {
+    data = [];
+  }
+
   if (data === null || data === undefined) return '';
   const formatter = TOOL_FORMATTERS[toolName];
   if (formatter) return formatter(data, args ?? {});
