@@ -103,17 +103,17 @@ describe('readResource', () => {
 
     test('reads asset by id', async () => {
       const client = createMockClient({
-        getAsset: jest.fn<() => Promise<any>>().mockResolvedValue({
+        getAssets: jest.fn<() => Promise<any>>().mockResolvedValue([{
           id: 5,
           name: 'Server-01',
           asset_layout_id: 1,
           company_id: 42,
           archived: false,
           fields: [],
-        }),
+        }]),
       });
       const result = await readResource('hudu://assets/5', client);
-      expect(client.getAsset).toHaveBeenCalledWith(5);
+      expect(client.getAssets).toHaveBeenCalled();
       expect(result.mimeType).toBe('text/markdown');
     });
   });

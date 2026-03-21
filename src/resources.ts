@@ -127,8 +127,14 @@ export async function readResource(
       break;
     case 'assets':
       if (resourceId !== undefined) {
-        const asset = await client.getAsset(resourceId);
-        text = formatAssetDetail(asset);
+        // Hudu API: /assets/:id returns 404. Use list with id filter instead.
+        const assetResults = await client.getAssets({ id: resourceId } as any);
+        const foundAsset = assetResults?.[0];
+        if (foundAsset) {
+          text = formatAssetDetail(foundAsset);
+        } else {
+          throw new InvalidResourceUriError(`Asset ID ${resourceId} not found`);
+        }
       } else {
         const assets = await client.getAssets({ page: 1, page_size: 25 });
         text = formatAssetList(toPagedResponse(assets));
