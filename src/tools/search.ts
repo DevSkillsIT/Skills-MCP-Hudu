@@ -75,36 +75,49 @@ export async function executeSearchTool(args: any, client: HuduClient): Promise<
       }
     }
     
-    // Sanitize and slim down results for LLM consumption:
+    // Sanitize results for LLM consumption — keep useful info, reduce noise:
     // 1. Truncate to page_size (API may ignore the parameter)
-    // 2. MASK passwords (NEVER expose secrets to LLM context)
-    // 3. Strip heavy payload fields (fields[], cards[], public_photos[], integrations[])
-    // 4. Truncate HTML content/notes to 200 chars
-    // 5. Remove internal Hudu URLs (slug, full_url, passwords_url, knowledge_base_url)
+    // 2. MASK password and otp_secret (NEVER expose secrets in global search context)
+    // 3. Simplify custom fields[] to key-value pairs (remove empty values)
+    // 4. Truncate HTML content/notes to 300 chars
+    // 5. Remove truly useless fields (empty arrays, internal-only IDs)
     const FIELDS_TO_REMOVE = [
-      'fields', 'cards', 'public_photos', 'integrations',           // heavy arrays
-      'slug', 'full_url', 'passwords_url', 'knowledge_base_url',    // internal URLs
-      'password_folder_name', 'asset_field_id', 'account_id',       // internal IDs
+      'cards', 'public_photos', 'integrations',                     // almost always empty arrays
+      'slug',                                                        // internal Hudu slug
+      'passwords_url', 'knowledge_base_url',                        // internal navigation URLs
+      'asset_field_id', 'account_id',                               // internal IDs
       'headers', 'cloudflare_details', 'sent_notifications',        // website internals
-      'otp_secret', 'login_url'                                     // credential internals
+      'otp_secret',                                                  // secret - mask
+      'monitor_type', 'keyword', 'discarded_at', 'potentially_proxied' // website noise
     ];
 
     const sanitizeItem = (item: any): any => {
       const cleaned: any = {};
       for (const [key, value] of Object.entries(item)) {
-        // Skip heavy/internal fields
+        // Skip truly useless fields
         if (FIELDS_TO_REMOVE.includes(key)) continue;
 
-        // MASK password values - CRITICAL SECURITY
+        // MASK password values in global search context
         if (key === 'password') {
           cleaned[key] = '****';
           continue;
         }
 
-        // Truncate HTML content and notes
+        // Simplify custom fields[] — keep only non-empty values as key:value
+        if (key === 'fields' && Array.isArray(value)) {
+          const simplified = (value as any[])
+            .filter((f: any) => f.value !== null && f.value !== undefined && f.value !== '')
+            .map((f: any) => ({ label: f.label, value: typeof f.value === 'string' && f.value.length > 100 ? f.value.substring(0, 100) + '...' : f.value }));
+          if (simplified.length > 0) {
+            cleaned[key] = simplified;
+          }
+          continue;
+        }
+
+        // Truncate HTML content, notes, description to 300 chars
         if ((key === 'content' || key === 'notes' || key === 'description') && typeof value === 'string') {
           const stripped = (value as string).replace(/<[^>]+>/g, '').replace(/&[a-z]+;/gi, ' ').trim();
-          cleaned[key] = stripped.length > 200 ? stripped.substring(0, 200) + '...' : stripped;
+          cleaned[key] = stripped.length > 300 ? stripped.substring(0, 300) + '...' : stripped;
           continue;
         }
 
