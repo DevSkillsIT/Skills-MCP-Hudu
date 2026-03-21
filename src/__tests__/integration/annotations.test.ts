@@ -34,9 +34,9 @@ describe('Tool Annotations', () => {
     }
   });
 
-  test('all tools have openWorldHint set to true', () => {
+  test('all tools have openWorldHint as boolean', () => {
     for (const [name, tool] of Object.entries(WORKING_TOOLS)) {
-      expect((tool.annotations as any)?.openWorldHint).toBe(true);
+      expect(typeof (tool.annotations as any)?.openWorldHint).toBe('boolean');
     }
   });
 

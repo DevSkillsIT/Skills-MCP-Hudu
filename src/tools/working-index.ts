@@ -132,6 +132,12 @@ import {
 import {
   magicDashTool, magicDashQueryTool, executeMagicDashTool, executeMagicDashQueryTool
 } from './magic-dash.js';
+import {
+  listPromptsTool, getPromptTool, executeListPromptsTool, executeGetPromptTool
+} from './prompt-tools.js';
+import {
+  listResourcesTool, readResourceTool, executeListResourcesTool, executeReadResourceTool
+} from './resource-tools.js';
 import type { ToolExecutor } from './base.js';
 
 // Working tool registry
@@ -197,6 +203,12 @@ export const WORKING_TOOLS: Record<string, Tool> = {
   // Magic Dash
   'hudu_manage_dashboard_widgets': magicDashTool,
   'hudu_search_dashboard_widgets': magicDashQueryTool,
+  // Prompts as tools (MCPHub bridge)
+  'hudu_list_prompts': listPromptsTool,
+  'hudu_get_prompt': getPromptTool,
+  // Resources as tools (MCPHub bridge)
+  'hudu_list_resources': listResourcesTool,
+  'hudu_read_resource': readResourceTool,
 };
 
 // Working tool executors
@@ -262,4 +274,10 @@ export const WORKING_TOOL_EXECUTORS: Record<string, ToolExecutor> = {
   // Magic Dash
   'hudu_manage_dashboard_widgets': executeMagicDashTool,
   'hudu_search_dashboard_widgets': executeMagicDashQueryTool,
+  // Prompts as tools (MCPHub bridge)
+  'hudu_list_prompts': executeListPromptsTool,
+  'hudu_get_prompt': executeGetPromptTool,
+  // Resources as tools (MCPHub bridge)
+  'hudu_list_resources': executeListResourcesTool,
+  'hudu_read_resource': executeReadResourceTool,
 };

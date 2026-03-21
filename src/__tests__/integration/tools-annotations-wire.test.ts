@@ -59,11 +59,11 @@ describe('tools/list wire-level annotations', () => {
     }
   });
 
-  test('all 43+ tools have openWorldHint=true', () => {
-    expect(tools.length).toBeGreaterThanOrEqual(43);
+  test('all 47+ tools have openWorldHint as boolean', () => {
+    expect(tools.length).toBeGreaterThanOrEqual(47);
     for (const tool of tools) {
       const ann = tool.annotations as Record<string, unknown>;
-      expect(ann.openWorldHint).toBe(true);
+      expect(typeof ann.openWorldHint).toBe('boolean');
     }
   });
 

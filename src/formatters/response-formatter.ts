@@ -234,6 +234,12 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
   },
   'hudu_search_dashboard_widgets': (data, args) =>
     formatMagicDashList(toPagedResponse(data, args?.page, args?.page_size)),
+
+  // Prompts and Resources as tools (executors already return formatted strings)
+  'hudu_list_prompts': (data) => typeof data === 'string' ? data : JSON.stringify(data, null, 2),
+  'hudu_get_prompt': (data) => typeof data === 'string' ? data : JSON.stringify(data, null, 2),
+  'hudu_list_resources': (data) => typeof data === 'string' ? data : JSON.stringify(data, null, 2),
+  'hudu_read_resource': (data) => typeof data === 'string' ? data : JSON.stringify(data, null, 2),
 };
 
 /**
