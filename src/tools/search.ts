@@ -107,7 +107,7 @@ export async function executeSearchTool(args: any, client: HuduClient): Promise<
         if (key === 'fields' && Array.isArray(value)) {
           const simplified = (value as any[])
             .filter((f: any) => f.value !== null && f.value !== undefined && f.value !== '')
-            .map((f: any) => ({ label: f.label, value: typeof f.value === 'string' && f.value.length > 100 ? f.value.substring(0, 100) + '...' : f.value }));
+            .map((f: any) => ({ label: f.label, value: typeof f.value === 'string' && f.value.length > 500 ? f.value.substring(0, 500) + '...' : f.value }));
           if (simplified.length > 0) {
             cleaned[key] = simplified;
           }
@@ -117,7 +117,7 @@ export async function executeSearchTool(args: any, client: HuduClient): Promise<
         // Truncate HTML content, notes, description to 300 chars
         if ((key === 'content' || key === 'notes' || key === 'description') && typeof value === 'string') {
           const stripped = (value as string).replace(/<[^>]+>/g, '').replace(/&[a-z]+;/gi, ' ').trim();
-          cleaned[key] = stripped.length > 300 ? stripped.substring(0, 300) + '...' : stripped;
+          cleaned[key] = stripped.length > 1000 ? stripped.substring(0, 1000) + '...' : stripped;
           continue;
         }
 

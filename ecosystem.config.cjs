@@ -3,7 +3,7 @@ module.exports = {
     name: 'mcp-hudu',
     script: 'dist/index.js',
     cwd: '/opt/mcp-servers/hudu',
-    instances: 1,
+    exec_mode: 'fork',
     autorestart: true,
     watch: false,
     max_memory_restart: '256M',
@@ -14,8 +14,8 @@ module.exports = {
       HUDU_TIMEOUT: '30000',
       MCP_SERVER_PORT: '3100'
     },
-    error_file: '/opt/mcp-servers/shared/logs/hudu-error.log',
-    out_file: '/opt/mcp-servers/shared/logs/hudu-out.log',
+    error_file: '/opt/mcp-servers/_shared/logs/mcp-hudu-error.log',
+    out_file: '/opt/mcp-servers/_shared/logs/mcp-hudu-out.log',
     merge_logs: true
   }]
 };
