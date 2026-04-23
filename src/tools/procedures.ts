@@ -15,11 +15,12 @@ export const proceduresTool: Tool = {
       action: createActionSchema(procedureActions, 'Ação a executar. Valores: create (criar novo procedimento), get (obter por ID), update (atualizar por ID), delete (excluir por ID), kickoff (iniciar execução do procedimento), duplicate (duplicar procedimento existente), create_from_template (criar novo a partir de um template)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: commonProperties.name,
+        name: { type: 'string', description: 'Nome do procedimento (obrigatório para criação)' },
         description: commonProperties.description,
         company_id: commonProperties.company_id,
-        folder_id: commonProperties.folder_id
-      })
+        folder_id: commonProperties.folder_id,
+        company_template: { type: 'boolean', description: 'Se true, cria o procedimento como template reutilizável para outras empresas' }
+      }, ['name'])
     },
     required: ['action']
   },
@@ -57,12 +58,12 @@ export const procedureTasksTool: Tool = {
       id: commonProperties.id,
       procedure_id: { type: 'number', description: 'ID do procedimento para listar tarefas' },
       fields: createFieldsSchema({
-        name: commonProperties.name,
+        name: { type: 'string', description: 'Nome da tarefa (obrigatório para criação)' },
         description: commonProperties.description,
         position: { type: 'number', description: 'Posição da tarefa dentro do procedimento' },
         completed: { type: 'boolean', description: 'Status de conclusão da tarefa (true = concluída)' },
         procedure_id: { type: 'number', description: 'ID do procedimento pai (obrigatório para criação)' }
-      })
+      }, ['name', 'procedure_id'])
     },
     required: ['action']
   },

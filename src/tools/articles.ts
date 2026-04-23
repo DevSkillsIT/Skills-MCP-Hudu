@@ -13,11 +13,11 @@ export const articlesTool: Tool = {
       id: commonProperties.id,
       fields: createFieldsSchema({
         name: { type: 'string', description: 'Nome do artigo (obrigatório para criação)' },
-        content: { type: 'string', description: 'Conteúdo do artigo em HTML ou Markdown' },
+        content: { type: 'string', description: 'Conteúdo do artigo em HTML ou Markdown (obrigatório para criação)' },
         company_id: commonProperties.company_id,
         folder_id: commonProperties.folder_id,
         enable_sharing: { type: 'boolean', description: 'Habilitar compartilhamento público do artigo' }
-      })
+      }, ['name', 'content'])
     },
     required: ['action']
   },

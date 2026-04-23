@@ -6,10 +6,11 @@ export const createActionSchema = (actions: string[], description?: string) => (
   description: description || 'Action to perform'
 });
 
-export const createFieldsSchema = (properties: Record<string, any>) => ({
+export const createFieldsSchema = (properties: Record<string, any>, required?: string[]) => ({
   type: 'object' as const,
   properties,
-  description: 'Dados para operações de criação ou atualização'
+  description: 'Dados para operações de criação ou atualização',
+  ...(required && required.length > 0 ? { required } : {})
 });
 
 export const createQuerySchema = (properties: Record<string, any>) => ({

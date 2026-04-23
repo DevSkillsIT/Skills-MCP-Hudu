@@ -367,6 +367,25 @@ export function formatFolderList(paged: HuduPagedResponse<HuduFolder>): string {
   ].join('\n');
 }
 
+// ---- Folder detail ----
+
+export function formatFolderDetail(f: any): string {
+  if (!f || typeof f !== 'object') return 'Pasta indisponível.';
+  return [
+    `# Pasta: ${esc(f.name) || '-'}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${f.id ?? '-'} |`,
+    `| Empresa ID | ${f.company_id ?? 'Global'} |`,
+    `| Pasta pai | ${f.parent_folder_id ?? '-'} |`,
+    `| Ícone | ${esc(f.icon) || '-'} |`,
+    `| Criada em | ${f.created_at ?? '-'} |`,
+    `| Atualizada em | ${f.updated_at ?? '-'} |`,
+    ...(f.description ? ['', '## Descrição', '', truncate(f.description, 1000)] : []),
+  ].join('\n');
+}
+
 // ---- Relations ----
 
 export function formatRelationList(paged: HuduPagedResponse<HuduRelation>): string {
@@ -458,6 +477,28 @@ export function formatNetworkList(paged: HuduPagedResponse<HuduNetwork>): string
   ].join('\n');
 }
 
+export function formatNetworkDetail(n: HuduNetwork): string {
+  if (!n || typeof n !== 'object') return 'Rede indisponível.';
+  return [
+    `# Rede: ${esc(n.name) || '-'}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${n.id ?? '-'} |`,
+    `| Endereço | ${esc(n.address || n.network) || '-'} |`,
+    `| Tipo | ${n.network_type ?? '-'} |`,
+    `| Empresa ID | ${n.company_id ?? '-'} |`,
+    `| Localização ID | ${n.location_id ?? '-'} |`,
+    `| VLAN ID | ${n.vlan_id ?? '-'} |`,
+    `| Slug | ${esc(n.slug) || '-'} |`,
+    `| URL | ${esc(n.url) || '-'} |`,
+    `| Criada em | ${n.created_at ?? '-'} |`,
+    `| Atualizada em | ${n.updated_at ?? '-'} |`,
+    ...(n.description ? ['', '## Descrição', '', truncate(n.description, 1000)] : []),
+    ...(n.notes ? ['', '## Notas', '', truncate(n.notes, 2000)] : []),
+  ].join('\n');
+}
+
 // ---- IP Addresses ----
 
 export function formatIpAddressList(paged: HuduPagedResponse<HuduIpAddress>): string {
@@ -477,21 +518,62 @@ export function formatIpAddressList(paged: HuduPagedResponse<HuduIpAddress>): st
   ].join('\n');
 }
 
+export function formatIpAddressDetail(ip: any): string {
+  if (!ip || typeof ip !== 'object') return 'Endereço IP indisponível.';
+  return [
+    `# Endereço IP: ${esc(ip.address) || '-'}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${ip.id ?? '-'} |`,
+    `| FQDN | ${esc(ip.fqdn) || '-'} |`,
+    `| Status | ${esc(ip.status) || '-'} |`,
+    `| Rede ID | ${ip.network_id ?? '-'} |`,
+    `| Empresa ID | ${ip.company_id ?? '-'} |`,
+    `| Ativo ID | ${ip.asset_id ?? '-'} |`,
+    `| Criado em | ${ip.created_at ?? '-'} |`,
+    `| Atualizado em | ${ip.updated_at ?? '-'} |`,
+    ...(ip.description ? ['', '## Descrição', '', truncate(ip.description, 1000)] : []),
+    ...(ip.notes ? ['', '## Notas', '', truncate(ip.notes, 2000)] : []),
+  ].join('\n');
+}
+
 // ---- VLANs ----
 
 export function formatVlanList(paged: HuduPagedResponse<HuduVlan>): string {
   if (paged.records.length === 0) return 'Nenhuma VLAN encontrada.';
 
+  // Hudu API returns `vlan_id` for the numeric 802.1Q tag; `vid` was a legacy alias.
   const rows = paged.records.map(
-    (v) => `| ${v.id} | ${v.vid ?? ''} | ${esc(v.name)} | ${v.network_id ?? '-'} |`
+    (v) => `| ${v.id} | ${v.vlan_id ?? v.vid ?? '-'} | ${esc(v.name)} | ${v.company_id ?? '-'} | ${v.vlan_zone_id ?? '-'} |`
   );
 
   return [
     pageInfo(paged),
     '',
-    '| ID | VID | Nome | Rede ID |',
-    '|---|---|---|---|',
+    '| ID | VLAN ID | Nome | Empresa ID | Zona ID |',
+    '|---|---|---|---|---|',
     ...rows,
+  ].join('\n');
+}
+
+export function formatVlanDetail(v: HuduVlan): string {
+  if (!v || typeof v !== 'object') return 'VLAN indisponível.';
+  return [
+    `# VLAN: ${esc(v.name) || '-'}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${v.id ?? '-'} |`,
+    `| VLAN ID (tag) | ${v.vlan_id ?? v.vid ?? '-'} |`,
+    `| Empresa ID | ${v.company_id ?? '-'} |`,
+    `| Zona ID | ${v.vlan_zone_id ?? '-'} |`,
+    `| Redes | ${v.networks_count ?? 0} |`,
+    `| URL | ${esc(v.url) || '-'} |`,
+    `| Criada em | ${v.created_at ?? '-'} |`,
+    `| Atualizada em | ${v.updated_at ?? '-'} |`,
+    ...(v.description ? ['', '## Descrição', '', truncate(v.description, 1000)] : []),
+    ...(v.notes ? ['', '## Notas', '', truncate(v.notes, 2000)] : []),
   ].join('\n');
 }
 
@@ -587,6 +669,23 @@ export function formatUploadList(paged: HuduPagedResponse<HuduUpload>): string {
   ].join('\n');
 }
 
+export function formatUploadDetail(u: any): string {
+  if (!u || typeof u !== 'object') return 'Upload indisponível.';
+  return [
+    `# Upload: ${esc(u.name) || esc(u.filename) || '-'}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${u.id ?? '-'} |`,
+    `| Arquivo | ${esc(u.filename) || '-'} |`,
+    `| Tamanho | ${u.size ?? '-'} |`,
+    `| Tipo | ${esc(u.content_type) || '-'} |`,
+    `| Vinculado a | ${esc(u.uploadable_type) || '-'}#${u.uploadable_id ?? '-'} |`,
+    `| URL | ${esc(u.url) || '-'} |`,
+    `| Criado em | ${u.created_at ?? '-'} |`,
+  ].join('\n');
+}
+
 // ---- Rack Storage ----
 
 export function formatRackStorageList(paged: HuduPagedResponse<HuduRackStorage>): string {
@@ -606,6 +705,28 @@ export function formatRackStorageList(paged: HuduPagedResponse<HuduRackStorage>)
   ].join('\n');
 }
 
+export function formatRackStorageDetail(r: any): string {
+  if (!r || typeof r !== 'object') return 'Rack indisponível.';
+  return [
+    `# Rack: ${esc(r.name) || '-'}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${r.id ?? '-'} |`,
+    `| Empresa ID | ${r.company_id ?? '-'} |`,
+    `| Altura (U) | ${r.height ?? '-'} |`,
+    `| Largura (pol) | ${r.width ?? '-'} |`,
+    `| Unidade inicial | ${r.starting_unit ?? '-'} |`,
+    `| Unidades descendentes | ${r.descending_units ? 'Sim' : 'Não'} |`,
+    `| Watts máximos | ${r.max_wattage ?? '-'} |`,
+    `| Utilização | ${r.utilization ?? 0}% |`,
+    `| Serial | ${esc(r.serial_number) || '-'} |`,
+    `| Asset tag | ${esc(r.asset_tag) || '-'} |`,
+    `| Localização | ${esc(r.location_name) || '-'} (ID: ${r.location_id ?? '-'}) |`,
+    ...(r.description ? ['', '## Descrição', '', truncate(r.description, 1000)] : []),
+  ].join('\n');
+}
+
 // ---- Rack Storage Items ----
 
 export function formatRackStorageItemList(
@@ -614,16 +735,37 @@ export function formatRackStorageItemList(
   if (paged.records.length === 0) return 'Nenhum item de rack encontrado.';
 
   const rows = paged.records.map(
-    (i) =>
-      `| ${i.id} | ${esc(i.name)} | ${i.rack_storage_id} | ${i.position ?? '-'} | ${i.size ?? '-'} |`
+    (i: any) =>
+      `| ${i.id} | ${esc(i.name || i.rack_storage_role_name) || '-'} | ${i.rack_storage_id ?? '-'} | ${i.start_unit ?? i.position ?? '-'}–${i.end_unit ?? '-'} | ${esc(i.status) || '-'} | ${esc(i.side) || '-'} |`
   );
 
   return [
     pageInfo(paged),
     '',
-    '| ID | Nome | Rack ID | Posição | Tamanho |',
-    '|---|---|---|---|---|',
+    '| ID | Nome/Role | Rack ID | Ocupação (U) | Status | Lado |',
+    '|---|---|---|---|---|---|',
     ...rows,
+  ].join('\n');
+}
+
+export function formatRackStorageItemDetail(i: any): string {
+  if (!i || typeof i !== 'object') return 'Item de rack indisponível.';
+  return [
+    `# Item de Rack: ${esc(i.rack_storage_role_name) || esc(i.name) || `#${i.id}`}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${i.id ?? '-'} |`,
+    `| Rack ID | ${i.rack_storage_id ?? '-'} |`,
+    `| Role ID | ${i.rack_storage_role_id ?? '-'} |`,
+    `| Ativo ID | ${i.asset_id ?? '-'} |`,
+    `| Unidade inicial | ${i.start_unit ?? '-'} |`,
+    `| Unidade final | ${i.end_unit ?? '-'} |`,
+    `| Status | ${esc(i.status) || '-'} |`,
+    `| Lado | ${esc(i.side) || '-'} |`,
+    `| Watts máximos | ${i.max_wattage ?? '-'} |`,
+    `| Consumo real | ${i.power_draw ?? '-'} |`,
+    ...(i.reserved_message ? ['', '## Mensagem', '', truncate(i.reserved_message, 500)] : []),
   ].join('\n');
 }
 
@@ -642,5 +784,212 @@ export function formatPublicPhotoList(paged: HuduPagedResponse<HuduPublicPhoto>)
     '| ID | Nome | Arquivo | URL |',
     '|---|---|---|---|',
     ...rows,
+  ].join('\n');
+}
+
+export function formatPublicPhotoDetail(p: any): string {
+  if (!p || typeof p !== 'object') return 'Foto indisponível.';
+  return [
+    `# Foto pública: ${esc(p.name) || esc(p.filename) || `#${p.id}`}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${p.id ?? '-'} |`,
+    `| Arquivo | ${esc(p.filename) || '-'} |`,
+    `| URL | ${esc(p.url) || '-'} |`,
+    `| Vinculada a | ${esc(p.record_type) || '-'}#${p.record_id ?? '-'} |`,
+    `| Criada em | ${p.created_at ?? '-'} |`,
+  ].join('\n');
+}
+
+// ---- Admin: API info ----
+
+export function formatApiInfo(info: any): string {
+  if (!info || typeof info !== 'object') return 'Informações da API indisponíveis.';
+  const rows: string[] = [];
+  for (const [k, v] of Object.entries(info)) {
+    const value = v === null || v === undefined ? '-' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+    rows.push(`| ${esc(k)} | ${esc(value)} |`);
+  }
+  return [
+    '# Informações da API do Hudu',
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    ...rows,
+  ].join('\n');
+}
+
+// ---- Admin: Exports ----
+
+export function formatExportsList(data: any, variant: 'standard' | 's3' = 'standard'): string {
+  const records: any[] = Array.isArray(data) ? data : (data?.exports ?? data?.s3_exports ?? []);
+  if (!records || records.length === 0) {
+    return variant === 's3' ? 'Nenhuma exportação S3 encontrada.' : 'Nenhuma exportação encontrada.';
+  }
+  const rows = records.map((e) =>
+    `| ${e.id ?? '-'} | ${esc(e.name) || esc(e.filename) || '-'} | ${esc(e.format) || '-'} | ${esc(e.status) || '-'} | ${e.created_at ?? '-'} | ${esc(e.url || e.download_url) || '-'} |`
+  );
+  return [
+    `**${records.length} ${variant === 's3' ? 'exportações S3' : 'exportações'} encontradas**`,
+    '',
+    '| ID | Nome | Formato | Status | Criada em | URL |',
+    '|---|---|---|---|---|---|',
+    ...rows,
+  ].join('\n');
+}
+
+// ---- Search All Resource Types (global multi-domain search) ----
+
+export function formatGlobalSearchResults(data: any, query?: string): string {
+  const articles: any[] = data?.articles ?? [];
+  const assets: any[] = data?.assets ?? [];
+  const passwords: any[] = data?.passwords ?? [];
+  const companies: any[] = data?.companies ?? [];
+
+  const totalResults = articles.length + assets.length + passwords.length + companies.length;
+  if (totalResults === 0) {
+    return `Nenhum resultado encontrado${query ? ` para "${esc(query)}"` : ''}.`;
+  }
+
+  const sections: string[] = [
+    `# Busca global no Hudu${query ? `: "${esc(query)}"` : ''}`,
+    '',
+    `**${totalResults} resultados** — Artigos: ${articles.length} · Ativos: ${assets.length} · Senhas: ${passwords.length} · Empresas: ${companies.length}`,
+    '',
+  ];
+
+  if (companies.length > 0) {
+    sections.push('## Empresas', '');
+    sections.push('| ID | Nome | Cidade | Estado |', '|---|---|---|---|');
+    for (const c of companies) {
+      sections.push(`| ${c.id} | ${esc(c.name)} | ${esc(c.city) || '-'} | ${esc(c.state) || '-'} |`);
+    }
+    sections.push('');
+  }
+
+  if (assets.length > 0) {
+    sections.push('## Ativos', '');
+    sections.push('| ID | Nome | Tipo | Empresa |', '|---|---|---|---|');
+    for (const a of assets) {
+      sections.push(`| ${a.id} | ${esc(a.name)} | ${esc(a.asset_type) || '-'} | ${esc(a.company_name) || (a.company_id ?? '-')} |`);
+    }
+    sections.push('');
+  }
+
+  if (articles.length > 0) {
+    sections.push('## Artigos', '');
+    sections.push('| ID | Título | Empresa ID | Atualizado |', '|---|---|---|---|');
+    for (const ar of articles) {
+      sections.push(`| ${ar.id} | ${esc(ar.name)} | ${ar.company_id ?? 'Global'} | ${ar.updated_at ?? '-'} |`);
+    }
+    sections.push('');
+  }
+
+  if (passwords.length > 0) {
+    sections.push('## Senhas', '');
+    sections.push('| ID | Nome | Usuário | Empresa ID |', '|---|---|---|---|');
+    for (const p of passwords) {
+      sections.push(`| ${p.id} | ${esc(p.name)} | ${esc(p.username) || '-'} | ${p.company_id ?? '-'} |`);
+    }
+    sections.push('');
+  }
+
+  return sections.join('\n').trimEnd();
+}
+
+// ---- Navigation results (produced by executeNavigationTool) ----
+
+export function formatNavigationResult(data: any): string {
+  const action: string = data?.action ?? 'desconhecida';
+  const query: string = data?.query ?? '';
+  const results: any[] = Array.isArray(data?.results) ? data.results : [];
+
+  if (results.length === 0) {
+    return `Nenhum registro encontrado para "${esc(query)}" (ação: ${esc(action)}).`;
+  }
+
+  const rows = results.map(
+    (r) =>
+      `| ${r.id} | ${esc(r.type) || '-'} | ${esc(r.name)} | ${esc(r.company_name) || (r.company_id ?? '-')} | ${esc(r.url) || '-'} |`
+  );
+
+  return [
+    `**${results.length} registro(s) para "${esc(query)}"** (ação: ${esc(action)})`,
+    '',
+    '| ID | Tipo | Nome | Empresa | URL |',
+    '|---|---|---|---|---|',
+    ...rows,
+  ].join('\n');
+}
+
+// ---- Procedure Tasks ----
+
+export function formatProcedureTaskList(paged: HuduPagedResponse<any>): string {
+  if (paged.records.length === 0) return 'Nenhuma tarefa de procedimento encontrada.';
+
+  const rows = paged.records.map(
+    (t) =>
+      `| ${t.id} | ${esc(t.name) || '-'} | ${t.procedure_id ?? '-'} | ${t.position ?? '-'} | ${t.completed ? 'Concluída' : 'Pendente'} |`
+  );
+
+  return [
+    pageInfo(paged),
+    '',
+    '| ID | Nome | Procedimento ID | Posição | Status |',
+    '|---|---|---|---|---|',
+    ...rows,
+  ].join('\n');
+}
+
+export function formatProcedureTaskDetail(t: any): string {
+  if (!t || typeof t !== 'object') return 'Tarefa indisponível.';
+  return [
+    `# Tarefa: ${esc(t.name) || '-'}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${t.id ?? '-'} |`,
+    `| Procedimento ID | ${t.procedure_id ?? '-'} |`,
+    `| Posição | ${t.position ?? '-'} |`,
+    `| Concluída | ${t.completed ? 'Sim' : 'Não'} |`,
+    `| Criada em | ${t.created_at ?? '-'} |`,
+    `| Atualizada em | ${t.updated_at ?? '-'} |`,
+    ...(t.description ? ['', '## Descrição', '', truncate(t.description, 2000)] : []),
+  ].join('\n');
+}
+
+// ---- VLAN Zones ----
+
+export function formatVlanZoneList(paged: HuduPagedResponse<any>): string {
+  if (paged.records.length === 0) return 'Nenhuma zona de VLAN encontrada.';
+
+  const rows = paged.records.map(
+    (z) =>
+      `| ${z.id} | ${esc(z.name)} | ${z.company_id ?? '-'} | ${truncate(z.description, 60)} |`
+  );
+
+  return [
+    pageInfo(paged),
+    '',
+    '| ID | Nome | Empresa ID | Descrição |',
+    '|---|---|---|---|',
+    ...rows,
+  ].join('\n');
+}
+
+export function formatVlanZoneDetail(z: any): string {
+  if (!z || typeof z !== 'object') return 'Zona indisponível.';
+  return [
+    `# Zona de VLAN: ${esc(z.name) || '-'}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${z.id ?? '-'} |`,
+    `| Nome | ${esc(z.name) || '-'} |`,
+    `| Empresa ID | ${z.company_id ?? '-'} |`,
+    `| Criada em | ${z.created_at ?? '-'} |`,
+    `| Atualizada em | ${z.updated_at ?? '-'} |`,
+    ...(z.description ? ['', '## Descrição', '', truncate(z.description, 1000)] : []),
   ].join('\n');
 }

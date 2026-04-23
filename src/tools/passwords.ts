@@ -18,9 +18,12 @@ export const passwordsTool: Tool = {
         url: { type: 'string', description: 'URL do serviço ou sistema relacionado' },
         description: commonProperties.description,
         company_id: commonProperties.company_id,
-        passwordable_type: { type: 'string', description: 'Tipo do recurso pai vinculado à credencial' },
-        passwordable_id: { type: 'number', description: 'ID do recurso pai vinculado à credencial' }
-      })
+        passwordable_type: { type: 'string', description: 'Tipo do recurso pai vinculado, ex: Asset, Company, Article (opcional)' },
+        passwordable_id: { type: 'number', description: 'ID do recurso pai vinculado à credencial (opcional)' },
+        in_portal: { type: 'boolean', description: 'Se a senha deve ficar visível no portal do cliente' },
+        password_folder_id: { type: 'number', description: 'ID da pasta de senhas (opcional)' },
+        otp_secret: { type: 'string', description: 'Segredo TOTP/OTP para autenticação 2FA (opcional)' }
+      }, ['name', 'password'])
     },
     required: ['action']
   },

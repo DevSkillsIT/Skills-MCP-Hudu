@@ -84,13 +84,13 @@ export class HuduClient {
   }
 
   async createArticle(article: Partial<HuduArticle>): Promise<HuduArticle> {
-    const response = await this.client.post<{ article: HuduArticle }>('/articles', { article });
-    return response.data.article;
+    const response = await this.client.post<any>('/articles', { article });
+    return response.data?.article ?? response.data;
   }
 
   async updateArticle(id: number, article: Partial<HuduArticle>): Promise<HuduArticle> {
-    const response = await this.client.put<{ article: HuduArticle }>(`/articles/${id}`, { article });
-    return response.data.article;
+    const response = await this.client.put<any>(`/articles/${id}`, { article });
+    return response.data?.article ?? response.data;
   }
 
   async deleteArticle(id: number): Promise<void> {
@@ -122,33 +122,74 @@ export class HuduClient {
     return response.data.assets;
   }
 
-  async getAsset(id: number): Promise<HuduAsset> {
-    const response = await this.client.get<{ asset: HuduAsset }>(`/assets/${id}`);
-    return response.data.asset;
+  async getAsset(id: number, company_id?: number): Promise<HuduAsset> {
+    // Hudu API: prefer nested endpoint GET /companies/{company_id}/assets/{id}.
+    // When company_id is unknown, fall back to a filtered list lookup — the
+    // flat GET /assets/{id} endpoint returns HTTP 404 on modern API versions.
+    if (company_id) {
+      const response = await this.client.get<any>(`/companies/${company_id}/assets/${id}`);
+      return response.data?.asset ?? response.data;
+    }
+    const list = await this.client.get<{ assets: HuduAsset[] }>('/assets', { params: { id } });
+    const found = (list.data?.assets ?? []).find((a: any) => a.id === id);
+    if (found) return found;
+    throw new Error(`Asset ${id} not found (tip: pass company_id for direct lookup via /companies/{company_id}/assets/{id})`);
   }
 
   async createAsset(asset: Partial<HuduAsset>): Promise<HuduAsset> {
-    const response = await this.client.post<{ asset: HuduAsset }>('/assets', { asset });
-    return response.data.asset;
+    // Hudu API requires nested endpoint: POST /companies/{company_id}/assets.
+    // There is NO top-level /assets POST — calling it returns 404.
+    if (!asset.company_id) {
+      throw new Error('company_id é obrigatório para criar ativos — a API do Hudu usa endpoint aninhado /companies/{company_id}/assets');
+    }
+    const response = await this.client.post<any>(
+      `/companies/${asset.company_id}/assets`,
+      { asset }
+    );
+    return response.data?.asset ?? response.data;
   }
 
   async updateAsset(id: number, asset: Partial<HuduAsset>): Promise<HuduAsset> {
-    const response = await this.client.put<{ asset: HuduAsset }>(`/assets/${id}`, { asset });
-    return response.data.asset;
+    // Hudu API uses nested endpoint PUT /companies/{company_id}/assets/{id}.
+    // For backwards compatibility, try the flat endpoint first and fall back.
+    if (asset.company_id) {
+      const response = await this.client.put<any>(
+        `/companies/${asset.company_id}/assets/${id}`,
+        { asset }
+      );
+      return response.data?.asset ?? response.data;
+    }
+    const response = await this.client.put<any>(`/assets/${id}`, { asset });
+    return response.data?.asset ?? response.data;
   }
 
-  async deleteAsset(id: number): Promise<void> {
+  async deleteAsset(id: number, company_id?: number): Promise<void> {
+    // Prefer nested /companies/{company_id}/assets/{id} when company_id is
+    // known — the flat /assets/{id} DELETE often returns 404 or 401 on
+    // recent Hudu versions.
+    if (company_id) {
+      await this.client.delete(`/companies/${company_id}/assets/${id}`);
+      return;
+    }
     await this.client.delete(`/assets/${id}`);
   }
 
-  async archiveAsset(id: number): Promise<HuduAsset> {
-    const response = await this.client.put<{ asset: HuduAsset }>(`/assets/${id}/archive`);
-    return response.data.asset;
+  async archiveAsset(id: number, company_id?: number): Promise<HuduAsset> {
+    if (company_id) {
+      const response = await this.client.put<any>(`/companies/${company_id}/assets/${id}/archive`);
+      return response.data?.asset ?? response.data;
+    }
+    const response = await this.client.put<any>(`/assets/${id}/archive`);
+    return response.data?.asset ?? response.data;
   }
 
-  async unarchiveAsset(id: number): Promise<HuduAsset> {
-    const response = await this.client.put<{ asset: HuduAsset }>(`/assets/${id}/unarchive`);
-    return response.data.asset;
+  async unarchiveAsset(id: number, company_id?: number): Promise<HuduAsset> {
+    if (company_id) {
+      const response = await this.client.put<any>(`/companies/${company_id}/assets/${id}/unarchive`);
+      return response.data?.asset ?? response.data;
+    }
+    const response = await this.client.put<any>(`/assets/${id}/unarchive`);
+    return response.data?.asset ?? response.data;
   }
 
   // Asset Passwords
@@ -171,13 +212,13 @@ export class HuduClient {
   }
 
   async createAssetPassword(password: Partial<HuduAssetPassword>): Promise<HuduAssetPassword> {
-    const response = await this.client.post<{ asset_password: HuduAssetPassword }>('/asset_passwords', { asset_password: password });
-    return response.data.asset_password;
+    const response = await this.client.post<any>('/asset_passwords', { asset_password: password });
+    return response.data?.asset_password ?? response.data;
   }
 
   async updateAssetPassword(id: number, password: Partial<HuduAssetPassword>): Promise<HuduAssetPassword> {
-    const response = await this.client.put<{ asset_password: HuduAssetPassword }>(`/asset_passwords/${id}`, { asset_password: password });
-    return response.data.asset_password;
+    const response = await this.client.put<any>(`/asset_passwords/${id}`, { asset_password: password });
+    return response.data?.asset_password ?? response.data;
   }
 
   async deleteAssetPassword(id: number): Promise<void> {
@@ -213,13 +254,13 @@ export class HuduClient {
   }
 
   async createCompany(company: Partial<HuduCompany>): Promise<HuduCompany> {
-    const response = await this.client.post<{ company: HuduCompany }>('/companies', { company });
-    return response.data.company;
+    const response = await this.client.post<any>('/companies', { company });
+    return response.data?.company ?? response.data;
   }
 
   async updateCompany(id: number, company: Partial<HuduCompany>): Promise<HuduCompany> {
-    const response = await this.client.put<{ company: HuduCompany }>(`/companies/${id}`, { company });
-    return response.data.company;
+    const response = await this.client.put<any>(`/companies/${id}`, { company });
+    return response.data?.company ?? response.data;
   }
 
   async archiveCompany(id: number): Promise<HuduCompany> {
@@ -249,13 +290,13 @@ export class HuduClient {
   }
 
   async createAssetLayout(layout: Partial<HuduAssetLayout>): Promise<HuduAssetLayout> {
-    const response = await this.client.post<{ asset_layout: HuduAssetLayout }>('/asset_layouts', { asset_layout: layout });
-    return response.data.asset_layout;
+    const response = await this.client.post<any>('/asset_layouts', { asset_layout: layout });
+    return response.data?.asset_layout ?? response.data;
   }
 
   async updateAssetLayout(id: number, layout: Partial<HuduAssetLayout>): Promise<HuduAssetLayout> {
-    const response = await this.client.put<{ asset_layout: HuduAssetLayout }>(`/asset_layouts/${id}`, { asset_layout: layout });
-    return response.data.asset_layout;
+    const response = await this.client.put<any>(`/asset_layouts/${id}`, { asset_layout: layout });
+    return response.data?.asset_layout ?? response.data;
   }
 
   // Activity Logs
@@ -304,13 +345,13 @@ export class HuduClient {
   }
 
   async createFolder(folder: Partial<HuduFolder>): Promise<HuduFolder> {
-    const response = await this.client.post<{ folder: HuduFolder }>('/folders', { folder });
-    return response.data.folder;
+    const response = await this.client.post<any>('/folders', { folder });
+    return response.data?.folder ?? response.data;
   }
 
   async updateFolder(id: number, folder: Partial<HuduFolder>): Promise<HuduFolder> {
-    const response = await this.client.put<{ folder: HuduFolder }>(`/folders/${id}`, { folder });
-    return response.data.folder;
+    const response = await this.client.put<any>(`/folders/${id}`, { folder });
+    return response.data?.folder ?? response.data;
   }
 
   async deleteFolder(id: number): Promise<void> {
@@ -362,13 +403,15 @@ export class HuduClient {
   }
 
   async createProcedure(procedure: Partial<HuduProcedure>): Promise<HuduProcedure> {
-    const response = await this.client.post<{ procedure: HuduProcedure }>('/procedures', { procedure });
-    return response.data.procedure;
+    // Hudu OpenAPI: POST /procedures expects fields at the ROOT level, not
+    // wrapped in { procedure: {...} }. Wrapping caused persistent HTTP 422.
+    const response = await this.client.post<any>('/procedures', procedure);
+    return response.data?.procedure ?? response.data;
   }
 
   async updateProcedure(id: number, procedure: Partial<HuduProcedure>): Promise<HuduProcedure> {
-    const response = await this.client.put<{ procedure: HuduProcedure }>(`/procedures/${id}`, { procedure });
-    return response.data.procedure;
+    const response = await this.client.put<any>(`/procedures/${id}`, procedure);
+    return response.data?.procedure ?? response.data;
   }
 
   async deleteProcedure(id: number): Promise<void> {
@@ -405,13 +448,13 @@ export class HuduClient {
   }
 
   async createProcedureTask(task: Partial<HuduProcedureTask>): Promise<HuduProcedureTask> {
-    const response = await this.client.post<{ procedure_task: HuduProcedureTask }>('/procedure_tasks', { procedure_task: task });
-    return response.data.procedure_task;
+    const response = await this.client.post<any>('/procedure_tasks', { procedure_task: task });
+    return response.data?.procedure_task ?? response.data;
   }
 
   async updateProcedureTask(id: number, task: Partial<HuduProcedureTask>): Promise<HuduProcedureTask> {
-    const response = await this.client.put<{ procedure_task: HuduProcedureTask }>(`/procedure_tasks/${id}`, { procedure_task: task });
-    return response.data.procedure_task;
+    const response = await this.client.put<any>(`/procedure_tasks/${id}`, { procedure_task: task });
+    return response.data?.procedure_task ?? response.data;
   }
 
   async deleteProcedureTask(id: number): Promise<void> {
@@ -435,13 +478,13 @@ export class HuduClient {
   }
 
   async createNetwork(network: Partial<HuduNetwork>): Promise<HuduNetwork> {
-    const response = await this.client.post<{ network: HuduNetwork }>('/networks', { network });
-    return response.data.network;
+    const response = await this.client.post<any>('/networks', { network });
+    return response.data?.network ?? response.data;
   }
 
   async updateNetwork(id: number, network: Partial<HuduNetwork>): Promise<HuduNetwork> {
-    const response = await this.client.put<{ network: HuduNetwork }>(`/networks/${id}`, { network });
-    return response.data.network;
+    const response = await this.client.put<any>(`/networks/${id}`, { network });
+    return response.data?.network ?? response.data;
   }
 
   async deleteNetwork(id: number): Promise<void> {
@@ -522,13 +565,14 @@ export class HuduClient {
   }
 
   async createWebsite(website: Partial<HuduWebsite>): Promise<HuduWebsite> {
-    const response = await this.client.post<{ website: HuduWebsite }>('/websites', { website });
-    return response.data.website;
+    // Hudu's /websites API returns the raw object directly (not wrapped).
+    const response = await this.client.post<any>('/websites', { website });
+    return response.data?.website || response.data;
   }
 
   async updateWebsite(id: number, website: Partial<HuduWebsite>): Promise<HuduWebsite> {
-    const response = await this.client.put<{ website: HuduWebsite }>(`/websites/${id}`, { website });
-    return response.data.website;
+    const response = await this.client.put<any>(`/websites/${id}`, { website });
+    return response.data?.website || response.data;
   }
 
   async deleteWebsite(id: number): Promise<void> {
@@ -551,13 +595,13 @@ export class HuduClient {
   }
 
   async createVlan(vlan: Partial<HuduVlan>): Promise<HuduVlan> {
-    const response = await this.client.post<{ vlan: HuduVlan }>('/vlans', { vlan });
-    return response.data.vlan;
+    const response = await this.client.post<any>('/vlans', { vlan });
+    return response.data?.vlan ?? response.data;
   }
 
   async updateVlan(id: number, vlan: Partial<HuduVlan>): Promise<HuduVlan> {
-    const response = await this.client.put<{ vlan: HuduVlan }>(`/vlans/${id}`, { vlan });
-    return response.data.vlan;
+    const response = await this.client.put<any>(`/vlans/${id}`, { vlan });
+    return response.data?.vlan ?? response.data;
   }
 
   async deleteVlan(id: number): Promise<void> {
@@ -580,13 +624,13 @@ export class HuduClient {
   }
 
   async createVlanZone(zone: Partial<HuduVlanZone>): Promise<HuduVlanZone> {
-    const response = await this.client.post<{ vlan_zone: HuduVlanZone }>('/vlan_zones', { vlan_zone: zone });
-    return response.data.vlan_zone;
+    const response = await this.client.post<any>('/vlan_zones', { vlan_zone: zone });
+    return response.data?.vlan_zone ?? response.data;
   }
 
   async updateVlanZone(id: number, zone: Partial<HuduVlanZone>): Promise<HuduVlanZone> {
-    const response = await this.client.put<{ vlan_zone: HuduVlanZone }>(`/vlan_zones/${id}`, { vlan_zone: zone });
-    return response.data.vlan_zone;
+    const response = await this.client.put<any>(`/vlan_zones/${id}`, { vlan_zone: zone });
+    return response.data?.vlan_zone ?? response.data;
   }
 
   async deleteVlanZone(id: number): Promise<void> {
@@ -609,13 +653,13 @@ export class HuduClient {
   }
 
   async createIpAddress(ipAddress: Partial<HuduIpAddress>): Promise<HuduIpAddress> {
-    const response = await this.client.post<{ ip_address: HuduIpAddress }>('/ip_addresses', { ip_address: ipAddress });
-    return response.data.ip_address;
+    const response = await this.client.post<any>('/ip_addresses', { ip_address: ipAddress });
+    return response.data?.ip_address ?? response.data;
   }
 
   async updateIpAddress(id: number, ipAddress: Partial<HuduIpAddress>): Promise<HuduIpAddress> {
-    const response = await this.client.put<{ ip_address: HuduIpAddress }>(`/ip_addresses/${id}`, { ip_address: ipAddress });
-    return response.data.ip_address;
+    const response = await this.client.put<any>(`/ip_addresses/${id}`, { ip_address: ipAddress });
+    return response.data?.ip_address ?? response.data;
   }
 
   async deleteIpAddress(id: number): Promise<void> {
@@ -640,13 +684,13 @@ export class HuduClient {
   }
 
   async createRelation(relation: Partial<HuduRelation>): Promise<HuduRelation> {
-    const response = await this.client.post<{ relation: HuduRelation }>('/relations', { relation });
-    return response.data.relation;
+    const response = await this.client.post<any>('/relations', { relation });
+    return response.data?.relation ?? response.data;
   }
 
   async updateRelation(id: number, relation: Partial<HuduRelation>): Promise<HuduRelation> {
-    const response = await this.client.put<{ relation: HuduRelation }>(`/relations/${id}`, { relation });
-    return response.data.relation;
+    const response = await this.client.put<any>(`/relations/${id}`, { relation });
+    return response.data?.relation ?? response.data;
   }
 
   async deleteRelation(id: number): Promise<void> {
@@ -815,13 +859,13 @@ export class HuduClient {
   }
 
   async createRackStorage(rackStorage: Partial<HuduRackStorage>): Promise<HuduRackStorage> {
-    const response = await this.client.post<{ rack_storage: HuduRackStorage }>('/rack_storages', { rack_storage: rackStorage });
-    return response.data.rack_storage;
+    const response = await this.client.post<any>('/rack_storages', { rack_storage: rackStorage });
+    return response.data?.rack_storage ?? response.data;
   }
 
   async updateRackStorage(id: number, rackStorage: Partial<HuduRackStorage>): Promise<HuduRackStorage> {
-    const response = await this.client.put<{ rack_storage: HuduRackStorage }>(`/rack_storages/${id}`, { rack_storage: rackStorage });
-    return response.data.rack_storage;
+    const response = await this.client.put<any>(`/rack_storages/${id}`, { rack_storage: rackStorage });
+    return response.data?.rack_storage ?? response.data;
   }
 
   async deleteRackStorage(id: number): Promise<void> {
@@ -843,13 +887,13 @@ export class HuduClient {
   }
 
   async createRackStorageItem(item: Partial<HuduRackStorageItem>): Promise<HuduRackStorageItem> {
-    const response = await this.client.post<{ rack_storage_item: HuduRackStorageItem }>('/rack_storage_items', { rack_storage_item: item });
-    return response.data.rack_storage_item;
+    const response = await this.client.post<any>('/rack_storage_items', { rack_storage_item: item });
+    return response.data?.rack_storage_item ?? response.data;
   }
 
   async updateRackStorageItem(id: number, item: Partial<HuduRackStorageItem>): Promise<HuduRackStorageItem> {
-    const response = await this.client.put<{ rack_storage_item: HuduRackStorageItem }>(`/rack_storage_items/${id}`, { rack_storage_item: item });
-    return response.data.rack_storage_item;
+    const response = await this.client.put<any>(`/rack_storage_items/${id}`, { rack_storage_item: item });
+    return response.data?.rack_storage_item ?? response.data;
   }
 
   async deleteRackStorageItem(id: number): Promise<void> {
@@ -884,18 +928,26 @@ export class HuduClient {
     await this.client.delete(`/public_photos/${id}`);
   }
 
-  // Cards - CORRIGIDO: pode retornar array direto
+  // @deprecated /cards/jump and /cards/lookup are integration deep-link endpoints
+  // in the Hudu API (they expect integration_slug/integration_type/integration_id
+  // from external systems like Syncro/ConnectWise), NOT name-based search.
+  // Calling them with `{ name }` returns HTTP 500 or 404. Kept for backwards
+  // compatibility with any external code; the MCP navigation tool now uses the
+  // regular /companies, /assets and /articles search endpoints.
   async cardJump(params: {
-    name: string;
-    company_id?: number;
+    integration_type?: string;
+    integration_slug?: string;
+    integration_id?: string;
+    integration_identifier?: string;
   }): Promise<HuduCard[]> {
     const response = await this.client.get<HuduCard[] | { cards: HuduCard[] }>('/cards/jump', { params });
     return extractArrayResponse(response.data, 'cards');
   }
 
   async cardLookup(params: {
-    name: string;
-    company_id?: number;
+    integration_slug: string;
+    integration_id?: string;
+    integration_identifier?: string;
   }): Promise<HuduCard[]> {
     const response = await this.client.get<HuduCard[] | { cards: HuduCard[] }>('/cards/lookup', { params });
     return extractArrayResponse(response.data, 'cards');
@@ -936,9 +988,12 @@ export class HuduClient {
     return response.data.asset;
   }
 
-  // Company Jump - CORRIGIDO: pode retornar array direto
+  // @deprecated /companies/jump is an integration deep-link endpoint
+  // (requires `integration_slug`). Do NOT use it for name lookups — the MCP
+  // navigation tool uses `getCompanies({ name })` instead. Kept only for
+  // completeness against the Hudu OpenAPI surface.
   async companyJump(params: {
-    name: string;
+    integration_slug: string;
   }): Promise<HuduCompany[]> {
     const response = await this.client.get<HuduCompany[] | { companies: HuduCompany[] }>('/companies/jump', { params });
     return extractArrayResponse(response.data, 'companies');

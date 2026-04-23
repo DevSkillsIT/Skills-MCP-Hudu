@@ -1,6 +1,6 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, commonProperties } from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 // Asset layouts manage tool (CRUD without delete)
@@ -42,10 +42,22 @@ export const assetLayoutsTool: Tool = {
 };
 
 // Asset layouts query tool
+// NOTE: Hudu API /asset_layouts does NOT accept page_size (verified against
+// hudu.json OpenAPI spec). We omit it from the schema to avoid misleading
+// the LLM — only `page`, `name`, `slug`, `updated_at` are forwarded.
 export const assetLayoutsQueryTool: Tool = {
   name: 'hudu_search_asset_layout_templates',
-  description: 'Layouts, templates e modelos de ativos no Hudu — busca e filtragem de estruturas de campos personalizados, tipos de equipamento e categorias por nome. Use quando precisar listar ou localizar layouts disponiveis no Hudu sem saber o ID exato. Consulta somente leitura. Retorna lista paginada em Markdown com dados resumidos dos layouts encontrados.',
-  inputSchema: createQuerySchema({}),
+  description: 'Layouts, templates e modelos de ativos no Hudu — busca e filtragem de estruturas de campos personalizados, tipos de equipamento e categorias por nome. Use quando precisar listar ou localizar layouts disponiveis no Hudu sem saber o ID exato. Consulta somente leitura. Nota: este endpoint do Hudu não suporta page_size. Retorna lista paginada em Markdown.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      search: { type: 'string', description: 'Texto de busca para filtrar resultados' },
+      name: { type: 'string', description: 'Filtrar por nome exato ou parcial' },
+      slug: { type: 'string', description: 'Filtrar por slug do layout' },
+      updated_at: { type: 'string', description: 'Filtrar por data de atualização (formato ISO 8601 AAAA-MM-DD)' },
+      page: { type: 'number', minimum: 1, default: 1, description: 'Número da página para paginação' }
+    }
+  },
   annotations: {
     readOnlyHint: true,
     destructiveHint: false,

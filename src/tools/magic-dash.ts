@@ -14,13 +14,14 @@ export const magicDashTool: Tool = {
       id: commonProperties.id,
       fields: createFieldsSchema({
         title: { type: 'string', description: 'Título do widget no dashboard (obrigatório para criação)' },
-        company_name: { type: 'string', description: 'Nome exato da empresa associada ao widget (obrigatório para criação)' },
+        company_name: { type: 'string', description: 'Nome EXATO da empresa associada ao widget, ex: "Skills IT Palmas" (obrigatório para criação — é o nome, não o ID)' },
         content_link: { type: 'string', description: 'URL de link para o conteúdo relacionado ao widget' },
-        content: { type: 'string', description: 'Conteúdo textual exibido no widget do dashboard' },
-        icon: { type: 'string', description: 'Ícone a ser exibido no widget (ex: nome de ícone FontAwesome)' },
-        shade: { type: 'string', description: 'Cor ou tonalidade do widget (ex: success, warning, danger, info)' },
-        message: { type: 'string', description: 'Mensagem de status ou informação adicional exibida no widget' }
-      })
+        content: { type: 'string', description: 'Conteúdo textual (HTML/Markdown) exibido no widget' },
+        icon: { type: 'string', description: 'Classe FontAwesome do ícone (ex: fa-server)' },
+        image_url: { type: 'string', description: 'URL de imagem a exibir no widget (alternativa ao icon)' },
+        shade: { type: 'string', enum: ['success', 'warning', 'danger', 'info', 'primary', 'secondary'], description: 'Cor/tonalidade do widget. Valores: success, warning, danger, info, primary, secondary' },
+        message: { type: 'string', description: 'Mensagem de status exibida no widget' }
+      }, ['title', 'company_name'])
     },
     required: ['action']
   },

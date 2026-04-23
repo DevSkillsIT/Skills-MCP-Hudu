@@ -16,8 +16,12 @@ export const assetsTool: Tool = {
         asset_type: { type: 'string', description: 'Tipo do ativo (ex: servidor, estação, switch)' },
         company_id: { ...commonProperties.company_id, description: 'ID da empresa associada (obrigatório para criação)' },
         asset_layout_id: { type: 'number', description: 'ID do layout de ativo (obrigatório para criação)' },
-        fields: { type: 'array', items: {}, description: 'Valores dos campos personalizados conforme o layout do ativo' }
-      })
+        primary_serial: { type: 'string', description: 'Número de série principal do ativo (opcional)' },
+        primary_mail: { type: 'string', description: 'E-mail principal associado ao ativo (opcional)' },
+        primary_model: { type: 'string', description: 'Modelo do ativo (opcional)' },
+        primary_manufacturer: { type: 'string', description: 'Fabricante do ativo (opcional)' },
+        custom_fields: { type: 'array', items: {}, description: 'Valores dos campos personalizados conforme o layout do ativo (array de objetos label/value)' }
+      }, ['name', 'company_id', 'asset_layout_id'])
     },
     required: ['action']
   },
@@ -61,7 +65,9 @@ export async function executeAssetsTool(args: any, client: HuduClient): Promise<
         if (!id) {
           return createErrorResponse('Asset ID is required for get operation');
         }
-        const asset = await client.getAsset(id);
+        // Pass company_id when provided so the client can use the
+        // nested /companies/{company_id}/assets/{id} endpoint directly.
+        const asset = await client.getAsset(id, fields?.company_id);
         return createSuccessResponse(asset);
         
       case 'update':
@@ -75,21 +81,22 @@ export async function executeAssetsTool(args: any, client: HuduClient): Promise<
         if (!id) {
           return createErrorResponse('Asset ID is required for delete operation');
         }
-        await client.deleteAsset(id);
+        // Pass company_id (from fields) to reach the nested endpoint.
+        await client.deleteAsset(id, fields?.company_id);
         return createSuccessResponse(null, 'Asset deleted successfully');
-        
+
       case 'archive':
         if (!id) {
           return createErrorResponse('Asset ID is required for archive operation');
         }
-        await client.archiveAsset(id);
+        await client.archiveAsset(id, fields?.company_id);
         return createSuccessResponse(null, 'Asset archived successfully');
-        
+
       case 'unarchive':
         if (!id) {
           return createErrorResponse('Asset ID is required for unarchive operation');
         }
-        await client.unarchiveAsset(id);
+        await client.unarchiveAsset(id, fields?.company_id);
         return createSuccessResponse(null, 'Asset unarchived successfully');
         
       default:

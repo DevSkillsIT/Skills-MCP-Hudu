@@ -73,8 +73,17 @@ export async function executeAdminTool(args: any, client: HuduClient): Promise<T
           page: args.page,
           page_size: args.page_size
         };
-        const s3Exports = await client.getS3Exports(s3ExportFilters);
-        return createSuccessResponse(s3Exports, 'S3 exports retrieved successfully');
+        try {
+          const s3Exports = await client.getS3Exports(s3ExportFilters);
+          return createSuccessResponse(s3Exports, 'S3 exports retrieved successfully');
+        } catch (s3Err: any) {
+          // Hudu returns HTTP 404 when S3 export integration is not enabled
+          // for the instance. Treat as empty list rather than a hard failure.
+          if (s3Err?.response?.status === 404 || /404/.test(String(s3Err?.message))) {
+            return createSuccessResponse([], 'S3 exports não configurado nesta instância do Hudu.');
+          }
+          throw s3Err;
+        }
         
       case 'get_expirations':
         const expirationFilters = {

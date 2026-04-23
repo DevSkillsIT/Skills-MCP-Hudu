@@ -71,5 +71,8 @@ temp/
 # Local configuration
 .claude/settings.local.json
 
+# Claude Code agent runtime artifacts (per-subagent memory)
+.claude/agent-memory/
+
 # Test artifacts
 test-results/

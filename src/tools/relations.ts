@@ -13,13 +13,13 @@ export const relationsTool: Tool = {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar nova relação), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Nome ou descrição da relação' },
-        description: { type: 'string', description: 'Descrição detalhada do vínculo entre as entidades' },
-        fromable_type: { type: 'string', description: 'Tipo da entidade de origem (obrigatório para criação, ex: Asset, Company, Article)' },
+        description: { type: 'string', description: 'Descrição do vínculo entre as entidades' },
+        fromable_type: { type: 'string', enum: ['Asset', 'Company', 'Article', 'Procedure', 'Website', 'Network', 'IpAddress', 'Vlan', 'VlanZone', 'AssetPassword'], description: 'Tipo da entidade de origem (obrigatório para criação). Valores: Asset, Company, Article, Procedure, Website, Network, IpAddress, Vlan, VlanZone, AssetPassword' },
         fromable_id: { type: 'number', description: 'ID da entidade de origem (obrigatório para criação)' },
-        toable_type: { type: 'string', description: 'Tipo da entidade de destino (obrigatório para criação, ex: Asset, Company, Article)' },
-        toable_id: { type: 'number', description: 'ID da entidade de destino (obrigatório para criação)' }
-      })
+        toable_type: { type: 'string', enum: ['Asset', 'Company', 'Article', 'Procedure', 'Website', 'Network', 'IpAddress', 'Vlan', 'VlanZone', 'AssetPassword'], description: 'Tipo da entidade de destino (obrigatório para criação)' },
+        toable_id: { type: 'number', description: 'ID da entidade de destino (obrigatório para criação)' },
+        is_inverse: { type: 'boolean', description: 'Se true, cria também a relação no sentido inverso automaticamente' }
+      }, ['fromable_type', 'fromable_id', 'toable_type', 'toable_id'])
     },
     required: ['action']
   },

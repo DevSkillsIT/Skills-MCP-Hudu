@@ -27,6 +27,22 @@ import {
   formatRelationDetail,
   formatMagicDashList,
   formatMagicDashDetail,
+  formatApiInfo,
+  formatExportsList,
+  formatGlobalSearchResults,
+  formatNavigationResult,
+  formatProcedureTaskList,
+  formatProcedureTaskDetail,
+  formatVlanZoneList,
+  formatVlanZoneDetail,
+  formatFolderDetail,
+  formatNetworkDetail,
+  formatIpAddressDetail,
+  formatVlanDetail,
+  formatUploadDetail,
+  formatRackStorageDetail,
+  formatRackStorageItemDetail,
+  formatPublicPhotoDetail,
   toPagedResponse,
 } from './markdown.js';
 
@@ -84,19 +100,22 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
   'hudu_search_workflow_procedures': (data, args) =>
     formatProcedureList(toPagedResponse(data, args?.page, args?.page_size)),
 
-  // Procedure Tasks - no dedicated formatter, fallback to JSON
-  'hudu_manage_procedure_task_items': (data) => {
+  // Procedure Tasks
+  'hudu_manage_procedure_task_items': (data, args) => {
     if (!data) return 'Operação realizada com sucesso.';
-    return JSON.stringify(data, null, 2);
+    if (Array.isArray(data))
+      return formatProcedureTaskList(toPagedResponse(data, args?.page, args?.page_size));
+    return formatProcedureTaskDetail(data);
   },
-  'hudu_search_procedure_task_items': (data) => JSON.stringify(data, null, 2),
+  'hudu_search_procedure_task_items': (data, args) =>
+    formatProcedureTaskList(toPagedResponse(data, args?.page, args?.page_size)),
 
   // Folders
   'hudu_manage_kb_article_folders': (data, args) => {
     if (!data) return 'Operação realizada com sucesso.';
     if (Array.isArray(data))
       return formatFolderList(toPagedResponse(data, args?.page, args?.page_size));
-    return JSON.stringify(data, null, 2);
+    return formatFolderDetail(data);
   },
   'hudu_search_kb_article_folders': (data, args) =>
     formatFolderList(toPagedResponse(data, args?.page, args?.page_size)),
@@ -106,7 +125,7 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
     if (!data) return 'Operação realizada com sucesso.';
     if (Array.isArray(data))
       return formatNetworkList(toPagedResponse(data, args?.page, args?.page_size));
-    return JSON.stringify(data, null, 2);
+    return formatNetworkDetail(data);
   },
   'hudu_search_network_documentation': (data, args) =>
     formatNetworkList(toPagedResponse(data, args?.page, args?.page_size)),
@@ -116,24 +135,27 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
     if (!data) return 'Operação realizada com sucesso.';
     if (Array.isArray(data))
       return formatVlanList(toPagedResponse(data, args?.page, args?.page_size));
-    return JSON.stringify(data, null, 2);
+    return formatVlanDetail(data);
   },
   'hudu_search_network_vlan_records': (data, args) =>
     formatVlanList(toPagedResponse(data, args?.page, args?.page_size)),
 
-  // VLAN Zones - no dedicated formatter
-  'hudu_manage_network_vlan_zones': (data) => {
+  // VLAN Zones
+  'hudu_manage_network_vlan_zones': (data, args) => {
     if (!data) return 'Operação realizada com sucesso.';
-    return JSON.stringify(data, null, 2);
+    if (Array.isArray(data))
+      return formatVlanZoneList(toPagedResponse(data, args?.page, args?.page_size));
+    return formatVlanZoneDetail(data);
   },
-  'hudu_search_network_vlan_zones': (data) => JSON.stringify(data, null, 2),
+  'hudu_search_network_vlan_zones': (data, args) =>
+    formatVlanZoneList(toPagedResponse(data, args?.page, args?.page_size)),
 
   // IP Addresses
   'hudu_manage_ip_address_records': (data, args) => {
     if (!data) return 'Operação realizada com sucesso.';
     if (Array.isArray(data))
       return formatIpAddressList(toPagedResponse(data, args?.page, args?.page_size));
-    return JSON.stringify(data, null, 2);
+    return formatIpAddressDetail(data);
   },
   'hudu_search_ip_address_records': (data, args) =>
     formatIpAddressList(toPagedResponse(data, args?.page, args?.page_size)),
@@ -143,7 +165,7 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
     if (!data) return 'Operação realizada com sucesso.';
     if (Array.isArray(data))
       return formatUploadList(toPagedResponse(data, args?.page, args?.page_size));
-    return JSON.stringify(data, null, 2);
+    return formatUploadDetail(data);
   },
   'hudu_search_file_upload_records': (data, args) =>
     formatUploadList(toPagedResponse(data, args?.page, args?.page_size)),
@@ -153,7 +175,7 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
     if (!data) return 'Operação realizada com sucesso.';
     if (Array.isArray(data))
       return formatRackStorageList(toPagedResponse(data, args?.page, args?.page_size));
-    return JSON.stringify(data, null, 2);
+    return formatRackStorageDetail(data);
   },
   'hudu_search_rack_storage_locations': (data, args) =>
     formatRackStorageList(toPagedResponse(data, args?.page, args?.page_size)),
@@ -163,7 +185,7 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
     if (!data) return 'Operação realizada com sucesso.';
     if (Array.isArray(data))
       return formatRackStorageItemList(toPagedResponse(data, args?.page, args?.page_size));
-    return JSON.stringify(data, null, 2);
+    return formatRackStorageItemDetail(data);
   },
   'hudu_search_rack_storage_items': (data, args) =>
     formatRackStorageItemList(toPagedResponse(data, args?.page, args?.page_size)),
@@ -173,19 +195,42 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
     if (!data) return 'Operação realizada com sucesso.';
     if (Array.isArray(data))
       return formatPublicPhotoList(toPagedResponse(data, args?.page, args?.page_size));
-    return JSON.stringify(data, null, 2);
+    return formatPublicPhotoDetail(data);
   },
   'hudu_search_public_photo_gallery': (data, args) =>
     formatPublicPhotoList(toPagedResponse(data, args?.page, args?.page_size)),
 
-  // Admin - variable structure
-  'hudu_admin_instance_operations': (data) => JSON.stringify(data, null, 2),
+  // Admin — dispatch per action because each sub-command returns a different
+  // shape (api_info object, activity_logs array, exports array, expirations array).
+  // Handlers tolerate undefined/null so empty API payloads produce a friendly
+  // "Nenhum X encontrado." instead of leaking the raw success message.
+  'hudu_admin_instance_operations': (data, args) => {
+    const action = args?.action;
+    const arr = Array.isArray(data) ? data : [];
+    switch (action) {
+      case 'get_api_info':
+        return data ? formatApiInfo(data) : 'Informações da API indisponíveis.';
+      case 'get_activity_logs':
+        return formatActivityLogList(toPagedResponse(arr, args?.page, args?.page_size));
+      case 'get_exports':
+        return formatExportsList(data, 'standard');
+      case 'get_s3_exports':
+        return formatExportsList(data, 's3');
+      case 'get_expirations':
+        return formatExpirationList(toPagedResponse(arr, args?.page, args?.page_size));
+      case 'delete_activity_logs':
+        return 'Logs de atividade excluídos com sucesso.';
+      default:
+        return data ? JSON.stringify(data, null, 2) : 'Operação realizada com sucesso.';
+    }
+  },
 
-  // Global Search - multi-key object
-  'hudu_search_all_resource_types': (data) => JSON.stringify(data, null, 2),
+  // Global Search — multi-key object aggregated across articles/assets/passwords/companies.
+  'hudu_search_all_resource_types': (data, args) =>
+    formatGlobalSearchResults(data, args?.query),
 
-  // Navigation
-  'hudu_navigate_to_resource_by_name': (data) => JSON.stringify(data, null, 2),
+  // Navigation — structured by executeNavigationTool as { action, query, results }.
+  'hudu_navigate_to_resource_by_name': (data) => formatNavigationResult(data),
 
   // Expirations (Phase 3 tools)
   'hudu_search_expiration_tracking': (data, args) =>
@@ -256,8 +301,12 @@ export function formatToolResponse(toolName: string, data: any, args: any): stri
     data = [];
   }
 
-  if (data === null || data === undefined) return '';
   const formatter = TOOL_FORMATTERS[toolName];
+  // Let the formatter decide what to render for null/undefined — the admin
+  // tool, for example, maps {action: 'get_exports', data: undefined} to
+  // "Nenhuma exportação encontrada." instead of leaking the raw API message.
   if (formatter) return formatter(data, args ?? {});
+
+  if (data === null || data === undefined) return '';
   return JSON.stringify(data, null, 2);
 }

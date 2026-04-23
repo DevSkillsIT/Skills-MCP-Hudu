@@ -1,6 +1,6 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, basicActions, commonProperties } from './schema-utils.js';
+import { createActionSchema, createQuerySchema, basicActions, commonProperties } from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 /**
@@ -21,22 +21,33 @@ function filterNetworkQueryParams(args: any): any {
 
 
 // Networks resource tool
+// OpenAPI: POST /networks requires { name, address, company_id }.
+// Address uses CIDR notation (e.g. "192.168.1.0/24").
 export const networksTool: Tool = {
   name: 'hudu_manage_network_documentation',
-  description: 'Redes, sub-redes e segmentos de infraestrutura documentados no Hudu — operações CRUD para registros de rede. Use quando precisar cadastrar, editar ou excluir redes e seus ranges de IP no Hudu. Requer name, network_type, network e mask. Aceita action (create, get, update, delete). Retorna Markdown da rede.',
+  description: 'Redes, sub-redes e segmentos de infraestrutura documentados no Hudu — operações CRUD para registros de rede. Use quando precisar cadastrar, editar ou excluir redes e seus ranges de IP no Hudu. Para criação, obrigatório: name, address (CIDR), company_id. Aceita action (create, get, update, delete). Retorna Markdown da rede.',
   inputSchema: {
     type: 'object',
     properties: {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
-      fields: createFieldsSchema({
-        name: { type: 'string', description: 'Nome da rede (obrigatório para criação)' },
-        network_type: { type: 'string', description: 'Tipo da rede (obrigatório para criação)' },
-        network: { type: 'string', description: 'Endereço de rede, ex: 192.168.1.0 (obrigatório para criação)' },
-        mask: { type: 'string', description: 'Máscara de rede, ex: 255.255.255.0 (obrigatório para criação)' },
-        gateway: { type: 'string', description: 'Endereço do gateway padrão da rede' },
-        company_id: commonProperties.company_id
-      })
+      fields: {
+        type: 'object',
+        description: 'Dados para operações de criação ou atualização',
+        properties: {
+          name: { type: 'string', description: 'Nome da rede (obrigatório para criação)' },
+          address: { type: 'string', description: 'Endereço em notação CIDR, ex: 192.168.1.0/24 (obrigatório para criação)' },
+          company_id: { type: 'number', description: 'ID da empresa proprietária da rede (obrigatório para criação)' },
+          network_type: { type: 'number', description: 'Tipo de rede (inteiro conforme API Hudu: 0 = IPv4, 1 = IPv6)' },
+          description: { type: 'string', description: 'Descrição breve da rede' },
+          notes: { type: 'string', description: 'Observações adicionais sobre a rede' },
+          location_id: { type: 'number', description: 'ID da localização física associada' },
+          vlan_id: { type: 'number', description: 'ID numérico da VLAN associada a esta rede' },
+          status_list_item_id: { type: 'number', description: 'ID do item de status da rede' },
+          role_list_item_id: { type: 'number', description: 'ID do item de papel/role da rede' }
+        },
+        required: ['name', 'address', 'company_id']
+      }
     },
     required: ['action']
   },
@@ -62,19 +73,31 @@ export const networksQueryTool: Tool = {
 };
 
 // VLANs resource tool
+// OpenAPI: POST /vlans requires { name, vlan_id, company_id }.
+// `vlan_id` is the numeric 802.1Q tag (1-4094), NOT a database row ID.
 export const vlansTool: Tool = {
   name: 'hudu_manage_network_vlan_records',
-  description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — operações CRUD para registros de VLAN. Use quando precisar cadastrar, editar ou excluir VLANs associadas a redes no Hudu. Requer name e vid (VLAN ID numérico). Aceita action (create, get, update, delete). Retorna Markdown da VLAN.',
+  description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — operações CRUD para registros de VLAN. Use quando precisar cadastrar, editar ou excluir VLANs no Hudu. Para criação, obrigatório: name, vlan_id (tag numérica 1-4094), company_id. Aceita action (create, get, update, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
-      fields: createFieldsSchema({
-        name: { type: 'string', description: 'Nome da VLAN (obrigatório para criação)' },
-        vid: { type: 'number', description: 'Número identificador da VLAN (obrigatório para criação)' },
-        network_id: { type: 'number', description: 'ID da rede associada à VLAN' }
-      })
+      fields: {
+        type: 'object',
+        description: 'Dados para operações de criação ou atualização',
+        properties: {
+          name: { type: 'string', description: 'Nome da VLAN (obrigatório para criação)' },
+          vlan_id: { type: 'number', minimum: 1, maximum: 4094, description: 'Tag numérica da VLAN, 1-4094 (obrigatório para criação, conforme 802.1Q)' },
+          company_id: { type: 'number', description: 'ID da empresa proprietária (obrigatório para criação)' },
+          description: { type: 'string', description: 'Descrição breve da VLAN' },
+          notes: { type: 'string', description: 'Observações em texto rico' },
+          vlan_zone_id: { type: 'number', description: 'ID da zona de VLAN associada (opcional)' },
+          status_list_item_id: { type: 'number', description: 'ID do item de status' },
+          role_list_item_id: { type: 'number', description: 'ID do item de papel/role' }
+        },
+        required: ['name', 'vlan_id', 'company_id']
+      }
     },
     required: ['action']
   },
@@ -100,19 +123,28 @@ export const vlansQueryTool: Tool = {
 };
 
 // VLAN Zones resource tool
+// OpenAPI: POST /vlan_zones requires { name, vlan_id_ranges, company_id }.
+// `vlan_id_ranges` is a comma-separated list of ranges (e.g. "100-500,1000-1500").
 export const vlanZonesTool: Tool = {
   name: 'hudu_manage_network_vlan_zones',
-  description: 'Zonas de VLAN, perímetros e agrupamentos lógicos de segmentação no Hudu — operações CRUD completas. Use quando precisar criar, editar ou excluir zonas para organizar VLANs no Hudu. Aceita action (create, get, update, delete) e campos como nome. Retorna Markdown da zona de VLAN processada.',
+  description: 'Zonas de VLAN, perímetros e agrupamentos lógicos de segmentação no Hudu — operações CRUD completas. Use quando precisar criar, editar ou excluir zonas para organizar VLANs no Hudu. Para criação, obrigatório: name, vlan_id_ranges (ranges no formato "100-500,1000-1500"), company_id. Aceita action (create, get, update, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
-      fields: createFieldsSchema({
-        name: { type: 'string', description: 'Nome da zona de VLAN (obrigatório para criação)' },
-        description: commonProperties.description,
-        company_id: commonProperties.company_id
-      })
+      fields: {
+        type: 'object',
+        description: 'Dados para operações de criação ou atualização',
+        properties: {
+          name: { type: 'string', description: 'Nome da zona de VLAN (obrigatório para criação)' },
+          vlan_id_ranges: { type: 'string', description: 'Lista de ranges separados por vírgula, ex: "100-500,1000-1500" (obrigatório para criação; cada range dentro de 1-4094)' },
+          company_id: { type: 'number', description: 'ID da empresa proprietária (obrigatório para criação)' },
+          description: { type: 'string', description: 'Descrição breve da zona' },
+          archived: { type: 'boolean', description: 'true para arquivar a zona, false para ativa' }
+        },
+        required: ['name', 'vlan_id_ranges', 'company_id']
+      }
     },
     required: ['action']
   },
@@ -138,19 +170,33 @@ export const vlanZonesQueryTool: Tool = {
 };
 
 // IP Addresses resource tool
+// OpenAPI: POST /ip_addresses — no required fields in spec, but `address`
+// and one of (network_id OR company_id) are needed to create a meaningful
+// record. The real field for hostname is `fqdn`, NOT `hostname`.
 export const ipAddressesTool: Tool = {
   name: 'hudu_manage_ip_address_records',
-  description: 'Endereços IP, atribuições e reservas de rede documentados no Hudu — operações CRUD para registros de IP. Use quando precisar cadastrar, editar ou excluir IPs associados a redes no Hudu. Requer campo address para criação. Aceita action (create, get, update, delete). Retorna Markdown do endereço IP.',
+  description: 'Endereços IP, atribuições e reservas de rede documentados no Hudu — operações CRUD para registros de IP. Use quando precisar cadastrar, editar ou excluir IPs no Hudu. Para criação, informar address e pelo menos network_id ou company_id. Aceita action (create, get, update, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
-      fields: createFieldsSchema({
-        address: { type: 'string', description: 'Endereço IP, ex: 192.168.1.10 (obrigatório para criação)' },
-        hostname: { type: 'string', description: 'Nome do host associado ao endereço IP' },
-        network_id: { type: 'number', description: 'ID da rede à qual o IP pertence' }
-      })
+      fields: {
+        type: 'object',
+        description: 'Dados para operações de criação ou atualização',
+        properties: {
+          address: { type: 'string', description: 'Endereço IP, ex: 192.168.1.10 (obrigatório para criação)' },
+          status: { type: 'string', enum: ['unassigned', 'assigned', 'reserved', 'deprecated', 'dhcp', 'slaac'], description: 'Status do IP. Valores: unassigned, assigned, reserved, deprecated, dhcp, slaac' },
+          fqdn: { type: 'string', description: 'Fully Qualified Domain Name associado ao IP' },
+          description: { type: 'string', description: 'Descrição breve do IP' },
+          notes: { type: 'string', description: 'Observações adicionais' },
+          asset_id: { type: 'number', description: 'ID do ativo associado ao IP' },
+          network_id: { type: 'number', description: 'ID da rede à qual o IP pertence' },
+          company_id: { type: 'number', description: 'ID da empresa proprietária' },
+          skip_dns_validation: { type: 'boolean', description: 'Se true, pula validação de DNS reverso' }
+        },
+        required: ['address']
+      }
     },
     required: ['action']
   },
@@ -183,8 +229,11 @@ export async function executeNetworksTool(args: any, client: HuduClient): Promis
   try {
     switch (action) {
       case 'create':
-        if (!fields?.name || !fields?.network_type || !fields?.network || !fields?.mask) {
-          return createErrorResponse('Name, network_type, network, and mask are required for creating networks');
+        if (!fields?.name || !fields?.address || !fields?.company_id) {
+          return createErrorResponse(
+            'name, address (CIDR) e company_id são obrigatórios para criar redes no Hudu. ' +
+            'Exemplo: { name: "LAN-Matriz", address: "192.168.1.0/24", company_id: 1 }'
+          );
         }
         const newNetwork = await client.createNetwork(fields);
         return createSuccessResponse(newNetwork, 'Network created successfully');
@@ -233,8 +282,11 @@ export async function executeVlansTool(args: any, client: HuduClient): Promise<T
   try {
     switch (action) {
       case 'create':
-        if (!fields?.name || !fields?.vid) {
-          return createErrorResponse('Name and VID are required for creating VLANs');
+        if (!fields?.name || !fields?.vlan_id || !fields?.company_id) {
+          return createErrorResponse(
+            'name, vlan_id (tag 1-4094) e company_id são obrigatórios para criar VLANs no Hudu. ' +
+            'Exemplo: { name: "VLAN-Voz", vlan_id: 100, company_id: 1 }'
+          );
         }
         const newVlan = await client.createVlan(fields);
         return createSuccessResponse(newVlan, 'VLAN created successfully');
@@ -283,8 +335,11 @@ export async function executeVlanZonesTool(args: any, client: HuduClient): Promi
   try {
     switch (action) {
       case 'create':
-        if (!fields?.name) {
-          return createErrorResponse('Name is required for creating VLAN zones');
+        if (!fields?.name || !fields?.vlan_id_ranges || !fields?.company_id) {
+          return createErrorResponse(
+            'name, vlan_id_ranges e company_id são obrigatórios para criar zonas de VLAN no Hudu. ' +
+            'Exemplo: { name: "Zona-Core", vlan_id_ranges: "100-500,1000-1500", company_id: 1 }'
+          );
         }
         const newZone = await client.createVlanZone(fields);
         return createSuccessResponse(newZone, 'VLAN zone created successfully');
@@ -334,7 +389,11 @@ export async function executeIpAddressesTool(args: any, client: HuduClient): Pro
     switch (action) {
       case 'create':
         if (!fields?.address) {
-          return createErrorResponse('Address is required for creating IP addresses');
+          return createErrorResponse(
+            'address é obrigatório para criar endereços IP no Hudu. ' +
+            'Recomenda-se também informar network_id ou company_id. ' +
+            'Exemplo: { address: "192.168.1.10", network_id: 5, status: "assigned", fqdn: "srv01.local" }'
+          );
         }
         const newIpAddress = await client.createIpAddress(fields);
         return createSuccessResponse(newIpAddress, 'IP address created successfully');

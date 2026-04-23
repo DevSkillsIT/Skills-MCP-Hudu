@@ -191,13 +191,29 @@ export interface HuduProcedureTask {
 export interface HuduNetwork {
   id: number;
   name: string;
-  network_type?: string;
+  // Hudu OpenAPI: network_type is an integer (0=IPv4, 1=IPv6). Keep both
+  // string and number for backwards compatibility with any pre-existing data.
+  network_type?: number | string;
   network?: string;
   address?: string;
   cidr?: string;
   mask?: string;
   gateway?: string;
+  slug?: string;
   company_id?: number;
+  location_id?: number;
+  description?: string;
+  notes?: string;
+  ancestry?: string;
+  settings?: Record<string, any>;
+  sync_identifier?: string;
+  is_discovery?: boolean;
+  is_radar?: boolean;
+  status_list_item_id?: number;
+  role_list_item_id?: number;
+  vlan_id?: number;
+  archived_at?: string | null;
+  url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -247,9 +263,22 @@ export interface HuduWebsite {
 export interface HuduVlan {
   id: number;
   name: string;
+  // Hudu API schema uses `vlan_id` for the numeric VLAN tag (1-4094).
+  // The older `vid` alias is kept optional for backwards compatibility with
+  // legacy payloads, but new code should rely on `vlan_id`.
+  vlan_id?: number;
   vid?: number;
+  slug?: string;
   description?: string;
+  notes?: string;
+  company_id?: number;
+  vlan_zone_id?: number;
+  status_list_item_id?: number;
+  role_list_item_id?: number;
   network_id?: number;
+  networks_count?: number;
+  archived_at?: string | null;
+  url?: string;
   created_at: string;
   updated_at: string;
 }
