@@ -56,20 +56,31 @@ export async function executeSearchTool(args: any, client: HuduClient): Promise<
         companies: companies.status === 'fulfilled' ? companies.value : []
       };
     } else {
-      // Search specific type with page_size limit
+      // REQ-04 / BUG-04: Wrap single-type results in { [type]: [...] } so that
+      // formatGlobalSearchResults can access the correct key (articles, assets,
+      // passwords, or companies). Without this wrapping, the formatter receives
+      // a raw array and returns "Nenhum resultado encontrado" even when results exist.
       switch (type) {
-        case 'articles':
-          results = await client.getArticles({ search: query, company_id, page_size: pageSize });
+        case 'articles': {
+          const items = await client.getArticles({ search: query, company_id, page_size: pageSize });
+          results = { articles: items, assets: [], passwords: [], companies: [] };
           break;
-        case 'assets':
-          results = await client.getAssets({ search: query, company_id, page_size: pageSize });
+        }
+        case 'assets': {
+          const items = await client.getAssets({ search: query, company_id, page_size: pageSize });
+          results = { articles: [], assets: items, passwords: [], companies: [] };
           break;
-        case 'passwords':
-          results = await client.getAssetPasswords({ search: query, company_id, page_size: pageSize });
+        }
+        case 'passwords': {
+          const items = await client.getAssetPasswords({ search: query, company_id, page_size: pageSize });
+          results = { articles: [], assets: [], passwords: items, companies: [] };
           break;
-        case 'companies':
-          results = await client.getCompanies({ search: query, page_size: pageSize });
+        }
+        case 'companies': {
+          const items = await client.getCompanies({ search: query, page_size: pageSize });
+          results = { articles: [], assets: [], passwords: [], companies: items };
           break;
+        }
         default:
           return createErrorResponse(`Unsupported search type: ${type}`);
       }

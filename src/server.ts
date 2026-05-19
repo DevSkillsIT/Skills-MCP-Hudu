@@ -22,6 +22,44 @@ import { FilteredHuduClient } from './filtered-hudu-client.js';
 import { HuduConfig } from './types.js';
 import { WORKING_TOOLS, WORKING_TOOL_EXECUTORS, type ToolResponse } from './tools/working-index.js';
 import { HUDU_PROMPTS_LIST, getHuduPromptText } from './prompts.js';
+
+/**
+ * Validates prompt arguments against the required fields declared in HUDU_PROMPTS_LIST.
+ * Called BEFORE template interpolation to prevent undefined values in prompt text.
+ *
+ * Returns an error descriptor object on validation failure, or null when args are valid.
+ * Shape on error: { error, prompt, required, provided }
+ *
+ * REQ-01 / BUG-01 / SPEC-HUDU-FIX-001
+ */
+export function validatePromptArgs(
+  promptName: string,
+  args: Record<string, string> | null | undefined
+): { error: string; prompt: string; required: string[]; provided: string[] } | null {
+  const promptDef = HUDU_PROMPTS_LIST.find((p: any) => p.name === promptName);
+
+  // Unknown prompts are not validated here — the handler throws later if needed
+  if (!promptDef) return null;
+
+  const requiredArgs: string[] = (promptDef.arguments ?? [])
+    .filter((a: any) => a.required === true)
+    .map((a: any) => a.name as string);
+
+  if (requiredArgs.length === 0) return null;
+
+  const safeArgs = args ?? {};
+  const provided = Object.keys(safeArgs).filter(k => safeArgs[k] !== undefined && safeArgs[k] !== '');
+  const missing = requiredArgs.filter(name => !provided.includes(name));
+
+  if (missing.length === 0) return null;
+
+  return {
+    error: 'MISSING_REQUIRED_ARG',
+    prompt: promptName,
+    required: requiredArgs,
+    provided
+  };
+}
 import { formatToolResponse } from './formatters/response-formatter.js';
 import { InvalidResourceUriError, listResources, readResource } from './resources.js';
 
@@ -628,6 +666,16 @@ export class HuduMcpServer {
       const { name, arguments: args } = request.params;
 
       this.logger.info('Prompt requested', { name, arguments: args });
+
+      // REQ-01 / BUG-01: Validate required args BEFORE template interpolation
+      const validationError = validatePromptArgs(name, args as Record<string, string>);
+      if (validationError) {
+        this.logger.warn('Prompt missing required argument', validationError);
+        throw new McpError(
+          ErrorCode.InvalidParams,
+          `Missing required argument(s) for prompt "${name}": ${validationError.required.filter(r => !validationError.provided.includes(r)).join(', ')}`
+        );
+      }
 
       try {
         return getHuduPromptText(name, args);

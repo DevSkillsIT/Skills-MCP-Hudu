@@ -854,7 +854,12 @@ export class HuduClient {
   }
 
   async getRackStorage(id: number): Promise<HuduRackStorage> {
+    // REQ-02 / BUG-02: Guard against HTTP 200 with { rack_storage: null }.
+    // The Hudu API may return a 200 with a null wrapper instead of 404 when
+    // the record is absent. Without this guard the method silently returns null
+    // which propagates as "not found" message in the tool executor.
     const response = await this.client.get<{ rack_storage: HuduRackStorage }>(`/rack_storages/${id}`);
+    if (!response.data?.rack_storage) throw new Error(`Rack storage with ID ${id} not found`);
     return response.data.rack_storage;
   }
 
