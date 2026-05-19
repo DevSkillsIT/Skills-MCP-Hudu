@@ -313,13 +313,13 @@ describe('formatWebsiteList', () => {
       {
         id: 1,
         name: 'SKILLS',
-        url: 'https://skillsit.com.br',
+        url: 'https://example.com',
         company_name: 'SKILLS IT',
         paused: false,
       } as any,
     ]);
     const result = formatWebsiteList(data);
-    expect(result).toContain('skillsit.com.br');
+    expect(result).toContain('example.com');
     expect(result).toContain('| ID |');
   });
 
@@ -338,7 +338,7 @@ describe('formatWebsiteDetail', () => {
     const website = {
       id: 1,
       name: 'SKILLS',
-      url: 'https://skillsit.com.br',
+      url: 'https://example.com',
       disable_dns: false,
       disable_ssl: false,
       disable_whois: true,
@@ -384,7 +384,7 @@ describe('formatActivityLogList', () => {
       {
         id: 100,
         created_at: '2026-03-20T10:00:00Z',
-        user_name: 'adriano',
+        user_name: 'testuser',
         action: 'created',
         record_type: 'Company',
         record_name: 'SKILLS IT',
@@ -392,7 +392,7 @@ describe('formatActivityLogList', () => {
     ]);
     const result = formatActivityLogList(data);
     expect(result).toContain('| ID |');
-    expect(result).toContain('adriano');
+    expect(result).toContain('testuser');
     expect(result).toContain('created');
   });
 

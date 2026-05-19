@@ -1,5 +1,4 @@
 // prompts.ts - Handlers de prompts para Hudu MCP Server
-// Skills IT Soluções em Tecnologia
 // Total: 15 prompts (2 originais + 13 novos)
 //
 // Design note:

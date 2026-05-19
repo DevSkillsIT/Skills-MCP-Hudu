@@ -3,8 +3,8 @@ import { executeExpirationsTool } from '../../tools/expirations.js';
 import type { HuduClient } from '../../hudu-client.js';
 
 const MOCK_EXPIRATIONS = [
-  { id: 1, name: 'skillsit.com.br', expiration_date: '2026-06-15', item_type: 'Domain', company_id: 42 },
-  { id: 2, name: 'SSL *.skillsit.com.br', expiration_date: '2026-08-01', item_type: 'SSL Certificate', company_id: 42 },
+  { id: 1, name: 'example.com', expiration_date: '2026-06-15', item_type: 'Domain', company_id: 42 },
+  { id: 2, name: 'SSL *.example.com', expiration_date: '2026-08-01', item_type: 'SSL Certificate', company_id: 42 },
 ];
 
 const mockFn = () => jest.fn<() => Promise<any>>().mockResolvedValue([]);

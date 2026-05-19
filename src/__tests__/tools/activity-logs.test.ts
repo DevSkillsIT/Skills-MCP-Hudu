@@ -5,14 +5,14 @@ import type { HuduClient } from '../../hudu-client.js';
 const MOCK_LOGS = [
   {
     id: 100,
-    user_email: 'admin@skillsit.com.br',
+    user_email: 'admin@example.com',
     resource_type: 'Company',
     action_message: 'updated',
     created_at: '2026-03-20T10:30:00Z',
   },
   {
     id: 101,
-    user_email: 'tech@skillsit.com.br',
+    user_email: 'tech@example.com',
     resource_type: 'Asset',
     action_message: 'created',
     created_at: '2026-03-20T11:00:00Z',
@@ -38,9 +38,9 @@ describe('executeActivityLogsTool', () => {
 
   test('passes user_email filter to client', async () => {
     const client = createMockClient();
-    await executeActivityLogsTool({ user_email: 'admin@skillsit.com.br' }, client);
+    await executeActivityLogsTool({ user_email: 'admin@example.com' }, client);
     expect(client.getActivityLogs).toHaveBeenCalledWith(
-      expect.objectContaining({ user_email: 'admin@skillsit.com.br' })
+      expect.objectContaining({ user_email: 'admin@example.com' })
     );
   });
 
@@ -55,12 +55,12 @@ describe('executeActivityLogsTool', () => {
   test('passes combined filters to client', async () => {
     const client = createMockClient();
     await executeActivityLogsTool(
-      { user_email: 'admin@skillsit.com.br', resource_type: 'Asset', page: 2 },
+      { user_email: 'admin@example.com', resource_type: 'Asset', page: 2 },
       client
     );
     expect(client.getActivityLogs).toHaveBeenCalledWith(
       expect.objectContaining({
-        user_email: 'admin@skillsit.com.br',
+        user_email: 'admin@example.com',
         resource_type: 'Asset',
         page: 2,
       })

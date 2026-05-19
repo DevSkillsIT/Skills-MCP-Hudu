@@ -18,7 +18,7 @@ export const magicDashTool: Tool = {
       id: commonProperties.id,
       fields: createFieldsSchema({
         title: { type: 'string', description: 'Título do widget no dashboard (obrigatório para criação)' },
-        company_name: { type: 'string', description: 'Nome EXATO da empresa associada ao widget, ex: "Skills IT Palmas" (obrigatório para criação — é o nome, não o ID)' },
+        company_name: { type: 'string', description: 'Nome EXATO da empresa associada ao widget, ex: "Empresa Exemplo Ltda" (obrigatório para criação — é o nome, não o ID)' },
         content_link: { type: 'string', description: 'URL de link para o conteúdo relacionado ao widget' },
         content: { type: 'string', description: 'Conteúdo textual (HTML/Markdown) exibido no widget' },
         icon: { type: 'string', description: 'Classe FontAwesome do ícone (ex: fa-server)' },

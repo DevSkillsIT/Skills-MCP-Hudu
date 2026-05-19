@@ -5,7 +5,7 @@ import type { HuduClient } from '../../hudu-client.js';
 const MOCK_WEBSITE = {
   id: 10,
   name: 'SKILLS IT Site',
-  url: 'https://skillsit.com.br',
+  url: 'https://example.com',
   company_id: 42,
   paused: false,
   created_at: '2025-01-01',
@@ -30,12 +30,12 @@ describe('executeWebsitesTool (CRUD)', () => {
     test('creates website with valid name (URL)', async () => {
       const client = createMockClient();
       const result = await executeWebsitesTool(
-        { action: 'create', fields: { name: 'https://skillsit.com.br', company_id: 1 } },
+        { action: 'create', fields: { name: 'https://example.com', company_id: 1 } },
         client
       );
       expect(result.success).toBe(true);
       expect(client.createWebsite).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'https://skillsit.com.br' })
+        expect.objectContaining({ name: 'https://example.com' })
       );
     });
 

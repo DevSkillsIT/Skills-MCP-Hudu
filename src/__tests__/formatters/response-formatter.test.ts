@@ -94,15 +94,15 @@ describe('formatToolResponse', () => {
     const data = [
       {
         id: 5,
-        name: 'skillsit.com.br',
-        url: 'https://skillsit.com.br',
+        name: 'example.com',
+        url: 'https://example.com',
         company_name: 'SKILLS IT',
         paused: false,
       },
     ];
     const result = formatToolResponse('hudu_search_website_monitoring', data, { page: 1 });
     expect(result).toContain('| ID |');
-    expect(result).toContain('skillsit.com.br');
+    expect(result).toContain('example.com');
   });
 
   test('activity logs search tool returns markdown', () => {
@@ -110,7 +110,7 @@ describe('formatToolResponse', () => {
       {
         id: 1,
         created_at: '2026-03-20',
-        user_name: 'adriano',
+        user_name: 'testuser',
         action: 'created',
         record_type: 'Company',
         record_name: 'SKILLS IT',
@@ -118,6 +118,6 @@ describe('formatToolResponse', () => {
     ];
     const result = formatToolResponse('hudu_search_activity_audit_logs', data, { page: 1 });
     expect(result).toContain('| ID |');
-    expect(result).toContain('adriano');
+    expect(result).toContain('testuser');
   });
 });
