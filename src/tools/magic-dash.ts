@@ -1,16 +1,20 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, basicActions, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, createQuerySchema, commonProperties } from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
-// Magic Dash manage tool (CRUD)
+// Magic Dash manage tool
+// REQ-17 / PRB-06 + REQ-16 / PRB-05: Hudu API 2.41.2 only exposes POST
+// /magic_dash (create) and DELETE /magic_dash/{id} (delete) for dashboard
+// widgets. There is no GET-by-ID or PATCH endpoint, so only create and
+// delete are advertised here. Listing remains available via the query tool.
 export const magicDashTool: Tool = {
   name: 'manage_dashboard_widgets',
-  description: 'Widgets de dashboard, paineis de controle e indicadores no Hudu — operacoes CRUD para gerenciar itens do Magic Dash. Use quando precisar criar paineis customizados, cards de status ou indicadores para empresas no Hudu. Aceita action (create, get, update, delete). Retorna Markdown com dados do widget processado.',
+  description: 'Widgets de dashboard, painéis de controle e indicadores no Hudu (Magic Dash) — operações disponíveis: criar e excluir. A API do Hudu 2.41.2 NÃO expõe GET por ID nem PATCH para widgets; para listar widgets existentes use search_dashboard_widgets. Use create para painéis customizados, cards de status ou indicadores por empresa; use delete para remover. Retorna Markdown com dados do widget processado.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo widget), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
+      action: createActionSchema(['create', 'delete'], 'Ação a executar. Valores: create (criar novo widget), delete (excluir por ID). A API do Hudu 2.41.2 não suporta get-by-id ou update para widgets de dashboard.'),
       id: commonProperties.id,
       fields: createFieldsSchema({
         title: { type: 'string', description: 'Título do widget no dashboard (obrigatório para criação)' },
@@ -35,7 +39,7 @@ export const magicDashTool: Tool = {
 // Magic Dash query tool
 export const magicDashQueryTool: Tool = {
   name: 'search_dashboard_widgets',
-  description: 'Widgets de dashboard, paineis de controle e indicadores no Hudu — busca e filtragem de itens do Magic Dash por nome ou empresa. Use quando precisar listar ou localizar widgets e cards de status existentes no Hudu sem saber o ID exato. Consulta somente leitura. Retorna lista paginada em Markdown.',
+  description: 'Widgets de dashboard, painéis de controle e indicadores no Hudu — busca e filtragem de itens do Magic Dash por nome ou empresa. Use quando precisar listar ou localizar widgets e cards de status existentes no Hudu sem saber o ID exato. Consulta somente leitura. Retorna lista paginada em Markdown.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
   }),

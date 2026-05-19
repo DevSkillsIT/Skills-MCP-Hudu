@@ -1,16 +1,20 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, basicActions, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, createQuerySchema, commonProperties } from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 // Relations manage tool (CRUD)
+// REQ-16 / PRB-05: Hudu API 2.41.2 only exposes POST /relations (create) and
+// DELETE /relations/{id} (delete). There is no GET-by-ID or PUT endpoint, so
+// only create and delete are advertised here. Reference: WIP audit on
+// wip/hudu-pre-spec-2026-05-19.
 export const relationsTool: Tool = {
   name: 'manage_entity_relations',
-  description: 'Relacoes, vinculos e associacoes entre entidades no Hudu — operacoes CRUD para gerenciar relacionamentos entre recursos. Use quando precisar criar, consultar, atualizar ou excluir vinculos entre ativos, empresas, artigos ou outros objetos no Hudu. Aceita action (create, get, update, delete). Retorna Markdown com dados da relacao processada.',
+  description: 'Relações, vínculos e associações entre entidades no Hudu — operações disponíveis: criar e excluir relacionamentos entre recursos. Use quando precisar criar ou excluir vínculos entre ativos, empresas, artigos ou outros objetos no Hudu. A API do Hudu 2.41.2 não expõe get-by-id ou update para relações. Retorna Markdown com dados da relação processada.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar nova relação), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
+      action: createActionSchema(['create', 'delete'], 'Ação a executar. Valores: create (criar nova relação), delete (excluir por ID). A API do Hudu não suporta get-by-id ou update para relações.'),
       id: commonProperties.id,
       fields: createFieldsSchema({
         description: { type: 'string', description: 'Descrição do vínculo entre as entidades' },

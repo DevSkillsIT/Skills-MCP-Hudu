@@ -428,11 +428,14 @@ export interface HuduCard {
   updated_at: string;
 }
 
-// Paged response wrapper for Markdown formatters
+// Paged response wrapper for Markdown formatters.
+// total is optional and surfaced when the underlying Hudu response carries
+// an X-Total-Count header (or equivalent metadata). REQ-13 / PRB-02.
 export interface HuduPagedResponse<T> {
   records: T[];
   page: number;
   hasMore: boolean;
+  total?: number;
 }
 
 // MCP Resource URI Types

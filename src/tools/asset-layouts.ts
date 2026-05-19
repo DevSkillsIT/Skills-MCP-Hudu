@@ -6,14 +6,14 @@ import type { HuduClient } from '../hudu-client.js';
 // Asset layouts manage tool (CRUD without delete)
 export const assetLayoutsTool: Tool = {
   name: 'manage_asset_layout_templates',
-  description: 'Layouts, templates e modelos de ativos no Hudu — criacao, consulta e atualizacao de estruturas de campos personalizados, tipos de equipamento e categorias. Use quando precisar definir ou modificar o modelo de campos de um tipo de ativo no Hudu. Aceita action (create, get, update). Retorna Markdown com dados do layout processado.',
+  description: 'Layouts, templates e modelos de ativos no Hudu — criação, consulta e atualização de estruturas de campos personalizados, tipos de equipamento e categorias. Use quando precisar definir ou modificar o modelo de campos de um tipo de ativo no Hudu. Aceita action (create, get, update). Retorna Markdown com dados do layout processado.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(['create', 'get', 'update'], 'Acao a executar. Valores: create (criar novo layout), get (obter por ID), update (atualizar por ID). Delete nao e suportado para layouts de ativos.'),
+      action: createActionSchema(['create', 'get', 'update'], 'Ação a executar. Valores: create (criar novo layout), get (obter por ID), update (atualizar por ID). Delete não é suportado para layouts de ativos.'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'Nome do layout de ativo (obrigatorio para criacao)' },
+        name: { type: 'string', description: 'Nome do layout de ativo (obrigatório para criação)' },
         icon: { type: 'string', description: 'Classe de icone Font Awesome para o layout, ex: fa-server' },
         color: { type: 'string', description: 'Cor de fundo do icone no formato hexadecimal, ex: #000000' },
         icon_color: { type: 'string', description: 'Cor do icone no formato hexadecimal, ex: #ffffff' },
@@ -21,7 +21,7 @@ export const assetLayoutsTool: Tool = {
         include_photos: { type: 'boolean', description: 'Incluir aba de fotos nos ativos deste layout' },
         include_comments: { type: 'boolean', description: 'Incluir aba de comentarios nos ativos deste layout' },
         include_files: { type: 'boolean', description: 'Incluir aba de arquivos nos ativos deste layout' },
-        active: { type: 'boolean', description: 'Se o layout esta ativo e disponivel para uso' },
+        active: { type: 'boolean', description: 'Se o layout está ativo e disponível para uso' },
         fields: {
           type: 'array',
           description: 'Lista de campos personalizados do layout',
@@ -42,12 +42,15 @@ export const assetLayoutsTool: Tool = {
 };
 
 // Asset layouts query tool
-// NOTE: Hudu API /asset_layouts does NOT accept page_size (verified against
-// hudu.json OpenAPI spec). We omit it from the schema to avoid misleading
-// the LLM — only `page`, `name`, `slug`, `updated_at` are forwarded.
+// Hudu API /asset_layouts silently caps page size at 25 (REQ-14 / PRB-03).
+// The page_size parameter below is advertised so callers can express intent,
+// but the upstream API does NOT honor it — we surface the cap by emitting a
+// `page_size_capped: 25` metadata note in the executor when results saturate.
+const ASSET_LAYOUTS_PAGE_SIZE_CAP = 25;
+
 export const assetLayoutsQueryTool: Tool = {
   name: 'search_asset_layout_templates',
-  description: 'Layouts, templates e modelos de ativos no Hudu — busca e filtragem de estruturas de campos personalizados, tipos de equipamento e categorias por nome. Use quando precisar listar ou localizar layouts disponiveis no Hudu sem saber o ID exato. Consulta somente leitura. Nota: este endpoint do Hudu não suporta page_size. Retorna lista paginada em Markdown.',
+  description: 'Layouts, templates e modelos de ativos no Hudu — busca e filtragem de estruturas de campos personalizados, tipos de equipamento e categorias por nome. Use quando precisar listar ou localizar layouts disponíveis no Hudu sem saber o ID exato. Consulta somente leitura. Nota Hudu API 2.41.2: o endpoint /asset_layouts limita silenciosamente cada página a 25 itens; quando esse limite é atingido a resposta inclui o metadado page_size_capped: 25. Retorna lista paginada em Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -55,7 +58,8 @@ export const assetLayoutsQueryTool: Tool = {
       name: { type: 'string', description: 'Filtrar por nome exato ou parcial' },
       slug: { type: 'string', description: 'Filtrar por slug do layout' },
       updated_at: { type: 'string', description: 'Filtrar por data de atualização (formato ISO 8601 AAAA-MM-DD)' },
-      page: { type: 'number', minimum: 1, default: 1, description: 'Número da página para paginação' }
+      page: { type: 'number', minimum: 1, default: 1, description: 'Número da página para paginação' },
+      page_size: { type: 'number', minimum: 1, maximum: 100, default: 25, description: 'Solicitação de tamanho de página. A API do Hudu ignora este valor e aplica o limite fixo de 25 itens; o campo é exposto apenas por consistência com outras tools.' }
     }
   },
   annotations: {
@@ -106,6 +110,11 @@ export async function executeAssetLayoutsTool(args: any, client: HuduClient): Pr
 export async function executeAssetLayoutsQueryTool(args: any, client: HuduClient): Promise<ToolResponse> {
   try {
     const layouts = await client.getAssetLayouts(args);
+    // REQ-14 / PRB-03: surface the API-level page size cap when reached so
+    // consumers know there may be unseen records on subsequent pages.
+    if (Array.isArray(layouts) && layouts.length >= ASSET_LAYOUTS_PAGE_SIZE_CAP) {
+      return createSuccessResponse({ records: layouts, page_size_capped: ASSET_LAYOUTS_PAGE_SIZE_CAP });
+    }
     return createSuccessResponse(layouts);
   } catch (error: any) {
     return createErrorResponse(`Asset layouts query failed: ${error.message}`);

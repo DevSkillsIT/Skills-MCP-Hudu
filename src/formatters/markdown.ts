@@ -28,24 +28,32 @@ import { resolveNetworkType } from './enums.js';
 // Alias for readability
 const esc = escapeMarkdown;
 
-// Wrapper to convert T[] to HuduPagedResponse<T>
+// Wrapper to convert T[] to HuduPagedResponse<T>.
+// The optional total argument carries the X-Total-Count header value when
+// the caller has access to it (REQ-13 / PRB-02).
 export function toPagedResponse<T>(
   records: T[],
   page: number = 1,
-  pageSize: number = 25
+  pageSize: number = 25,
+  total?: number
 ): HuduPagedResponse<T> {
-  return {
+  const paged: HuduPagedResponse<T> = {
     records: records || [],
     page,
     hasMore: (records || []).length >= pageSize,
   };
+  if (typeof total === 'number') {
+    paged.total = total;
+  }
+  return paged;
 }
 
-function pageInfo(paged: { page: number; hasMore: boolean; records: unknown[] }): string {
+function pageInfo(paged: { page: number; hasMore: boolean; records: unknown[]; total?: number }): string {
   const more = paged.hasMore
-    ? ` | Pagina ${paged.page}, mais disponíveis (próxima: ${paged.page + 1})`
-    : ` | Pagina ${paged.page}, sem mais resultados`;
-  return `**${paged.records.length} resultados**${more}`;
+    ? ` | Página ${paged.page}, mais disponíveis (próxima: ${paged.page + 1})`
+    : ` | Página ${paged.page}, sem mais resultados`;
+  const totalSuffix = typeof paged.total === 'number' ? ` | Total: ${paged.total}` : '';
+  return `**${paged.records.length} resultados**${more}${totalSuffix}`;
 }
 
 // ---- Companies ----
@@ -451,7 +459,7 @@ export function formatRelationDetail(r: HuduRelation): string {
     `| Destino | ${to} |`,
     `| Criado em | ${r.created_at ?? ''} |`,
     `| Atualizado em | ${r.updated_at ?? ''} |`,
-    ...(r.description ? ['', '## Descricao', '', truncate(r.description, 2000)] : []),
+    ...(r.description ? ['', '## Descrição', '', truncate(r.description, 2000)] : []),
   ].join('\n');
 }
 

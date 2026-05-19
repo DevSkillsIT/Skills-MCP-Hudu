@@ -137,7 +137,7 @@ Utilitarios:
   {"name":"hudu_manage_website_monitoring","arguments":{"action":"get","id":10}}
 - Criar relacao entre ativos:
   {"name":"hudu_manage_entity_relations","arguments":{"action":"create","fields":{"fromable_type":"Asset","fromable_id":100,"toable_type":"Asset","toable_id":200}}}
-- Listar expiracoes por empresa:
+- Listar expirações por empresa:
   {"name":"hudu_search_expiration_tracking","arguments":{"company_id":42,"page":1}}
 
 === DICAS ===

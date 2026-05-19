@@ -5,6 +5,51 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — SPEC-HUDU-FIX-001 Phase 2C (P2 polish and schema hygiene)
+
+### [SPEC-HUDU-FIX-001 / REQ-12 / PRB-01] Tool name prefix cleanup
+- Dropped redundant `hudu_` prefix from registered tool names so mcphub-aggregated names read as `hudu-manage_*` / `hudu-search_*` instead of `hudu-hudu_manage_*` / `hudu-hudu_search_*`.
+- Added `src/tools/aliases.ts` exporting `TOOL_ALIASES` map and `resolveToolAlias()` so old `hudu_<verb>_<noun>` names continue to resolve for one minor version. CallToolRequestSchema handler in `src/server.ts` resolves the alias before dispatch and emits a deprecation warning when the old name is used. Bridge tools (`hudu_list_*`, `hudu_get_prompt`, `hudu_card_lookup`, `hudu_read_resource`, `hudu_navigate_*`) are intentionally NOT renamed because their names are part of the MCPHub bridge interface.
+- Commit: 1d96d42. Test: `src/__tests__/PRB-01-tool-aliases.test.ts`.
+
+### [SPEC-HUDU-FIX-001 / REQ-13 / PRB-02] Total record count metadata
+- Added optional `total?: number` to `HuduPagedResponse<T>` interface in `src/types.ts`.
+- Added optional `total` parameter to `toPagedResponse()` in `src/formatters/markdown.ts`; when present, `pageInfo()` appends `| Total: N` to the metadata block alongside the existing pagination hint.
+- Test: `src/__tests__/PRB-02-total-count.test.ts`.
+
+### [SPEC-HUDU-FIX-001 / REQ-14 / PRB-03] Asset layout templates page_size cap
+- Added `page_size: { type: 'number', maximum: 100, default: 25 }` to `search_asset_layout_templates` input schema in `src/tools/asset-layouts.ts`; the description documents that Hudu API 2.41.2 silently caps each page at 25 items and ignores the requested value.
+- Executor now emits `page_size_capped: 25` metadata when the result count reaches the cap so consumers know there may be unseen records.
+- Test: `src/__tests__/PRB-03-asset-layout-page-size.test.ts`.
+
+### [SPEC-HUDU-FIX-001 / REQ-15 / PRB-04] Resource URI enum alignment
+- Updated `readResourceTool` in `src/tools/resource-tools.ts`: `uri` enum lists only base collection URIs (`hudu://companies`, `hudu://assets`, `hudu://articles`). Detail access is provided via the optional `id` parameter which is concatenated to the chosen base. Description now matches the enum (no longer advertises parameterized forms `hudu://companies/{id}` that aren't in the enum).
+- Test: `src/__tests__/PRB-04-resource-uri.test.ts`.
+
+### [SPEC-HUDU-FIX-001 / REQ-16 / PRB-05] Manage action enum cleanup vs Hudu API 2.41.2
+- `manage_entity_relations` (`src/tools/relations.ts`): action enum reduced from `['create', 'get', 'update', 'delete']` to `['create', 'delete']` — Hudu API does NOT expose GET-by-id or PUT for `/relations/{id}`. Reuses WIP audit from `wip/hudu-pre-spec-2026-05-19`.
+- `manage_dashboard_widgets` (`src/tools/magic-dash.ts`): action enum reduced from `['create', 'get', 'update', 'delete']` to `['create', 'delete']` — Hudu API does NOT expose GET-by-id or PATCH for `/magic_dash/{id}`.
+- `manage_file_upload_records` (`src/tools/storage.ts` uploadsTool): action enum reduced from `['get', 'update', 'delete']` to `['get', 'delete']` — Hudu API does NOT expose PUT for `/uploads/{id}`.
+- `manage_public_photo_gallery` (`src/tools/storage.ts` publicPhotosTool): action enum reduced to `['update']` only — Hudu API only exposes PUT for `/public_photos/{id}`.
+- Test: `src/__tests__/PRB-05-action-enums.test.ts`.
+
+### [SPEC-HUDU-FIX-001 / REQ-17 / PRB-06] Dashboard widgets API gap documented
+- Updated description of `manage_dashboard_widgets` in `src/tools/magic-dash.ts` (NOT `admin.ts` as the original spec.md placeholder said) to explicitly document that Hudu API 2.41.2 does not expose GET-by-id or PATCH; only create and delete are supported via this tool. Listing remains available via `search_dashboard_widgets`.
+
+### [SPEC-HUDU-FIX-001 / REQ-18 / PRB-07] Asset history prompt template cleanup
+- Removed instruction in `hudu_asset_history` prompt body (`src/prompts.ts`) that asked the LLM to call `manage_it_asset_inventory action=get` with `fields.company_id`. The `fields` parameter is only for filtered list views (search_*), not for `action=get`; the corrected prompt now calls `manage_it_asset_inventory` with just `{ action: 'get', id }`.
+- Test: `src/__tests__/PRB-07-prompt-template.test.ts`.
+
+### [SPEC-HUDU-FIX-001 / REQ-19 / PRB-08] pt-BR mojibake encoding cleanup
+- Fixed mojibake across `src/resources.ts`, `src/server.ts`, `src/formatters/markdown.ts`, `src/tools/asset-layouts.ts`, `src/tools/expirations.ts`, `src/tools/magic-dash.ts`, `src/tools/prompt-tools.ts`, `src/tools/resource-tools.ts`, `src/tools/websites.ts` — restored `painéis`, `paginação`, `Ação`, `Descrição`, `informações`, `organizações`, `expirações`, `domínios`, `licenças`, `relatórios`, `análises`, `catálogo`, `disponíveis`, `disponível`, `obrigatória`, `obrigatório`, `endereço`, `específico`, `título`, `publicação`, `criação`, `verificação`, `observações`, `não`, `é`.
+- Added `scripts/audit-encoding.ts`: CLI that scans every tracked `.ts` source file (excluding `__tests__/`) for known mojibake patterns and exits non-zero on any finding. Becomes the CI guard against regression.
+
+### Housekeeping (pre-existing LSP diagnostics)
+- `src/server.ts:769`: renamed unused `res` parameter to `_res` in OAuth2-Proxy middleware (TS6133).
+- `src/hudu-client.ts:55`: removed unused `private` modifier on `_config` constructor parameter; field was never read outside the constructor (TS6138).
+
+---
+
 ## [Unreleased] — SPEC-HUDU-FIX-001 Phase 2B (P1 hydration and data-quality fixes)
 
 ### [SPEC-HUDU-FIX-001 / REQ-06 / BUG-06] Enum resolution helpers

@@ -6,7 +6,7 @@ import { listResources, readResource } from '../resources.js';
 // List resources tool - exposes MCP resources as a tool for MCPHub bridge
 export const listResourcesTool: Tool = {
   name: 'hudu_list_resources',
-  description: 'Recursos MCP disponiveis no Hudu — catalogo de URIs hudu:// para acesso direto a empresas, ativos e artigos. Use quando precisar descobrir quais recursos de leitura direta estao disponiveis no Hudu. Retorna lista de URIs com nome e descricao de cada recurso.',
+  description: 'Recursos MCP disponíveis no Hudu — catálogo de URIs hudu:// para acesso direto a empresas, ativos e artigos. Use quando precisar descobrir quais recursos de leitura direta estão disponíveis no Hudu. Retorna lista de URIs com nome e descrição de cada recurso.',
   inputSchema: {
     type: 'object',
     properties: {}
@@ -18,16 +18,20 @@ export const listResourcesTool: Tool = {
   }
 };
 
-// Read resource tool
+// Read resource tool.
+// REQ-15 / PRB-04: the uri enum lists only base collection URIs. Detail
+// access is provided by the optional `id` parameter, which is concatenated
+// to the chosen base uri. Parameterized forms (hudu://companies/{id}) are
+// NOT advertised in the enum to keep the schema and description aligned.
 export const readResourceTool: Tool = {
   name: 'hudu_read_resource',
-  description: 'Leitura direta de recurso MCP no Hudu — acessa empresas, ativos ou artigos via URI hudu://. Use quando precisar ler dados do Hudu sem filtros, obtendo uma lista completa ou detalhe por ID. Retorna conteudo formatado em Markdown.',
+  description: 'Leitura direta de recurso MCP no Hudu — acessa empresas, ativos ou artigos via URI hudu://. Use quando precisar ler dados do Hudu sem filtros, obtendo uma lista completa ou detalhe por ID. Retorna conteúdo formatado em Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
       uri: {
         type: 'string',
-        description: 'URI do recurso no formato hudu://. Valores validos: hudu://companies, hudu://companies/{id}, hudu://assets, hudu://assets/{id}, hudu://articles, hudu://articles/{id}',
+        description: 'URI base do recurso. Valores válidos: hudu://companies, hudu://assets, hudu://articles. Para obter um item específico, combine com o parâmetro id (ex.: uri=hudu://companies + id=42 → leitura de /companies/42).',
         enum: [
           'hudu://companies',
           'hudu://assets',
@@ -36,7 +40,7 @@ export const readResourceTool: Tool = {
       },
       id: {
         type: 'number',
-        description: 'ID do recurso especifico (opcional). Quando informado, concatena com a URI base: hudu://companies + id=42 -> hudu://companies/42'
+        description: 'ID opcional do recurso específico. Quando informado, é concatenado à URI base: hudu://companies + id=42 → hudu://companies/42.'
       }
     },
     required: ['uri']
@@ -52,9 +56,9 @@ export async function executeListResourcesTool(_args: any, _client: HuduClient):
   const resources = listResources();
 
   const lines = [
-    `**${resources.length} recursos disponiveis**`,
+    `**${resources.length} recursos disponíveis**`,
     '',
-    '| URI | Nome | Descricao | Formato |',
+    '| URI | Nome | Descrição | Formato |',
     '|---|---|---|---|',
     ...resources.map(r =>
       `| ${r.uri} | ${r.name} | ${r.description} | ${r.mimeType} |`
@@ -68,7 +72,7 @@ export async function executeReadResourceTool(args: any, client: HuduClient): Pr
   let { uri, id } = args;
 
   if (!uri) {
-    return createErrorResponse('URI do recurso e obrigatoria. Use hudu_list_resources para ver os disponiveis.');
+    return createErrorResponse('URI do recurso é obrigatória. Use hudu_list_resources para ver as disponíveis.');
   }
 
   // Append ID if provided separately

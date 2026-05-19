@@ -35,12 +35,16 @@ describe('BUG-03: Public photo gallery ID type consistency', () => {
       expect(schema.properties.id.type).toBe('number');
     });
 
-    test('action enum does not include create (photo upload requires multipart)', () => {
+    test('action enum reflects Hudu API 2.41.2 support (PRB-05 / REQ-16)', () => {
       const schema = publicPhotosTool.inputSchema as any;
+      // create excluded: POST /public_photos is multipart-only and not viable via MCP.
+      // get/delete excluded: Hudu API 2.41.2 does NOT expose GET-by-id or DELETE-by-id
+      // for /public_photos/{id}; only PUT (update) is supported. Listing remains
+      // available via search_public_photo_gallery.
       expect(schema.properties.action.enum).not.toContain('create');
-      expect(schema.properties.action.enum).toContain('get');
+      expect(schema.properties.action.enum).not.toContain('get');
+      expect(schema.properties.action.enum).not.toContain('delete');
       expect(schema.properties.action.enum).toContain('update');
-      expect(schema.properties.action.enum).toContain('delete');
     });
 
     test('action is required in manage tool', () => {

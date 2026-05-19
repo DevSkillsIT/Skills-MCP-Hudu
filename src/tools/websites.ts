@@ -10,16 +10,16 @@ export const websitesTool: Tool = {
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions, 'Acao a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
+      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
       id: commonProperties.id,
       fields: createFieldsSchema({
-        name: { type: 'string', description: 'URL do website para monitoramento, ex: https://exemplo.com (obrigatorio para criacao). No Hudu, o campo name recebe a URL do site.' },
-        company_id: { ...commonProperties.company_id, description: 'ID da empresa associada (OBRIGATORIO para criacao)' },
-        disable_dns: { type: 'boolean', description: 'Desabilitar verificacao de DNS' },
-        disable_ssl: { type: 'boolean', description: 'Desabilitar verificacao de certificado SSL' },
-        disable_whois: { type: 'boolean', description: 'Desabilitar verificacao de WHOIS e expiracao de dominio' },
+        name: { type: 'string', description: 'URL do website para monitoramento, ex: https://exemplo.com (obrigatório para criação). No Hudu, o campo name recebe a URL do site.' },
+        company_id: { ...commonProperties.company_id, description: 'ID da empresa associada (OBRIGATÓRIO para criação)' },
+        disable_dns: { type: 'boolean', description: 'Desabilitar verificação de DNS' },
+        disable_ssl: { type: 'boolean', description: 'Desabilitar verificação de certificado SSL' },
+        disable_whois: { type: 'boolean', description: 'Desabilitar verificação de WHOIS e expiração de domínio' },
         paused: { type: 'boolean', description: 'Pausar monitoramento do site' },
-        notes: { type: 'string', description: 'Observacoes e notas sobre o site' }
+        notes: { type: 'string', description: 'Observações e notas sobre o site' }
       })
     },
     required: ['action']
@@ -34,7 +34,7 @@ export const websitesTool: Tool = {
 // Websites query tool
 export const websitesQueryTool: Tool = {
   name: 'search_website_monitoring',
-  description: 'Sites, portais e URLs monitorados no Hudu — busca e filtragem com paginacao por nome e empresa. Use quando precisar listar ou localizar registros de monitoramento de websites sem saber o ID exato no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com dados resumidos dos sites encontrados.',
+  description: 'Sites, portais e URLs monitorados no Hudu — busca e filtragem com paginação por nome e empresa. Use quando precisar listar ou localizar registros de monitoramento de websites sem saber o ID exato no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com dados resumidos dos sites encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
   }),

@@ -4,19 +4,20 @@ import { createActionSchema, createFieldsSchema, createQuerySchema, basicActions
 import type { HuduClient } from '../hudu-client.js';
 
 // Uploads resource tool
-// IMPORTANT: Hudu's POST /uploads uses multipart/form-data with a binary
-// `file` field — upload is not viable via JSON MCP args. Only get/update/
-// delete are meaningful. For new uploads, use the Hudu web UI.
+// REQ-16 / PRB-05: Hudu API 2.41.2 exposes GET /uploads/{id} and DELETE
+// /uploads/{id} but NOT PUT. Upload itself (POST) is multipart/form-data
+// and not viable via JSON MCP args. The action enum therefore lists only
+// get and delete.
 export const uploadsTool: Tool = {
   name: 'manage_file_upload_records',
-  description: 'Uploads, anexos e arquivos vinculados a recursos no Hudu — consulta e remoção de metadados. Criação (upload) exige multipart/form-data com arquivo binário e não é suportada via MCP — use a UI do Hudu. Aceita action (get, update, delete). Retorna Markdown.',
+  description: 'Uploads, anexos e arquivos vinculados a recursos no Hudu — consulta de metadados e remoção por ID. Criação (upload) exige multipart/form-data com arquivo binário e não é suportada via MCP — use a UI do Hudu. A API do Hudu 2.41.2 não expõe PUT para uploads, portanto update não está disponível. Aceita action (get, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
       action: {
         type: 'string',
-        enum: ['get', 'update', 'delete'],
-        description: 'Ação a executar. Valores: get (obter por ID), update (atualizar metadados por ID), delete (excluir por ID). Para upload use a UI do Hudu.'
+        enum: ['get', 'delete'],
+        description: 'Ação a executar. Valores: get (obter por ID), delete (excluir por ID). A API do Hudu 2.41.2 não suporta update para uploads; para substituir um arquivo, exclua e faça novo upload via UI.'
       },
       id: commonProperties.id,
       fields: createFieldsSchema({
@@ -155,21 +156,20 @@ export const rackStorageItemsQueryTool: Tool = {
 };
 
 // Public Photos resource tool
-// IMPORTANT: Hudu's POST /public_photos uses multipart/form-data with a
-// binary `photo` file — this cannot be performed purely via JSON MCP args.
-// Create is therefore exposed only for existing-record association; the
-// executor rejects create with a clear message directing the user to upload
-// the image via the Hudu UI first.
+// REQ-16 / PRB-05: Hudu API 2.41.2 only exposes PUT /public_photos/{id}
+// for this resource — there is no GET-by-ID, no DELETE-by-ID, and POST is
+// multipart-only (not viable via JSON MCP args). The action enum therefore
+// lists only update. Use search_public_photo_gallery to list photos.
 export const publicPhotosTool: Tool = {
   name: 'manage_public_photo_gallery',
-  description: 'Fotos públicas, imagens e capturas de tela compartilháveis na galeria do Hudu — operações de consulta, atualização de metadados e exclusão. A criação (upload) exige multipart/form-data com arquivo binário e não é suportada via MCP — use a UI do Hudu para upload. Aceita action (get, update, delete). Retorna Markdown.',
+  description: 'Fotos públicas, imagens e capturas de tela compartilháveis na galeria do Hudu — operação disponível: atualizar metadados (PUT) por ID. A API do Hudu 2.41.2 NÃO expõe GET por ID nem DELETE por ID; para listar fotos use search_public_photo_gallery. Criação requer upload binário e deve ser feita via UI do Hudu. Aceita action (update). Retorna Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
       action: {
         type: 'string',
-        enum: ['get', 'update', 'delete'],
-        description: 'Ação a executar. Valores: get (obter por ID), update (atualizar metadados por ID), delete (excluir por ID). A criação exige upload binário e deve ser feita via UI do Hudu.'
+        enum: ['update'],
+        description: 'Ação a executar. Valor: update (atualizar metadados por ID). A API do Hudu 2.41.2 não suporta get-by-id ou delete-by-id para fotos públicas; criação requer upload binário via UI.'
       },
       id: commonProperties.id,
       fields: {

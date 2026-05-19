@@ -562,9 +562,8 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`search_it_asset_inventory\` com \`{ "search": "${asset_id}", "page_size": 1 }\` (ou descubra company_id via search genérica) → guardar como **asset_current** e extrair \`company_id\`
-2. \`manage_it_asset_inventory\` com \`{ "action": "get", "id": ${asset_id}, "fields": { "company_id": <company_id_from_step_1> } }\` → guardar como **asset_detail**
-3. \`search_activity_audit_logs\` com \`{ "resource_type": "Asset", "resource_id": ${asset_id}, "page_size": 25 }\` → guardar como **logs**
+1. \`manage_it_asset_inventory\` com \`{ "action": "get", "id": ${asset_id} }\` → guardar como **asset_detail**. O parâmetro \`fields\` NÃO se aplica a action=get; é usado apenas em buscas filtradas (search_*).
+2. \`search_activity_audit_logs\` com \`{ "resource_type": "Asset", "resource_id": ${asset_id}, "page_size": 25 }\` → guardar como **logs**
 
 ## 📊 Formato de saída
 

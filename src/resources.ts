@@ -34,9 +34,9 @@ const RESOURCE_DEFINITIONS = [
     name: 'Empresas Hudu',
     detailName: 'Empresa Hudu por ID',
     description:
-      'Empresas, clientes e organizacoes cadastradas no Hudu - lista completa com nome, tipo, endereco e status. Recurso somente leitura.',
+      'Empresas, clientes e organizações cadastradas no Hudu - lista completa com nome, tipo, endereço e status. Recurso somente leitura.',
     detailDescription:
-      'Detalhes completos de uma empresa ou cliente especifico no Hudu - endereco, telefone, notas e informacoes cadastrais.'
+      'Detalhes completos de uma empresa ou cliente específico no Hudu - endereço, telefone, notas e informações cadastrais.'
   },
   {
     key: 'assets',
@@ -47,7 +47,7 @@ const RESOURCE_DEFINITIONS = [
     description:
       'Ativos, equipamentos e dispositivos de TI cadastrados no Hudu - inventario completo com modelo, serial e campos customizados. Recurso somente leitura.',
     detailDescription:
-      'Detalhes completos de um ativo ou equipamento de TI especifico no Hudu - campos customizados, empresa e layout.'
+      'Detalhes completos de um ativo ou equipamento de TI específico no Hudu - campos customizados, empresa e layout.'
   },
   {
     key: 'articles',
@@ -56,7 +56,7 @@ const RESOURCE_DEFINITIONS = [
     name: 'Artigos KB Hudu',
     detailName: 'Artigo KB Hudu por ID',
     description:
-      'Artigos, documentos e procedimentos da base de conhecimento no Hudu - lista com titulo, empresa e status de publicacao. Recurso somente leitura.',
+      'Artigos, documentos e procedimentos da base de conhecimento no Hudu - lista com título, empresa e status de publicação. Recurso somente leitura.',
     detailDescription:
       'Detalhes completos de um artigo ou documento da base de conhecimento no Hudu - conteudo completo em Markdown.'
   }

@@ -6,7 +6,7 @@ import { HUDU_PROMPTS_LIST, getHuduPromptText } from '../prompts.js';
 // List prompts tool - exposes MCP prompts as a tool for MCPHub bridge
 export const listPromptsTool: Tool = {
   name: 'hudu_list_prompts',
-  description: 'Prompts e modelos prontos no Hudu — catalogo de 15 templates para gestores e analistas de suporte MSP. Use quando precisar descobrir quais relatorios, auditorias e analises estao disponiveis no Hudu. Retorna nome, descricao, argumentos e categoria de cada prompt disponivel.',
+  description: 'Prompts e modelos prontos no Hudu — catálogo de 15 templates para gestores e analistas de suporte MSP. Use quando precisar descobrir quais relatórios, auditorias e análises estão disponíveis no Hudu. Retorna nome, descrição, argumentos e categoria de cada prompt disponível.',
   inputSchema: {
     type: 'object',
     properties: {}
@@ -21,7 +21,7 @@ export const listPromptsTool: Tool = {
 // Get/execute prompt tool
 export const getPromptTool: Tool = {
   name: 'hudu_get_prompt',
-  description: 'Prompt e execucao de modelo no Hudu — processa um relatorio ou analise especifica com argumentos customizados. Use quando precisar gerar relatorio de auditoria, compliance, inventario ou checklist no Hudu. Retorna resultado formatado em Markdown.',
+  description: 'Prompt e execução de modelo no Hudu — processa um relatório ou análise específica com argumentos customizados. Use quando precisar gerar relatório de auditoria, compliance, inventário ou checklist no Hudu. Retorna resultado formatado em Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -57,9 +57,9 @@ export async function executeListPromptsTool(_args: any, _client: HuduClient): P
 
   // Format as Markdown table
   const lines = [
-    `**${promptList.length} prompts disponiveis**`,
+    `**${promptList.length} prompts disponíveis**`,
     '',
-    '| Nome | Descricao | Argumentos |',
+    '| Nome | Descrição | Argumentos |',
     '|---|---|---|',
     ...promptList.map(p => {
       const args = p.arguments.map(a => `${a.name}${a.required ? ' (obrig.)' : ''}`).join(', ') || 'nenhum';
@@ -74,18 +74,18 @@ export async function executeGetPromptTool(args: any, _client: HuduClient): Prom
   const { name, arguments: promptArgs } = args;
 
   if (!name) {
-    return createErrorResponse('Nome do prompt e obrigatorio. Use hudu_list_prompts para ver os disponiveis.');
+    return createErrorResponse('Nome do prompt é obrigatório. Use hudu_list_prompts para ver os disponíveis.');
   }
 
   const prompt = HUDU_PROMPTS_LIST.find(p => p.name === name);
   if (!prompt) {
-    return createErrorResponse(`Prompt "${name}" nao encontrado. Use hudu_list_prompts para ver os disponiveis.`);
+    return createErrorResponse(`Prompt "${name}" não encontrado. Use hudu_list_prompts para ver os disponíveis.`);
   }
 
   try {
     const result = getHuduPromptText(name, promptArgs || {});
     if (!result) {
-      return createErrorResponse(`Prompt "${name}" nao retornou conteudo.`);
+      return createErrorResponse(`Prompt "${name}" não retornou conteúdo.`);
     }
 
     // getHuduPromptText returns { messages: [{ role, content: { type, text } }] }
