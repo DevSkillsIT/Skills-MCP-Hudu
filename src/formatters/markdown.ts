@@ -23,6 +23,7 @@ import type {
   HuduPagedResponse,
 } from '../types.js';
 import { stripHtml, truncate, escapeMarkdown } from '../utils/html-stripper.js';
+import { resolveNetworkType } from './enums.js';
 
 // Alias for readability
 const esc = escapeMarkdown;
@@ -192,15 +193,18 @@ export function formatAssetLayoutDetail(l: HuduAssetLayout): string {
 export function formatArticleList(paged: HuduPagedResponse<HuduArticle>): string {
   if (paged.records.length === 0) return 'Nenhum artigo encontrado.';
 
-  const rows = paged.records.map(
-    (a) =>
-      `| ${a.id} | ${esc(a.name)} | ${a.company_id ?? 'Global'} | ${a.draft ? 'Rascunho' : 'Publicado'} | ${a.updated_at ?? ''} |`
-  );
+  const rows = paged.records.map((a) => {
+    // REQ-07 / BUG-07: show company name when available; fall back to ID
+    const company = a.company_name
+      ? `${esc(a.company_name)} (ID: ${a.company_id})`
+      : (a.company_id ? String(a.company_id) : 'Global');
+    return `| ${a.id} | ${esc(a.name)} | ${company} | ${a.draft ? 'Rascunho' : 'Publicado'} | ${a.updated_at ?? ''} |`;
+  });
 
   return [
     pageInfo(paged),
     '',
-    '| ID | Título | Empresa ID | Status | Atualizado |',
+    '| ID | Título | Empresa | Status | Atualizado |',
     '|---|---|---|---|---|',
     ...rows,
   ].join('\n');
@@ -208,13 +212,17 @@ export function formatArticleList(paged: HuduPagedResponse<HuduArticle>): string
 
 export function formatArticleDetail(a: HuduArticle): string {
   const content = a.content ? stripHtml(a.content) : 'Sem conteúdo.';
+  // REQ-07 / BUG-07: show company name when available; fall back to ID
+  const company = a.company_name
+    ? `${esc(a.company_name)} (ID: ${a.company_id})`
+    : (a.company_id ? `ID: ${a.company_id}` : 'Global');
   return [
     `# Artigo KB: ${a.name}`,
     '',
     '| Campo | Valor |',
     '|---|---|',
     `| ID | ${a.id} |`,
-    `| Empresa ID | ${a.company_id ?? 'Global'} |`,
+    `| Empresa | ${company} |`,
     `| Pasta ID | ${a.folder_id ?? '-'} |`,
     `| Status | ${a.draft ? 'Rascunho' : 'Publicado'} |`,
     `| Criado em | ${a.created_at ?? ''} |`,
@@ -353,15 +361,18 @@ export function formatActivityLogList(paged: HuduPagedResponse<HuduActivityLog>)
 export function formatFolderList(paged: HuduPagedResponse<HuduFolder>): string {
   if (paged.records.length === 0) return 'Nenhuma pasta encontrada.';
 
-  const rows = paged.records.map(
-    (f) =>
-      `| ${f.id} | ${esc(f.name)} | ${f.company_id ?? 'Global'} | ${f.parent_folder_id ?? '-'} | ${truncate(f.description, 60)} |`
-  );
+  const rows = paged.records.map((f) => {
+    // REQ-07 / BUG-07: show company name when available; fall back to ID
+    const company = (f as any).company_name
+      ? `${esc((f as any).company_name)} (ID: ${f.company_id})`
+      : (f.company_id ? String(f.company_id) : 'Global');
+    return `| ${f.id} | ${esc(f.name)} | ${company} | ${f.parent_folder_id ?? '-'} | ${truncate(f.description, 60)} |`;
+  });
 
   return [
     pageInfo(paged),
     '',
-    '| ID | Nome | Empresa ID | Pai | Descrição |',
+    '| ID | Nome | Empresa | Pai | Descrição |',
     '|---|---|---|---|---|',
     ...rows,
   ].join('\n');
@@ -371,13 +382,19 @@ export function formatFolderList(paged: HuduPagedResponse<HuduFolder>): string {
 
 export function formatFolderDetail(f: any): string {
   if (!f || typeof f !== 'object') return 'Pasta indisponível.';
+  // REQ-07 / BUG-07: show company name when available; fall back to ID
+  // REQ-08: include Nome row at the top of the detail table
+  const company = f.company_name
+    ? `${esc(f.company_name)} (ID: ${f.company_id})`
+    : (f.company_id ? `ID: ${f.company_id}` : 'Global');
   return [
     `# Pasta: ${esc(f.name) || '-'}`,
     '',
     '| Campo | Valor |',
     '|---|---|',
     `| ID | ${f.id ?? '-'} |`,
-    `| Empresa ID | ${f.company_id ?? 'Global'} |`,
+    `| Nome | ${esc(f.name) || '-'} |`,
+    `| Empresa | ${company} |`,
     `| Pasta pai | ${f.parent_folder_id ?? '-'} |`,
     `| Ícone | ${esc(f.icon) || '-'} |`,
     `| Criada em | ${f.created_at ?? '-'} |`,
@@ -388,13 +405,27 @@ export function formatFolderDetail(f: any): string {
 
 // ---- Relations ----
 
+/**
+ * Format a relation endpoint as "Type "Name" (ID: N)" when name is known,
+ * or "Type#N" as fallback.
+ * REQ-09 / BUG-09
+ */
+function formatRelationEndpoint(type: string, id: number, name?: string | null): string {
+  if (name && name.trim() !== '') {
+    return `${esc(type)} "${esc(name)}" (ID: ${id})`;
+  }
+  return `${esc(type)}#${id}`;
+}
+
 export function formatRelationList(paged: HuduPagedResponse<HuduRelation>): string {
   if (paged.records.length === 0) return 'Nenhuma relação encontrada.';
 
-  const rows = paged.records.map(
-    (r) =>
-      `| ${r.id} | ${esc(r.fromable_type)}#${r.fromable_id} | ${esc(r.toable_type)}#${r.toable_id} | ${truncate(r.description, 60)} |`
-  );
+  const rows = paged.records.map((r) => {
+    // REQ-09 / BUG-09: show entity names when available via optional hydrated fields
+    const from = formatRelationEndpoint(r.fromable_type, r.fromable_id, (r as any).fromable_name);
+    const to = formatRelationEndpoint(r.toable_type, r.toable_id, (r as any).toable_name);
+    return `| ${r.id} | ${from} | ${to} | ${truncate(r.description, 60)} |`;
+  });
 
   return [
     pageInfo(paged),
@@ -406,15 +437,18 @@ export function formatRelationList(paged: HuduPagedResponse<HuduRelation>): stri
 }
 
 export function formatRelationDetail(r: HuduRelation): string {
+  // REQ-09 / BUG-09: show entity names when available via optional hydrated fields
+  const from = formatRelationEndpoint(r.fromable_type, r.fromable_id, (r as any).fromable_name);
+  const to = formatRelationEndpoint(r.toable_type, r.toable_id, (r as any).toable_name);
   return [
-    `# Relacao: ${esc(r.name) || `${esc(r.fromable_type)}#${r.fromable_id} -> ${esc(r.toable_type)}#${r.toable_id}`}`,
+    `# Relacao: ${esc(r.name) || `${from} -> ${to}`}`,
     '',
     '| Campo | Valor |',
     '|---|---|',
     `| ID | ${r.id} |`,
     `| Nome | ${esc(r.name) || '-'} |`,
-    `| Origem | ${esc(r.fromable_type)}#${r.fromable_id} |`,
-    `| Destino | ${esc(r.toable_type)}#${r.toable_id} |`,
+    `| Origem | ${from} |`,
+    `| Destino | ${to} |`,
     `| Criado em | ${r.created_at ?? ''} |`,
     `| Atualizado em | ${r.updated_at ?? ''} |`,
     ...(r.description ? ['', '## Descricao', '', truncate(r.description, 2000)] : []),
@@ -463,9 +497,10 @@ export function formatProcedureDetail(p: HuduProcedure): string {
 export function formatNetworkList(paged: HuduPagedResponse<HuduNetwork>): string {
   if (paged.records.length === 0) return 'Nenhuma rede encontrada.';
 
+  // REQ-06 / BUG-06: resolve network_type integer to human-readable label
   const rows = paged.records.map(
     (n) =>
-      `| ${n.id} | ${esc(n.name)} | ${esc(n.address || n.network) || '-'} | ${esc(n.cidr || n.mask) || '-'} | ${esc(n.network_type) || '-'} |`
+      `| ${n.id} | ${esc(n.name)} | ${esc(n.address || n.network) || '-'} | ${esc(n.cidr || n.mask) || '-'} | ${resolveNetworkType(n.network_type as number | string | undefined)} |`
   );
 
   return [
@@ -486,7 +521,7 @@ export function formatNetworkDetail(n: HuduNetwork): string {
     '|---|---|',
     `| ID | ${n.id ?? '-'} |`,
     `| Endereço | ${esc(n.address || n.network) || '-'} |`,
-    `| Tipo | ${n.network_type ?? '-'} |`,
+    `| Tipo | ${resolveNetworkType(n.network_type as number | string | undefined)} |`,
     `| Empresa ID | ${n.company_id ?? '-'} |`,
     `| Localização ID | ${n.location_id ?? '-'} |`,
     `| VLAN ID | ${n.vlan_id ?? '-'} |`,
@@ -774,8 +809,9 @@ export function formatRackStorageItemDetail(i: any): string {
 export function formatPublicPhotoList(paged: HuduPagedResponse<HuduPublicPhoto>): string {
   if (paged.records.length === 0) return 'Nenhuma foto encontrada.';
 
+  // REQ-10 / BUG-08: surface name and filename even when empty (use '-' placeholder)
   const rows = paged.records.map(
-    (p) => `| ${p.id} | ${esc(p.name)} | ${esc(p.filename)} | ${esc(p.url)} |`
+    (p) => `| ${p.id} | ${esc(p.name) || '-'} | ${esc(p.filename) || '-'} | ${esc(p.url) || '-'} |`
   );
 
   return [
@@ -789,12 +825,14 @@ export function formatPublicPhotoList(paged: HuduPagedResponse<HuduPublicPhoto>)
 
 export function formatPublicPhotoDetail(p: any): string {
   if (!p || typeof p !== 'object') return 'Foto indisponível.';
+  // REQ-10 / BUG-08: surface name and filename even when empty (use '-' placeholder)
   return [
     `# Foto pública: ${esc(p.name) || esc(p.filename) || `#${p.id}`}`,
     '',
     '| Campo | Valor |',
     '|---|---|',
     `| ID | ${p.id ?? '-'} |`,
+    `| Nome | ${esc(p.name) || '-'} |`,
     `| Arquivo | ${esc(p.filename) || '-'} |`,
     `| URL | ${esc(p.url) || '-'} |`,
     `| Vinculada a | ${esc(p.record_type) || '-'}#${p.record_id ?? '-'} |`,

@@ -49,17 +49,153 @@ function extractArrayResponse<T>(data: T[] | { [key: string]: T[] }, key: string
   return (data as { [key: string]: T[] })[key] || [];
 }
 
+// ---------------------------------------------------------------------------
+// Simple LRU cache for company name lookups (REQ-06 / BUG-07)
+// ---------------------------------------------------------------------------
+interface LruEntry {
+  name: string | null;
+  expiresAt: number;
+}
+
+class CompanyNameCache {
+  private readonly cache: Map<number, LruEntry>;
+  private readonly capacity: number;
+  private readonly ttlMs: number;
+
+  constructor(capacity = 200, ttlMinutes = 5) {
+    this.cache = new Map();
+    this.capacity = capacity;
+    this.ttlMs = ttlMinutes * 60 * 1000;
+  }
+
+  get(id: number): string | null | undefined {
+    const entry = this.cache.get(id);
+    if (!entry) return undefined; // cache miss
+    if (Date.now() > entry.expiresAt) {
+      this.cache.delete(id);
+      return undefined; // expired
+    }
+    // Move to end (most-recently-used)
+    this.cache.delete(id);
+    this.cache.set(id, entry);
+    console.error(`[cache] company hit id=${id} name=${entry.name ?? 'null'}`);
+    return entry.name;
+  }
+
+  set(id: number, name: string | null): void {
+    if (this.cache.has(id)) {
+      this.cache.delete(id);
+    } else if (this.cache.size >= this.capacity) {
+      // Evict least-recently-used (first entry)
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey !== undefined) this.cache.delete(firstKey);
+    }
+    this.cache.set(id, { name, expiresAt: Date.now() + this.ttlMs });
+    console.error(`[cache] company set id=${id} name=${name ?? 'null'}`);
+  }
+
+  /** Seed cache from a pre-fetched array of companies. */
+  seed(companies: Array<{ id: number; name: string }>): void {
+    for (const c of companies) {
+      this.set(c.id, c.name);
+    }
+  }
+}
+
 export class HuduClient {
   private client: AxiosInstance;
+  // @MX:NOTE: [AUTO] LRU cache for company name resolution — REQ-07 / BUG-07.
+  // Capacity 200, TTL 5 min. Do NOT cache password/credential payloads here.
+  private readonly companyCache = new CompanyNameCache(200, 5);
 
-  constructor(private _config: HuduConfig) {
+  constructor(config: HuduConfig) {
     this.client = axios.create({
-      baseURL: `${_config.baseUrl}/api/v1`,
+      baseURL: `${config.baseUrl}/api/v1`,
       headers: {
-        'x-api-key': _config.apiKey,
+        'x-api-key': config.apiKey,
         'Content-Type': 'application/json',
       },
-      timeout: _config.timeout,
+      timeout: config.timeout,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Company name resolution (REQ-07 / BUG-07)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Resolve a company name for a given ID.
+   *
+   * Algorithm:
+   * 1. Return cache hit immediately.
+   * 2. Fetch GET /companies/{id}, store result, return name.
+   * 3. On error, store null (so we don't retry on every call) and return null.
+   *
+   * IMPORTANT: Call resolveCompanyNames() (batch variant) when hydrating lists
+   * to avoid N+1 fetches.
+   */
+  async resolveCompanyName(companyId: number): Promise<string | null> {
+    const cached = this.companyCache.get(companyId);
+    if (cached !== undefined) return cached;
+
+    try {
+      const response = await this.client.get<{ company: HuduCompany }>(`/companies/${companyId}`);
+      const name = response.data.company?.name ?? null;
+      this.companyCache.set(companyId, name);
+      return name;
+    } catch {
+      // Store null to prevent repeated failed lookups within TTL
+      this.companyCache.set(companyId, null);
+      return null;
+    }
+  }
+
+  /**
+   * Batch-resolve company names for a set of IDs.
+   *
+   * Deduplicates IDs, resolves each missing name once, and updates the cache.
+   * Returns a Map<id, name|null> for caller convenience.
+   */
+  async resolveCompanyNames(companyIds: number[]): Promise<Map<number, string | null>> {
+    const result = new Map<number, string | null>();
+    const unique = [...new Set(companyIds)];
+
+    await Promise.all(
+      unique.map(async (id) => {
+        const name = await this.resolveCompanyName(id);
+        result.set(id, name);
+      })
+    );
+
+    return result;
+  }
+
+  /**
+   * Hydrate company_name on a list of records that each have company_id.
+   * Only fetches names for records where company_name is missing or empty.
+   * Deduplicates company_id values to avoid N+1 fetches.
+   */
+  async hydrateCompanyNames<T extends { company_id?: number; company_name?: string }>(
+    records: T[]
+  ): Promise<T[]> {
+    const missingIds = [
+      ...new Set(
+        records
+          .filter((r) => r.company_id && !r.company_name)
+          .map((r) => r.company_id as number)
+      ),
+    ];
+
+    if (missingIds.length === 0) return records;
+
+    const nameMap = await this.resolveCompanyNames(missingIds);
+
+    return records.map((r) => {
+      if (r.company_id && !r.company_name) {
+        const name = nameMap.get(r.company_id);
+        if (name) return { ...r, company_name: name };
+      }
+      return r;
     });
   }
 
@@ -75,12 +211,20 @@ export class HuduClient {
     updated_at?: string;
   }): Promise<HuduArticle[]> {
     const response = await this.client.get<{ articles: HuduArticle[] }>('/articles', { params });
-    return response.data.articles;
+    const articles = response.data.articles;
+    // REQ-07 / BUG-07: hydrate company_name for articles that have company_id
+    return this.hydrateCompanyNames(articles);
   }
 
   async getArticle(id: number): Promise<HuduArticle> {
     const response = await this.client.get<{ article: HuduArticle }>(`/articles/${id}`);
-    return response.data.article;
+    const article = response.data.article;
+    // REQ-07 / BUG-07: hydrate company_name for single article
+    if (article.company_id && !article.company_name) {
+      const name = await this.resolveCompanyName(article.company_id);
+      if (name) return { ...article, company_name: name };
+    }
+    return article;
   }
 
   async createArticle(article: Partial<HuduArticle>): Promise<HuduArticle> {
@@ -203,12 +347,20 @@ export class HuduClient {
     updated_at?: string;
   }): Promise<HuduAssetPassword[]> {
     const response = await this.client.get<{ asset_passwords: HuduAssetPassword[] }>('/asset_passwords', { params });
-    return response.data.asset_passwords;
+    const passwords = response.data.asset_passwords;
+    // REQ-07 / BUG-07: hydrate company_name for passwords missing it
+    return this.hydrateCompanyNames(passwords);
   }
 
   async getAssetPassword(id: number): Promise<HuduAssetPassword> {
     const response = await this.client.get<{ asset_password: HuduAssetPassword }>(`/asset_passwords/${id}`);
-    return response.data.asset_password;
+    const password = response.data.asset_password;
+    // REQ-07 / BUG-07: hydrate company_name for single password
+    if (password.company_id && !password.company_name) {
+      const name = await this.resolveCompanyName(password.company_id);
+      if (name) return { ...password, company_name: name };
+    }
+    return password;
   }
 
   async createAssetPassword(password: Partial<HuduAssetPassword>): Promise<HuduAssetPassword> {
@@ -336,12 +488,20 @@ export class HuduClient {
     company_id?: number;
   }): Promise<HuduFolder[]> {
     const response = await this.client.get<{ folders: HuduFolder[] }>('/folders', { params });
-    return response.data.folders;
+    const folders = response.data.folders;
+    // REQ-07/REQ-08 / BUG-07: hydrate company_name for folders
+    return this.hydrateCompanyNames(folders);
   }
 
   async getFolder(id: number): Promise<HuduFolder> {
     const response = await this.client.get<{ folder: HuduFolder }>(`/folders/${id}`);
-    return response.data.folder;
+    const folder = response.data.folder;
+    // REQ-07/REQ-08 / BUG-07: hydrate company_name for single folder
+    if (folder.company_id && !(folder as any).company_name) {
+      const name = await this.resolveCompanyName(folder.company_id);
+      if (name) return { ...folder, company_name: name } as HuduFolder & { company_name: string };
+    }
+    return folder;
   }
 
   async createFolder(folder: Partial<HuduFolder>): Promise<HuduFolder> {
