@@ -19,13 +19,14 @@ export const createQuerySchema = (properties: Record<string, any>) => ({
     search: { type: 'string', description: 'Texto de busca para filtrar resultados' },
     name: { type: 'string', description: 'Filtrar por nome exato ou parcial' },
     page: { type: 'number', minimum: 1, default: 1, description: 'Número da página para paginação' },
-    page_size: { type: 'number', minimum: 1, maximum: 25, default: 25, description: 'Quantidade de resultados por pagina (padrao e maximo: 25, limite da API Hudu)' },
+    page_size: { type: 'number', minimum: 1, maximum: 100, default: 25, description: 'Quantidade de resultados por pagina (padrao: 25, maximo: 100)' },
     ...properties
   }
 });
 
 export const standardActions = ['create', 'get', 'update', 'delete', 'archive', 'unarchive'];
 export const basicActions = ['create', 'get', 'update', 'delete'];
+export const createDeleteActions = ['create', 'delete'];
 
 export const commonProperties = {
   id: { type: 'number' as const, description: 'ID do recurso para operações get, update, delete ou archive' },

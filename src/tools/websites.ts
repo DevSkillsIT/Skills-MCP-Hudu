@@ -87,7 +87,7 @@ export async function executeWebsitesTool(args: any, client: HuduClient): Promis
         return createSuccessResponse(null, 'Website deleted successfully');
 
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Websites operation failed: ${error.message}`);

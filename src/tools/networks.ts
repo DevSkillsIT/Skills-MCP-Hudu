@@ -260,7 +260,7 @@ export async function executeNetworksTool(args: any, client: HuduClient): Promis
         return createSuccessResponse(null, 'Network deleted successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Networks operation failed: ${error.message}`);
@@ -313,7 +313,7 @@ export async function executeVlansTool(args: any, client: HuduClient): Promise<T
         return createSuccessResponse(null, 'VLAN deleted successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`VLANs operation failed: ${error.message}`);
@@ -366,7 +366,7 @@ export async function executeVlanZonesTool(args: any, client: HuduClient): Promi
         return createSuccessResponse(null, 'VLAN zone deleted successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`VLAN zones operation failed: ${error.message}`);
@@ -420,7 +420,7 @@ export async function executeIpAddressesTool(args: any, client: HuduClient): Pro
         return createSuccessResponse(null, 'IP address deleted successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`IP addresses operation failed: ${error.message}`);

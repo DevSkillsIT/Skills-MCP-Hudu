@@ -26,8 +26,8 @@ export const adminTool: Tool = {
     required: ['action']
   },
   annotations: {
-    readOnlyHint: true,
-    destructiveHint: false,
+    readOnlyHint: false,
+    destructiveHint: true,
     openWorldHint: true
   }
 };
@@ -96,7 +96,7 @@ export async function executeAdminTool(args: any, client: HuduClient): Promise<T
         return createSuccessResponse(expirations, 'Expirations retrieved successfully');
         
       default:
-        return createErrorResponse(`Unknown admin action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: get_api_info, get_activity_logs, delete_activity_logs, get_exports, get_s3_exports, get_expirations.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Admin operation failed: ${error.message}`);

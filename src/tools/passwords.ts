@@ -97,7 +97,7 @@ export async function executePasswordsTool(args: any, client: HuduClient): Promi
         return createSuccessResponse(null, 'Password unarchived successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete, archive, unarchive.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Passwords operation failed: ${error.message}`);

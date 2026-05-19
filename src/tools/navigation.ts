@@ -22,7 +22,7 @@ export const navigationTool: Tool = {
         type: 'string',
         enum: ['card_jump', 'card_lookup', 'company_jump'],
         description: 'Ação de navegação. Valores: card_jump (melhor correspondência entre ativos e artigos, retorna 1 registro), card_lookup (lista completa de ativos e artigos que correspondem ao nome), company_jump (busca a empresa pelo nome e retorna os detalhes)'
-      },
+      , default: 'card_jump' },
       name: { type: 'string', description: 'Nome do recurso ou empresa a localizar' },
       company_id: { type: 'number', description: 'ID da empresa para restringir a busca (opcional, ignorado em company_jump)' }
     },
@@ -79,7 +79,7 @@ function mapArticleHit(a: any): NavigationHit {
 
 // Tool execution function
 export async function executeNavigationTool(args: any, client: HuduClient): Promise<ToolResponse> {
-  const { action, name, company_id } = args;
+  const { action = 'card_jump', name, company_id } = args;
 
   if (!name) {
     return createErrorResponse('O parâmetro "name" é obrigatório para operações de navegação.');
@@ -143,7 +143,7 @@ export async function executeNavigationTool(args: any, client: HuduClient): Prom
       }
 
       default:
-        return createErrorResponse(`Unknown navigation action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: company_jump, card_lookup, card_jump.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Navigation operation failed: ${error.message}`);

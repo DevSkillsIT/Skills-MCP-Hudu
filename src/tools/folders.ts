@@ -85,7 +85,7 @@ export async function executeFoldersTool(args: any, client: HuduClient): Promise
         return createSuccessResponse(null, 'Folder deleted successfully');
 
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Folders operation failed: ${error.message}`);

@@ -27,7 +27,7 @@ export const companiesTool: Tool = {
   },
   annotations: {
     readOnlyHint: false,
-    destructiveHint: false,
+    destructiveHint: true,
     openWorldHint: true
   }
 };
@@ -86,7 +86,7 @@ export async function executeCompaniesTool(args: any, client: HuduClient): Promi
         return createSuccessResponse(null, 'Company unarchived successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, archive, unarchive.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Companies operation failed: ${error.message}`);

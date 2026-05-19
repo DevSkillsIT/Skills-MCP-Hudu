@@ -1,16 +1,16 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, basicActions, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, createQuerySchema, createDeleteActions, commonProperties } from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 // Magic Dash manage tool (CRUD)
 export const magicDashTool: Tool = {
   name: 'hudu_manage_dashboard_widgets',
-  description: 'Widgets de dashboard, paineis de controle e indicadores no Hudu — operacoes CRUD para gerenciar itens do Magic Dash. Use quando precisar criar paineis customizados, cards de status ou indicadores para empresas no Hudu. Aceita action (create, get, update, delete). Retorna Markdown com dados do widget processado.',
+  description: 'Widgets de dashboard, paineis e indicadores no Hudu — operacoes create e delete (a API do Hudu NAO suporta GET nem PUT em magic_dash individuais). Use hudu_search_dashboard_widgets para listar. Aceita action (create, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo widget), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
+      action: createActionSchema(createDeleteActions, 'Ação a executar. Valores: create (criar novo widget), delete (excluir por ID). A API do Hudu NAO suporta GET nem PUT em magic_dash individuais — use hudu_search_dashboard_widgets para listar.'),
       id: commonProperties.id,
       fields: createFieldsSchema({
         title: { type: 'string', description: 'Título do widget no dashboard (obrigatório para criação)' },
@@ -60,18 +60,16 @@ export async function executeMagicDashTool(args: any, client: HuduClient): Promi
         return createSuccessResponse(newMagicDash, 'Magic dash item created successfully');
 
       case 'get':
-        if (!id) {
-          return createErrorResponse('Magic dash ID is required for get operation');
-        }
-        const magicDash = await client.getMagicDash(id);
-        return createSuccessResponse(magicDash);
+        return createErrorResponse(
+          'A API do Hudu NAO suporta GET /magic_dash/:id. ' +
+          'Use hudu_search_dashboard_widgets para listar widgets disponiveis.'
+        );
 
       case 'update':
-        if (!id) {
-          return createErrorResponse('Magic dash ID is required for update operation');
-        }
-        const updatedMagicDash = await client.updateMagicDash(id, fields || {});
-        return createSuccessResponse(updatedMagicDash, 'Magic dash item updated successfully');
+        return createErrorResponse(
+          'A API do Hudu NAO suporta PUT /magic_dash/:id. ' +
+          'Para atualizar, delete o widget existente e crie um novo.'
+        );
 
       case 'delete':
         if (!id) {
@@ -81,7 +79,7 @@ export async function executeMagicDashTool(args: any, client: HuduClient): Promi
         return createSuccessResponse(null, 'Magic dash item deleted successfully');
 
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Magic dash operation failed: ${error.message}`);

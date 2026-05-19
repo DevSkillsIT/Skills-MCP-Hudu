@@ -36,7 +36,7 @@ export const assetLayoutsTool: Tool = {
   },
   annotations: {
     readOnlyHint: false,
-    destructiveHint: false,
+    destructiveHint: true,
     openWorldHint: true
   }
 };
@@ -96,7 +96,7 @@ export async function executeAssetLayoutsTool(args: any, client: HuduClient): Pr
         return createErrorResponse('Delete is not supported for asset layouts');
 
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Asset layouts operation failed: ${error.message}`);

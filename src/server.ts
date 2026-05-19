@@ -329,6 +329,32 @@ export class HuduMcpServer {
     });
   }
 
+  private sanitizeToolArgs(toolName: string, args: any): any {
+    if (!args || typeof args !== 'object') return args;
+    const sanitized = { ...args };
+    
+    // BUG-05: Clamp page_size to [1, 100]
+    if (typeof sanitized.page_size === 'number') {
+      if (sanitized.page_size > 100) sanitized.page_size = 100;
+      if (sanitized.page_size < 1) sanitized.page_size = 1;
+    }
+    // Coerce string page_size to number
+    if (typeof sanitized.page_size === 'string') {
+      const n = parseInt(sanitized.page_size, 10);
+      if (!isNaN(n)) sanitized.page_size = Math.max(1, Math.min(100, n));
+    }
+    
+    // BUG-01 / LLM-01: Accept 'query' as alias for 'search' in tools that use 'search'
+    // (search tools use 'search'; only hudu_search_all_resource_types uses 'query')
+    if (sanitized.query !== undefined && sanitized.search === undefined 
+        && toolName !== 'hudu_search_all_resource_types') {
+      sanitized.search = sanitized.query;
+      delete sanitized.query;
+    }
+    
+    return sanitized;
+  }
+
   private setupHandlers(): void {
     this.logger.debug('Setting up MCP request handlers');
 
@@ -348,7 +374,8 @@ export class HuduMcpServer {
 
     // Tool execution handler - proper MCP SDK pattern
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
+      const { name, arguments: rawArgs } = request.params;
+      const args = this.sanitizeToolArgs(name, rawArgs);
       const requestId = Math.random().toString(36).substring(7);
       
       this.logger.info('Tool execution started', {
@@ -771,6 +798,45 @@ export class HuduMcpServer {
     });
     
 
+    // Bearer Token Authentication Middleware for /mcp endpoints
+    const mcpBearerToken = process.env.MCP_BEARER_TOKEN;
+    if (mcpBearerToken) {
+      app.use('/mcp', (req, res, next) => {
+        const authHeader = req.headers['authorization'];
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          this.logger.warn('MCP request rejected: missing or malformed Authorization header', {
+            ip: req.ip,
+            method: req.method,
+            path: req.path
+          });
+          res.status(401).json({
+            error: 'Unauthorized',
+            message: 'Missing or malformed Authorization header. Expected: Bearer <token>'
+          });
+          return;
+        }
+
+        const token = authHeader.slice(7);
+        if (token !== mcpBearerToken) {
+          this.logger.warn('MCP request rejected: invalid bearer token', {
+            ip: req.ip,
+            method: req.method,
+            path: req.path
+          });
+          res.status(401).json({
+            error: 'Unauthorized',
+            message: 'Invalid bearer token'
+          });
+          return;
+        }
+
+        next();
+      });
+      this.logger.info('Bearer token authentication enabled for /mcp endpoints');
+    } else {
+      this.logger.info('Bearer token authentication disabled (MCP_BEARER_TOKEN not set)');
+    }
+
     // ============================================
     // Streamable HTTP Transport (Dual: Claude + Gemini)
     // Suporta GET (SSE), POST (JSON-RPC), DELETE (session)
@@ -879,7 +945,8 @@ export class HuduMcpServer {
             break;
             
           case 'tools/call':
-            const { name, arguments: args } = params;
+            const { name, arguments: rawArgsHttp } = params;
+            const args = this.sanitizeToolArgs(name, rawArgsHttp);
             const executor = WORKING_TOOL_EXECUTORS[name];
 
             if (!executor) {

@@ -100,7 +100,7 @@ export async function executeAssetsTool(args: any, client: HuduClient): Promise<
         return createSuccessResponse(null, 'Asset unarchived successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete, archive, unarchive.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Assets operation failed: ${error.message}`);

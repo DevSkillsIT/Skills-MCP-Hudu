@@ -80,7 +80,6 @@ export class HuduClient {
 
   async getArticle(id: number): Promise<HuduArticle> {
     const response = await this.client.get<{ article: HuduArticle }>(`/articles/${id}`);
-    if (!response.data?.article) throw new Error(`Article with ID ${id} not found`);
     return response.data.article;
   }
 
@@ -209,7 +208,6 @@ export class HuduClient {
 
   async getAssetPassword(id: number): Promise<HuduAssetPassword> {
     const response = await this.client.get<{ asset_password: HuduAssetPassword }>(`/asset_passwords/${id}`);
-    if (!response.data?.asset_password) throw new Error(`Asset password with ID ${id} not found`);
     return response.data.asset_password;
   }
 
@@ -252,7 +250,6 @@ export class HuduClient {
 
   async getCompany(id: number): Promise<HuduCompany> {
     const response = await this.client.get<{ company: HuduCompany }>(`/companies/${id}`);
-    if (!response.data?.company) throw new Error(`Company with ID ${id} not found`);
     return response.data.company;
   }
 
@@ -289,7 +286,6 @@ export class HuduClient {
 
   async getAssetLayout(id: number): Promise<HuduAssetLayout> {
     const response = await this.client.get<{ asset_layout: HuduAssetLayout }>(`/asset_layouts/${id}`);
-    if (!response.data?.asset_layout) throw new Error(`Asset layout with ID ${id} not found`);
     return response.data.asset_layout;
   }
 
@@ -345,7 +341,6 @@ export class HuduClient {
 
   async getFolder(id: number): Promise<HuduFolder> {
     const response = await this.client.get<{ folder: HuduFolder }>(`/folders/${id}`);
-    if (!response.data?.folder) throw new Error(`Folder with ID ${id} not found`);
     return response.data.folder;
   }
 
@@ -375,7 +370,6 @@ export class HuduClient {
 
   async getUser(id: number): Promise<HuduUser> {
     const response = await this.client.get<{ user: HuduUser }>(`/users/${id}`);
-    if (!response.data?.user) throw new Error(`User with ID ${id} not found`);
     return response.data.user;
   }
 
@@ -405,7 +399,6 @@ export class HuduClient {
 
   async getProcedure(id: number): Promise<HuduProcedure> {
     const response = await this.client.get<{ procedure: HuduProcedure }>(`/procedures/${id}`);
-    if (!response.data?.procedure) throw new Error(`Procedure with ID ${id} not found`);
     return response.data.procedure;
   }
 
@@ -451,7 +444,6 @@ export class HuduClient {
 
   async getProcedureTask(id: number): Promise<HuduProcedureTask> {
     const response = await this.client.get<{ procedure_task: HuduProcedureTask }>(`/procedure_tasks/${id}`);
-    if (!response.data?.procedure_task) throw new Error(`Procedure task with ID ${id} not found`);
     return response.data.procedure_task;
   }
 
@@ -481,9 +473,8 @@ export class HuduClient {
 
   async getNetwork(id: number): Promise<HuduNetwork> {
     const response = await this.client.get<any>(`/networks/${id}`);
-    const result = response.data?.network ?? response.data;
-    if (!result || (typeof result === 'object' && !('id' in result))) throw new Error(`Network with ID ${id} not found`);
-    return result;
+    // Handle both formats: { network: {...} } or {...}
+    return response.data.network || response.data;
   }
 
   async createNetwork(network: Partial<HuduNetwork>): Promise<HuduNetwork> {
@@ -512,7 +503,6 @@ export class HuduClient {
 
   async getPasswordFolder(id: number): Promise<HuduPasswordFolder> {
     const response = await this.client.get<{ password_folder: HuduPasswordFolder }>(`/password_folders/${id}`);
-    if (!response.data?.password_folder) throw new Error(`Password folder with ID ${id} not found`);
     return response.data.password_folder;
   }
 
@@ -541,7 +531,6 @@ export class HuduClient {
 
   async getUpload(id: number): Promise<HuduUpload> {
     const response = await this.client.get<{ upload: HuduUpload }>(`/uploads/${id}`);
-    if (!response.data?.upload) throw new Error(`Upload with ID ${id} not found`);
     return response.data.upload;
   }
 
@@ -571,9 +560,8 @@ export class HuduClient {
 
   async getWebsite(id: number): Promise<HuduWebsite> {
     const response = await this.client.get<any>(`/websites/${id}`);
-    const result = response.data?.website ?? response.data;
-    if (!result || (typeof result === 'object' && !('id' in result))) throw new Error(`Website with ID ${id} not found`);
-    return result;
+    // API returns raw object directly (not wrapped in { website: {...} })
+    return response.data.website || response.data;
   }
 
   async createWebsite(website: Partial<HuduWebsite>): Promise<HuduWebsite> {
@@ -603,9 +591,7 @@ export class HuduClient {
 
   async getVlan(id: number): Promise<HuduVlan> {
     const response = await this.client.get<any>(`/vlans/${id}`);
-    const result = response.data?.vlan ?? response.data;
-    if (!result || (typeof result === 'object' && !('id' in result))) throw new Error(`VLAN with ID ${id} not found`);
-    return result;
+    return response.data.vlan || response.data;
   }
 
   async createVlan(vlan: Partial<HuduVlan>): Promise<HuduVlan> {
@@ -634,9 +620,7 @@ export class HuduClient {
 
   async getVlanZone(id: number): Promise<HuduVlanZone> {
     const response = await this.client.get<any>(`/vlan_zones/${id}`);
-    const result = response.data?.vlan_zone ?? response.data;
-    if (!result || (typeof result === 'object' && !('id' in result))) throw new Error(`VLAN zone with ID ${id} not found`);
-    return result;
+    return response.data.vlan_zone || response.data;
   }
 
   async createVlanZone(zone: Partial<HuduVlanZone>): Promise<HuduVlanZone> {
@@ -665,9 +649,7 @@ export class HuduClient {
 
   async getIpAddress(id: number): Promise<HuduIpAddress> {
     const response = await this.client.get<any>(`/ip_addresses/${id}`);
-    const result = response.data?.ip_address ?? response.data;
-    if (!result || (typeof result === 'object' && !('id' in result))) throw new Error(`IP address with ID ${id} not found`);
-    return result;
+    return response.data.ip_address || response.data;
   }
 
   async createIpAddress(ipAddress: Partial<HuduIpAddress>): Promise<HuduIpAddress> {
@@ -698,7 +680,6 @@ export class HuduClient {
 
   async getRelation(id: number): Promise<HuduRelation> {
     const response = await this.client.get<{ relation: HuduRelation }>(`/relations/${id}`);
-    if (!response.data?.relation) throw new Error(`Relation with ID ${id} not found`);
     return response.data.relation;
   }
 
@@ -728,7 +709,6 @@ export class HuduClient {
 
   async getList(id: number): Promise<HuduList> {
     const response = await this.client.get<{ list: HuduList }>(`/lists/${id}`);
-    if (!response.data?.list) throw new Error(`List with ID ${id} not found`);
     return response.data.list;
   }
 
@@ -757,7 +737,6 @@ export class HuduClient {
 
   async getGroup(id: number): Promise<HuduGroup> {
     const response = await this.client.get<{ group: HuduGroup }>(`/groups/${id}`);
-    if (!response.data?.group) throw new Error(`Group with ID ${id} not found`);
     return response.data.group;
   }
 
@@ -787,7 +766,6 @@ export class HuduClient {
 
   async getMagicDash(id: number): Promise<HuduMagicDash> {
     const response = await this.client.get<{ magic_dash: HuduMagicDash }>(`/magic_dash/${id}`);
-    if (!response.data?.magic_dash) throw new Error(`Magic dash with ID ${id} not found`);
     return response.data.magic_dash;
   }
 
@@ -822,7 +800,6 @@ export class HuduClient {
 
   async getMatcher(id: number): Promise<HuduMatcher> {
     const response = await this.client.get<{ matcher: HuduMatcher }>(`/matchers/${id}`);
-    if (!response.data?.matcher) throw new Error(`Matcher with ID ${id} not found`);
     return response.data.matcher;
   }
 
@@ -878,7 +855,6 @@ export class HuduClient {
 
   async getRackStorage(id: number): Promise<HuduRackStorage> {
     const response = await this.client.get<{ rack_storage: HuduRackStorage }>(`/rack_storages/${id}`);
-    if (!response.data?.rack_storage) throw new Error(`Rack storage with ID ${id} not found`);
     return response.data.rack_storage;
   }
 
@@ -896,21 +872,17 @@ export class HuduClient {
     await this.client.delete(`/rack_storages/${id}`);
   }
 
-  // Rack Storage Items - Hudu API for /rack_storage_items ONLY accepts asset_id parameter.
-  // It rejects rack_storage_id, page, page_size (all return HTTP 400).
-  // To get items of a specific rack, use getRackStorage(rackId) - response includes nested front_items/back_items.
+  // Rack Storage Items - CORRIGIDO: API pode retornar array direto
   async getRackStorageItems(params?: {
-    asset_id?: number;
+    rack_storage_id?: number;
+    page?: number;
   }): Promise<HuduRackStorageItem[]> {
-    const safeParams: any = {};
-    if (params?.asset_id) safeParams.asset_id = params.asset_id;
-    const response = await this.client.get<HuduRackStorageItem[] | { rack_storage_items: HuduRackStorageItem[] }>('/rack_storage_items', { params: safeParams });
+    const response = await this.client.get<HuduRackStorageItem[] | { rack_storage_items: HuduRackStorageItem[] }>('/rack_storage_items', { params });
     return extractArrayResponse(response.data, 'rack_storage_items');
   }
 
   async getRackStorageItem(id: number): Promise<HuduRackStorageItem> {
     const response = await this.client.get<{ rack_storage_item: HuduRackStorageItem }>(`/rack_storage_items/${id}`);
-    if (!response.data?.rack_storage_item) throw new Error(`Rack storage item with ID ${id} not found`);
     return response.data.rack_storage_item;
   }
 
@@ -939,7 +911,6 @@ export class HuduClient {
 
   async getPublicPhoto(id: number): Promise<HuduPublicPhoto> {
     const response = await this.client.get<{ public_photo: HuduPublicPhoto }>(`/public_photos/${id}`);
-    if (!response.data?.public_photo) throw new Error(`Public photo with ID ${id} not found`);
     return response.data.public_photo;
   }
 

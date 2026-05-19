@@ -1,16 +1,16 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, basicActions, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, createQuerySchema, createDeleteActions, commonProperties } from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 // Relations manage tool (CRUD)
 export const relationsTool: Tool = {
   name: 'hudu_manage_entity_relations',
-  description: 'Relacoes, vinculos e associacoes entre entidades no Hudu — operacoes CRUD para gerenciar relacionamentos entre recursos. Use quando precisar criar, consultar, atualizar ou excluir vinculos entre ativos, empresas, artigos ou outros objetos no Hudu. Aceita action (create, get, update, delete). Retorna Markdown com dados da relacao processada.',
+  description: 'Relacoes, vinculos e associacoes entre entidades no Hudu — operacoes create e delete (a API do Hudu NAO suporta GET nem PUT em relations). Use hudu_search_entity_relations para listar/filtrar. Aceita action (create, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
-      action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar nova relação), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
+      action: createActionSchema(createDeleteActions, 'Ação a executar. Valores: create (criar nova relacao), delete (excluir por ID). A API do Hudu NAO suporta get ou update — use hudu_search_entity_relations para listar e filtrar.'),
       id: commonProperties.id,
       fields: createFieldsSchema({
         description: { type: 'string', description: 'Descrição do vínculo entre as entidades' },
@@ -55,34 +55,32 @@ export async function executeRelationsTool(args: any, client: HuduClient): Promi
     switch (action) {
       case 'create':
         if (!fields?.fromable_type || !fields?.fromable_id || !fields?.toable_type || !fields?.toable_id) {
-          return createErrorResponse('fromable_type, fromable_id, toable_type and toable_id are required for creating relations');
+          return createErrorResponse('Para criar uma relation, fields deve conter: fromable_type, fromable_id, toable_type, toable_id.');
         }
         const newRelation = await client.createRelation(fields);
         return createSuccessResponse(newRelation, 'Relation created successfully');
 
       case 'get':
-        if (!id) {
-          return createErrorResponse('Relation ID is required for get operation');
-        }
-        const relation = await client.getRelation(id);
-        return createSuccessResponse(relation);
+        return createErrorResponse(
+          'A API do Hudu NAO suporta GET /relations/:id. ' +
+          'Use hudu_search_entity_relations para listar e filtrar relations por fromable_type, fromable_id, toable_type ou toable_id.'
+        );
 
       case 'update':
-        if (!id) {
-          return createErrorResponse('Relation ID is required for update operation');
-        }
-        const updatedRelation = await client.updateRelation(id, fields || {});
-        return createSuccessResponse(updatedRelation, 'Relation updated successfully');
+        return createErrorResponse(
+          'A API do Hudu NAO suporta PUT /relations/:id. ' +
+          'Para alterar uma relation, delete a existente (action=delete) e crie uma nova (action=create).'
+        );
 
       case 'delete':
         if (!id) {
-          return createErrorResponse('Relation ID is required for delete operation');
+          return createErrorResponse('id e obrigatorio para action=delete.');
         }
         await client.deleteRelation(id);
         return createSuccessResponse(null, 'Relation deleted successfully');
 
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Relations operation failed: ${error.message}`);

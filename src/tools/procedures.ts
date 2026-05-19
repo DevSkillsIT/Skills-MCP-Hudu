@@ -144,7 +144,7 @@ export async function executeProceduresTool(args: any, client: HuduClient): Prom
         return createSuccessResponse(procedureFromTemplate, 'Procedure created from template successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete, kickoff, duplicate, create_from_template.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Procedures operation failed: ${error.message}`);
@@ -194,7 +194,7 @@ export async function executeProcedureTasksTool(args: any, client: HuduClient): 
         return createSuccessResponse(null, 'Procedure task deleted successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Procedure tasks operation failed: ${error.message}`);

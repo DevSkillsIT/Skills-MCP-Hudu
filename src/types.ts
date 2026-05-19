@@ -68,6 +68,8 @@ export interface HuduAssetPassword {
   username?: string;
   password: string;
   url?: string;
+  login_url?: string;
+  slug?: string;
   description?: string;
   company_id?: number;
   company_name?: string;
@@ -98,6 +100,13 @@ export interface HuduCompany {
   archived: boolean;
   created_at: string;
   updated_at: string;
+  parent_company_id?: number;
+  parent_company_name?: string;
+  full_url?: string;
+  slug?: string;
+  passwords_url?: string;
+  knowledge_base_url?: string;
+  object_type?: string;
 }
 
 export interface HuduAssetLayout {
@@ -234,6 +243,7 @@ export interface HuduUpload {
   filename: string;
   size: number;
   content_type: string;
+  url?: string;
   uploadable_type?: string;
   uploadable_id?: number;
   created_at: string;
@@ -243,12 +253,18 @@ export interface HuduUpload {
 export interface HuduWebsite {
   id: number;
   name: string;
+  code?: number;
   url: string;
+  slug?: string;
   company_id?: number;
   company_name?: string;
   paused: boolean;
   status?: string;
   monitoring_status?: string;
+  refreshed_at?: string;
+  monitored_at?: string;
+  icon?: string;
+  asset_type?: string;
   disable_dns?: boolean;
   disable_ssl?: boolean;
   disable_whois?: boolean;
@@ -300,6 +316,8 @@ export interface HuduIpAddress {
   status?: string;
   description?: string;
   network_id?: number;
+  company_id?: number;
+  asset_id?: number;
   created_at: string;
   updated_at: string;
 }
@@ -400,11 +418,21 @@ export interface HuduRackStorage {
 
 export interface HuduRackStorageItem {
   id: number;
-  name: string;
+  name?: string;
   rack_storage_id: number;
-  position: number;
-  size: number;
-  item_type: string;
+  position?: number;
+  size?: number;
+  item_type?: string;
+  rack_storage_role_name?: string;
+  rack_storage_role_id?: number;
+  asset_id?: number;
+  start_unit?: number;
+  end_unit?: number;
+  status?: string;
+  side?: string;
+  max_wattage?: number;
+  power_draw?: number;
+  reserved_message?: string;
   created_at: string;
   updated_at: string;
 }

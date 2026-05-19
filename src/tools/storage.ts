@@ -138,14 +138,13 @@ export const rackStorageItemsTool: Tool = {
 // in the executor to give a clear error message before hitting the API.
 export const rackStorageItemsQueryTool: Tool = {
   name: 'hudu_search_rack_storage_items',
-  description: 'Equipamentos, servidores e dispositivos montados em racks no Hudu — busca e filtragem com paginação. Use quando precisar localizar hardware instalado em um rack específico no Hudu. Exige rack_storage_id obrigatório — descubra IDs via hudu_search_rack_storage_locations. Consulta somente leitura. Retorna lista paginada em Markdown.',
+  description: 'Equipamentos montados em racks no Hudu — lista itens de rack. A API do Hudu para /rack_storage_items NAO suporta paginacao (page/page_size sao rejeitados). Para detalhes de um rack especifico (com items aninhados front_items/back_items), use hudu_manage_rack_storage_locations action=get. Consulta somente leitura. Retorna lista em Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
-      ...createQuerySchema({}).properties,
-      rack_storage_id: { type: 'number', description: 'ID do rack a pesquisar (obrigatório — API do Hudu rejeita busca ampla)' }
+      asset_id: { type: 'number', description: 'Filtrar por ID do ativo associado ao item (unico filtro suportado pela API)' }
     },
-    required: ['rack_storage_id']
+    required: []
   },
   annotations: {
     readOnlyHint: true,
@@ -236,7 +235,7 @@ export async function executeUploadsTool(args: any, client: HuduClient): Promise
         return createSuccessResponse(null, 'Upload deleted successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Uploads operation failed: ${error.message}`);
@@ -289,7 +288,7 @@ export async function executeRackStoragesTool(args: any, client: HuduClient): Pr
         return createSuccessResponse(null, 'Rack storage deleted successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Rack storages operation failed: ${error.message}`);
@@ -342,7 +341,7 @@ export async function executeRackStorageItemsTool(args: any, client: HuduClient)
         return createSuccessResponse(null, 'Rack storage item deleted successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Rack storage items operation failed: ${error.message}`);
@@ -350,12 +349,7 @@ export async function executeRackStorageItemsTool(args: any, client: HuduClient)
 }
 
 export async function executeRackStorageItemsQueryTool(args: any, client: HuduClient): Promise<ToolResponse> {
-  if (!args?.rack_storage_id) {
-    return createErrorResponse(
-      'rack_storage_id é obrigatório. A API do Hudu rejeita a busca ampla com HTTP 400. ' +
-      'Use hudu_search_rack_storage_locations para descobrir os IDs de racks disponíveis.'
-    );
-  }
+  // rack_storage_id is rejected by Hudu API; list items uses only asset_id filter
   try {
     const items = await client.getRackStorageItems(args);
     return createSuccessResponse(items);
@@ -400,7 +394,7 @@ export async function executePublicPhotosTool(args: any, client: HuduClient): Pr
         return createSuccessResponse(null, 'Public photo deleted successfully');
 
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Public photos operation failed: ${error.message}`);

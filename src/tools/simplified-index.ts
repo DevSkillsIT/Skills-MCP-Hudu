@@ -188,7 +188,7 @@ export async function executeArticlesTool(args: any, client: HuduClient): Promis
         return createSuccessResponse(newArticle, 'Article created successfully');
         
       default:
-        return createErrorResponse(`Action ${action} not yet implemented in simplified version`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: get, create.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Articles operation failed: ${error.message}`);
@@ -224,7 +224,7 @@ export async function executeCompaniesTool(args: any, client: HuduClient): Promi
         return createSuccessResponse(newCompany, 'Company created successfully');
         
       default:
-        return createErrorResponse(`Action ${action} not yet implemented in simplified version`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: get, create.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Companies operation failed: ${error.message}`);
@@ -250,7 +250,7 @@ export async function executeAdminTool(args: any, client: HuduClient): Promise<T
         return createSuccessResponse(apiInfo, 'API information retrieved successfully');
         
       default:
-        return createErrorResponse(`Unknown admin action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: get_api_info.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Admin operation failed: ${error.message}`);

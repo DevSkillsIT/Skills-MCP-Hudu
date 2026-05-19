@@ -79,7 +79,13 @@ export function formatCompanyDetail(c: HuduCompany): string {
     `| Endereço | ${esc([c.address_line_1, c.address_line_2, c.city, c.state, c.zip].filter(Boolean).join(', ')) || '-'} |`,
     `| País | ${esc(c.country_name) || '-'} |`,
     `| Telefone | ${esc(c.phone_number) || '-'} |`,
+    `| Fax | ${esc(c.fax_number) || '-'} |`,
     `| Website | ${esc(c.website) || '-'} |`,
+    `| CNPJ/ID | ${esc(c.id_number) || '-'} |`,
+    `| Empresa Pai | ${c.parent_company_name ? `${esc(c.parent_company_name)} (ID: ${c.parent_company_id})` : '-'} |`,
+    `| URL Hudu | ${esc(c.full_url) || '-'} |`,
+    `| URL Senhas | ${esc(c.passwords_url) || '-'} |`,
+    `| URL Base Conhecimento | ${esc(c.knowledge_base_url) || '-'} |`,
     `| Status | ${c.archived ? 'Arquivado' : 'Ativo'} |`,
     `| Criado em | ${c.created_at ?? ''} |`,
     `| Atualizado em | ${c.updated_at ?? ''} |`,
@@ -115,6 +121,7 @@ export function formatAssetDetail(a: HuduAsset): string {
     `| ID | ${a.id} |`,
     `| Nome | ${esc(a.name)} |`,
     `| Empresa | ${esc(a.company_name) || String(a.company_id)} |`,
+    `| Tipo | ${esc(a.asset_type) || '-'} |`,
     `| Layout ID | ${a.asset_layout_id} |`,
     `| Serial | ${esc(a.primary_serial) || '-'} |`,
     `| Modelo | ${esc(a.primary_model) || '-'} |`,
@@ -169,7 +176,12 @@ export function formatAssetLayoutDetail(l: HuduAssetLayout): string {
     `| Nome | ${esc(l.name)} |`,
     `| Ícone | ${esc(l.icon) || '-'} |`,
     `| Cor | ${esc(l.color) || '-'} |`,
+    `| Cor do Ícone | ${esc(l.icon_color) || '-'} |`,
     `| Ativo | ${l.active ? 'Sim' : 'Não'} |`,
+    `| Inclui Senhas | ${l.include_passwords ? 'Sim' : 'Não'} |`,
+    `| Inclui Fotos | ${l.include_photos ? 'Sim' : 'Não'} |`,
+    `| Inclui Comentários | ${l.include_comments ? 'Sim' : 'Não'} |`,
+    `| Inclui Arquivos | ${l.include_files ? 'Sim' : 'Não'} |`,
   ];
 
   if (l.fields && l.fields.length > 0) {
@@ -234,14 +246,14 @@ export function formatPasswordList(paged: HuduPagedResponse<HuduAssetPassword>):
 
   const rows = paged.records.map(
     (p) =>
-      `| ${p.id} | ${esc(p.name)} | ${esc(p.username) || '-'} | ${esc(p.url) || '-'} | ${esc(p.company_name) || (p.company_id ? String(p.company_id) : '-')} |`
+      `| ${p.id} | ${esc(p.name)} | ${esc(p.username) || '-'} | ${esc(p.login_url) || '-'} | ${esc(p.url) || '-'} | ${esc(p.company_name) || (p.company_id ? String(p.company_id) : '-')} |`
   );
 
   return [
     pageInfo(paged),
     '',
-    '| ID | Nome | Usuário | URL | Empresa |',
-    '|---|---|---|---|---|',
+    '| ID | Nome | Usuário | URL Acesso | URL Hudu | Empresa |',
+    '|---|---|---|---|---|---|',
     ...rows,
   ].join('\n');
 }
@@ -257,6 +269,7 @@ export function formatPasswordDetail(p: HuduAssetPassword): string {
     `| Usuário | ${esc(p.username) || '-'} |`,
     `| Senha | **** |`,
     `| URL | ${esc(p.url) || '-'} |`,
+    `| URL de Acesso | ${esc(p.login_url) || '-'} |`,
     `| Empresa | ${esc(p.company_name) || (p.company_id ? String(p.company_id) : '-')} |`,
     `| Tipo | ${esc(p.password_type) || '-'} |`,
     `| No Portal | ${p.in_portal ? 'Sim' : 'Não'} |`,
@@ -312,8 +325,9 @@ export function formatWebsiteDetail(w: HuduWebsite): string {
     '|---|---|',
     `| ID | ${w.id} |`,
     `| Nome | ${esc(w.name)} |`,
-    `| Empresa | ${esc(w.company_name) || '-'} |`,
+    `| Empresa | ${esc(w.company_name) || (w.company_id ? String(w.company_id) : '-')} |`,
     `| URL | ${esc(w.url) || '-'} |`,
+    `| HTTP Code | ${w.code ?? '-'} |`,
     `| Status | ${esc(w.status) || '-'} |`,
     `| Monitoramento | ${esc(w.monitoring_status) || '-'} |`,
     `| Pausado | ${w.paused ? 'Sim' : 'Não'} |`,
@@ -323,6 +337,7 @@ export function formatWebsiteDetail(w: HuduWebsite): string {
     `| Rastreio DMARC | ${w.enable_dmarc_tracking ? 'Ativado' : 'Desativado'} |`,
     `| Rastreio DKIM | ${w.enable_dkim_tracking ? 'Ativado' : 'Desativado'} |`,
     `| Rastreio SPF | ${w.enable_spf_tracking ? 'Ativado' : 'Desativado'} |`,
+    `| Última verificação | ${w.refreshed_at ?? '-'} |`,
     `| Criado em | ${w.created_at ?? ''} |`,
     `| Atualizado em | ${w.updated_at ?? ''} |`,
     ...(w.notes ? ['', '## Notas', '', truncate(w.notes, 2000)] : []),
@@ -449,6 +464,7 @@ export function formatProcedureDetail(p: HuduProcedure): string {
     `| ID | ${p.id} |`,
     `| Nome | ${esc(p.name)} |`,
     `| Empresa | ${esc(p.company_name) || 'Global'} |`,
+    `| Pasta ID | ${p.folder_id ?? '-'} |`,
     `| Progresso | ${p.completed ?? 0}/${p.total ?? 0} (${p.completion_percentage ?? '-'}) |`,
     `| Criado em | ${p.created_at ?? ''} |`,
     `| Atualizado em | ${p.updated_at ?? ''} |`,

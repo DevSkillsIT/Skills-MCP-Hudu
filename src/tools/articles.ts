@@ -92,7 +92,7 @@ export async function executeArticlesTool(args: any, client: HuduClient): Promis
         return createSuccessResponse(null, 'Article unarchived successfully');
         
       default:
-        return createErrorResponse(`Unknown action: ${action}`);
+        return createErrorResponse(`Acao desconhecida: '${action}'. Acoes validas: create, get, update, delete, archive, unarchive.`);
     }
   } catch (error: any) {
     return createErrorResponse(`Articles operation failed: ${error.message}`);
