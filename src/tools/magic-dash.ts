@@ -5,7 +5,7 @@ import type { HuduClient } from '../hudu-client.js';
 
 // Magic Dash manage tool (CRUD)
 export const magicDashTool: Tool = {
-  name: 'hudu_manage_dashboard_widgets',
+  name: 'manage_dashboard_widgets',
   description: 'Widgets de dashboard, paineis de controle e indicadores no Hudu — operacoes CRUD para gerenciar itens do Magic Dash. Use quando precisar criar paineis customizados, cards de status ou indicadores para empresas no Hudu. Aceita action (create, get, update, delete). Retorna Markdown com dados do widget processado.',
   inputSchema: {
     type: 'object',
@@ -34,7 +34,7 @@ export const magicDashTool: Tool = {
 
 // Magic Dash query tool
 export const magicDashQueryTool: Tool = {
-  name: 'hudu_search_dashboard_widgets',
+  name: 'search_dashboard_widgets',
   description: 'Widgets de dashboard, paineis de controle e indicadores no Hudu — busca e filtragem de itens do Magic Dash por nome ou empresa. Use quando precisar listar ou localizar widgets e cards de status existentes no Hudu sem saber o ID exato. Consulta somente leitura. Retorna lista paginada em Markdown.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id

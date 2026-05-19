@@ -24,7 +24,7 @@ function filterNetworkQueryParams(args: any): any {
 // OpenAPI: POST /networks requires { name, address, company_id }.
 // Address uses CIDR notation (e.g. "192.168.1.0/24").
 export const networksTool: Tool = {
-  name: 'hudu_manage_network_documentation',
+  name: 'manage_network_documentation',
   description: 'Redes, sub-redes e segmentos de infraestrutura documentados no Hudu — operações CRUD para registros de rede. Use quando precisar cadastrar, editar ou excluir redes e seus ranges de IP no Hudu. Para criação, obrigatório: name, address (CIDR), company_id. Aceita action (create, get, update, delete). Retorna Markdown da rede.',
   inputSchema: {
     type: 'object',
@@ -60,7 +60,7 @@ export const networksTool: Tool = {
 
 // Networks query tool
 export const networksQueryTool: Tool = {
-  name: 'hudu_search_network_documentation',
+  name: 'search_network_documentation',
   description: 'Redes, sub-redes e segmentos de infraestrutura documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar redes ou ranges de IP por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das redes encontradas no inventário de infraestrutura.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
@@ -76,7 +76,7 @@ export const networksQueryTool: Tool = {
 // OpenAPI: POST /vlans requires { name, vlan_id, company_id }.
 // `vlan_id` is the numeric 802.1Q tag (1-4094), NOT a database row ID.
 export const vlansTool: Tool = {
-  name: 'hudu_manage_network_vlan_records',
+  name: 'manage_network_vlan_records',
   description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — operações CRUD para registros de VLAN. Use quando precisar cadastrar, editar ou excluir VLANs no Hudu. Para criação, obrigatório: name, vlan_id (tag numérica 1-4094), company_id. Aceita action (create, get, update, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
@@ -110,7 +110,7 @@ export const vlansTool: Tool = {
 
 // VLANs query tool
 export const vlansQueryTool: Tool = {
-  name: 'hudu_search_network_vlan_records',
+  name: 'search_network_vlan_records',
   description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — busca e filtragem com paginação. Use quando precisar localizar VLANs de uma rede específica por network_id no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das VLANs encontradas.',
   inputSchema: createQuerySchema({
     network_id: { type: 'number', description: 'Filtrar por ID da rede' }
@@ -126,7 +126,7 @@ export const vlansQueryTool: Tool = {
 // OpenAPI: POST /vlan_zones requires { name, vlan_id_ranges, company_id }.
 // `vlan_id_ranges` is a comma-separated list of ranges (e.g. "100-500,1000-1500").
 export const vlanZonesTool: Tool = {
-  name: 'hudu_manage_network_vlan_zones',
+  name: 'manage_network_vlan_zones',
   description: 'Zonas de VLAN, perímetros e agrupamentos lógicos de segmentação no Hudu — operações CRUD completas. Use quando precisar criar, editar ou excluir zonas para organizar VLANs no Hudu. Para criação, obrigatório: name, vlan_id_ranges (ranges no formato "100-500,1000-1500"), company_id. Aceita action (create, get, update, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
@@ -157,7 +157,7 @@ export const vlanZonesTool: Tool = {
 
 // VLAN Zones query tool
 export const vlanZonesQueryTool: Tool = {
-  name: 'hudu_search_network_vlan_zones',
+  name: 'search_network_vlan_zones',
   description: 'Zonas de VLAN, perímetros e agrupamentos lógicos de segmentação no Hudu — busca e filtragem com paginação. Use quando precisar localizar zonas de organização de VLANs por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das zonas encontradas.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
@@ -174,7 +174,7 @@ export const vlanZonesQueryTool: Tool = {
 // and one of (network_id OR company_id) are needed to create a meaningful
 // record. The real field for hostname is `fqdn`, NOT `hostname`.
 export const ipAddressesTool: Tool = {
-  name: 'hudu_manage_ip_address_records',
+  name: 'manage_ip_address_records',
   description: 'Endereços IP, atribuições e reservas de rede documentados no Hudu — operações CRUD para registros de IP. Use quando precisar cadastrar, editar ou excluir IPs no Hudu. Para criação, informar address e pelo menos network_id ou company_id. Aceita action (create, get, update, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
@@ -209,7 +209,7 @@ export const ipAddressesTool: Tool = {
 
 // IP Addresses query tool
 export const ipAddressesQueryTool: Tool = {
-  name: 'hudu_search_ip_address_records',
+  name: 'search_ip_address_records',
   description: 'Endereços IP, atribuições e reservas de rede documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar IPs por endereço ou rede específica no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos endereços IP encontrados no inventário.',
   inputSchema: createQuerySchema({
     address: { type: 'string', description: 'Filtrar por endereço IP exato ou parcial' },

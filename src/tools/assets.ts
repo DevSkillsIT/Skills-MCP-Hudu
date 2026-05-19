@@ -4,7 +4,7 @@ import { createActionSchema, createFieldsSchema, createQuerySchema, standardActi
 import type { HuduClient } from '../hudu-client.js';
 
 export const assetsTool: Tool = {
-  name: 'hudu_manage_it_asset_inventory',
+  name: 'manage_it_asset_inventory',
   description: 'Ativos de TI, equipamentos e dispositivos no inventário do Hudu — operações CRUD completas incluindo arquivamento. Use quando precisar cadastrar, editar ou excluir servidores, estações e hardware no Hudu. Requer company_id e asset_layout_id para criação. Aceita action (create, get, update, delete, archive, unarchive). Retorna Markdown.',
   inputSchema: {
     type: 'object',
@@ -34,7 +34,7 @@ export const assetsTool: Tool = {
 
 // Assets query tool
 export const assetsQueryTool: Tool = {
-  name: 'hudu_search_it_asset_inventory',
+  name: 'search_it_asset_inventory',
   description: 'Ativos de TI, equipamentos e dispositivos no inventário do Hudu — busca e filtragem com paginação. Use quando precisar localizar servidores, estações ou hardware por texto, empresa ou layout no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos ativos encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id,

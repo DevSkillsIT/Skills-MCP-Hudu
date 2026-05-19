@@ -78,9 +78,9 @@ describe('BUG-03: Public photo gallery ID type consistency', () => {
       expect(manageSchema.properties.id.type).toBe('number');
     });
 
-    test('tool names follow naming convention', () => {
-      expect(publicPhotosTool.name).toBe('hudu_manage_public_photo_gallery');
-      expect(publicPhotosQueryTool.name).toBe('hudu_search_public_photo_gallery');
+    test('tool names follow naming convention (no hudu_ prefix since P3-A)', () => {
+      expect(publicPhotosTool.name).toBe('manage_public_photo_gallery');
+      expect(publicPhotosQueryTool.name).toBe('search_public_photo_gallery');
     });
   });
 });

@@ -5,7 +5,7 @@ import type { HuduClient } from '../hudu-client.js';
 
 // Asset layouts manage tool (CRUD without delete)
 export const assetLayoutsTool: Tool = {
-  name: 'hudu_manage_asset_layout_templates',
+  name: 'manage_asset_layout_templates',
   description: 'Layouts, templates e modelos de ativos no Hudu — criacao, consulta e atualizacao de estruturas de campos personalizados, tipos de equipamento e categorias. Use quando precisar definir ou modificar o modelo de campos de um tipo de ativo no Hudu. Aceita action (create, get, update). Retorna Markdown com dados do layout processado.',
   inputSchema: {
     type: 'object',
@@ -46,7 +46,7 @@ export const assetLayoutsTool: Tool = {
 // hudu.json OpenAPI spec). We omit it from the schema to avoid misleading
 // the LLM — only `page`, `name`, `slug`, `updated_at` are forwarded.
 export const assetLayoutsQueryTool: Tool = {
-  name: 'hudu_search_asset_layout_templates',
+  name: 'search_asset_layout_templates',
   description: 'Layouts, templates e modelos de ativos no Hudu — busca e filtragem de estruturas de campos personalizados, tipos de equipamento e categorias por nome. Use quando precisar listar ou localizar layouts disponiveis no Hudu sem saber o ID exato. Consulta somente leitura. Nota: este endpoint do Hudu não suporta page_size. Retorna lista paginada em Markdown.',
   inputSchema: {
     type: 'object',

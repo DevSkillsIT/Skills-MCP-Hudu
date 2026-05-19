@@ -5,7 +5,7 @@ import type { HuduClient } from '../hudu-client.js';
 
 // Websites manage tool (CRUD)
 export const websitesTool: Tool = {
-  name: 'hudu_manage_website_monitoring',
+  name: 'manage_website_monitoring',
   description: 'Sites, portais e URLs monitorados no Hudu — operacoes CRUD para registros de monitoramento de website. Use quando precisar cadastrar, editar, consultar ou excluir sites monitorados vinculados a empresas no Hudu. Aceita action (create, get, update, delete). Retorna Markdown com dados do site processado.',
   inputSchema: {
     type: 'object',
@@ -33,7 +33,7 @@ export const websitesTool: Tool = {
 
 // Websites query tool
 export const websitesQueryTool: Tool = {
-  name: 'hudu_search_website_monitoring',
+  name: 'search_website_monitoring',
   description: 'Sites, portais e URLs monitorados no Hudu — busca e filtragem com paginacao por nome e empresa. Use quando precisar listar ou localizar registros de monitoramento de websites sem saber o ID exato no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com dados resumidos dos sites encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id

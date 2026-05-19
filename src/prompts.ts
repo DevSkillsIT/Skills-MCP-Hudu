@@ -144,11 +144,11 @@ export function getHuduPromptText(name: string, args: any): any {
 
 Antes de responder, execute as seguintes tool calls:
 
-1. \`hudu_search_password_credentials\` com ${companyArg} → guardar como **passwords**
-2. \`hudu_search_it_asset_inventory\` com ${companyArg} → guardar como **assets**
-3. \`hudu_search_knowledge_articles\` com ${companyArg} → guardar como **articles**
-4. \`hudu_search_activity_audit_logs\` com \`{ "page_size": 25${company_id ? `, "resource_id": ${company_id}` : ''} }\` → guardar como **audit_logs**
-${company_id ? `5. \`hudu_admin_instance_operations\` com \`{ "action": "get_expirations", "company_id": ${company_id} }\` → guardar como **expirations**` : `5. \`hudu_admin_instance_operations\` com \`{ "action": "get_expirations" }\` → guardar como **expirations**`}
+1. \`search_password_credentials\` com ${companyArg} → guardar como **passwords**
+2. \`search_it_asset_inventory\` com ${companyArg} → guardar como **assets**
+3. \`search_knowledge_articles\` com ${companyArg} → guardar como **articles**
+4. \`search_activity_audit_logs\` com \`{ "page_size": 25${company_id ? `, "resource_id": ${company_id}` : ''} }\` → guardar como **audit_logs**
+${company_id ? `5. \`admin_instance_operations\` com \`{ "action": "get_expirations", "company_id": ${company_id} }\` → guardar como **expirations**` : `5. \`admin_instance_operations\` com \`{ "action": "get_expirations" }\` → guardar como **expirations**`}
 
 ## 📊 Formato de saída
 
@@ -193,10 +193,10 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`hudu_search_it_asset_inventory\` com ${companyArg} → guardar como **assets**
-2. \`hudu_search_asset_layout_templates\` com \`{}\` → guardar como **layouts**
-${company_id ? `3. \`hudu_manage_company_information\` com \`{ "action": "get", "id": ${company_id} }\` → guardar como **company**` : ''}
-${company_id ? `4. \`hudu_search_entity_relations\` com \`{ "fromable_type": "Company", "fromable_id": ${company_id}, "page_size": 25 }\` → guardar como **relations**` : ''}
+1. \`search_it_asset_inventory\` com ${companyArg} → guardar como **assets**
+2. \`search_asset_layout_templates\` com \`{}\` → guardar como **layouts**
+${company_id ? `3. \`manage_company_information\` com \`{ "action": "get", "id": ${company_id} }\` → guardar como **company**` : ''}
+${company_id ? `4. \`search_entity_relations\` com \`{ "fromable_type": "Company", "fromable_id": ${company_id}, "page_size": 25 }\` → guardar como **relations**` : ''}
 
 ## 📊 Formato de saída
 
@@ -242,11 +242,11 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`hudu_search_company_information\` com \`{ "page_size": 25 }\` → guardar como **companies**
-2. \`hudu_search_it_asset_inventory\` com ${companyArg} → guardar como **assets**
-3. \`hudu_search_password_credentials\` com ${companyArg} → guardar como **passwords**
-4. \`hudu_search_knowledge_articles\` com ${companyArg} → guardar como **articles**
-5. \`hudu_admin_instance_operations\` com \`{ "action": "get_expirations"${company_id ? `, "company_id": ${company_id}` : ''}, "page_size": 50 }\` → guardar como **expirations**
+1. \`search_company_information\` com \`{ "page_size": 25 }\` → guardar como **companies**
+2. \`search_it_asset_inventory\` com ${companyArg} → guardar como **assets**
+3. \`search_password_credentials\` com ${companyArg} → guardar como **passwords**
+4. \`search_knowledge_articles\` com ${companyArg} → guardar como **articles**
+5. \`admin_instance_operations\` com \`{ "action": "get_expirations"${company_id ? `, "company_id": ${company_id}` : ''}, "page_size": 50 }\` → guardar como **expirations**
 
 ## 📊 Formato de saída
 
@@ -294,9 +294,9 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`hudu_search_knowledge_articles\` com ${companyArg} → guardar como **articles**
-2. \`hudu_search_kb_article_folders\` com ${company_id ? `\`{ "company_id": ${company_id} }\`` : `\`{}\``} → guardar como **folders**
-3. \`hudu_search_workflow_procedures\` com ${companyArg} → guardar como **procedures**
+1. \`search_knowledge_articles\` com ${companyArg} → guardar como **articles**
+2. \`search_kb_article_folders\` com ${company_id ? `\`{ "company_id": ${company_id} }\`` : `\`{}\``} → guardar como **folders**
+3. \`search_workflow_procedures\` com ${companyArg} → guardar como **procedures**
 
 ## 📊 Formato de saída
 
@@ -341,9 +341,9 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`hudu_search_it_asset_inventory\` com ${companyArg} → guardar como **assets**
+1. \`search_it_asset_inventory\` com ${companyArg} → guardar como **assets**
 2. Para cada asset, verifique se existe campo personalizado com label contendo "EOL", "End of Life", "warranty_end", "vencimento_garantia" ou "end_of_life_date"
-3. \`hudu_admin_instance_operations\` com \`{ "action": "get_expirations"${company_id ? `, "company_id": ${company_id}` : ''}, "page_size": 100 }\` → guardar como **expirations** (para complementar com SSL/domain/warranty registrados)
+3. \`admin_instance_operations\` com \`{ "action": "get_expirations"${company_id ? `, "company_id": ${company_id}` : ''}, "page_size": 100 }\` → guardar como **expirations** (para complementar com SSL/domain/warranty registrados)
 
 ## 📊 Formato de saída
 
@@ -379,9 +379,9 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`hudu_search_knowledge_articles\` com ${companyArg} → guardar como **articles**
-2. \`hudu_search_workflow_procedures\` com ${companyArg} → guardar como **procedures**
-3. \`hudu_search_password_credentials\` com ${companyArg} → guardar como **passwords**
+1. \`search_knowledge_articles\` com ${companyArg} → guardar como **articles**
+2. \`search_workflow_procedures\` com ${companyArg} → guardar como **procedures**
+3. \`search_password_credentials\` com ${companyArg} → guardar como **passwords**
 
 Para avaliar presença dos artefatos obrigatórios, **busque por palavras-chave no campo \`name\`** dos artigos/procedimentos:
 - "segurança da informação" / "PSI" / "ISO 27001"
@@ -425,12 +425,12 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`hudu_manage_company_information\` com \`{ "action": "get", "id": ${company_id} }\` → guardar como **company**
-2. \`hudu_search_it_asset_inventory\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → guardar como **assets**
-3. \`hudu_search_knowledge_articles\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → guardar como **articles**
-4. \`hudu_search_password_credentials\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → guardar como **passwords**
-5. \`hudu_search_workflow_procedures\` com \`{ "company_id": ${company_id}, "page_size": 50 }\` → guardar como **procedures**
-6. \`hudu_search_network_documentation\` com \`{ "company_id": ${company_id}, "page_size": 50 }\` → guardar como **networks**
+1. \`manage_company_information\` com \`{ "action": "get", "id": ${company_id} }\` → guardar como **company**
+2. \`search_it_asset_inventory\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → guardar como **assets**
+3. \`search_knowledge_articles\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → guardar como **articles**
+4. \`search_password_credentials\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → guardar como **passwords**
+5. \`search_workflow_procedures\` com \`{ "company_id": ${company_id}, "page_size": 50 }\` → guardar como **procedures**
+6. \`search_network_documentation\` com \`{ "company_id": ${company_id}, "page_size": 50 }\` → guardar como **networks**
 
 ## 📊 Formato de saída
 
@@ -489,7 +489,7 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-Execute \`hudu_search_all_resource_types\` com \`{ "query": "${query}", "page_size": 10 }\` → guardar como **results**
+Execute \`search_all_resource_types\` com \`{ "query": "${query}", "page_size": 10 }\` → guardar como **results**
 
 Esta tool já consolida as 4 categorias (articles, assets, passwords, companies) em uma única chamada.
 
@@ -531,7 +531,7 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`hudu_search_password_credentials\` com \`{ "search": "${search_term}", "page_size": 20 }\` → guardar como **passwords**
+1. \`search_password_credentials\` com \`{ "search": "${search_term}", "page_size": 20 }\` → guardar como **passwords**
 
 ## 📊 Formato de saída
 
@@ -562,9 +562,9 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`hudu_search_it_asset_inventory\` com \`{ "search": "${asset_id}", "page_size": 1 }\` (ou descubra company_id via search genérica) → guardar como **asset_current** e extrair \`company_id\`
-2. \`hudu_manage_it_asset_inventory\` com \`{ "action": "get", "id": ${asset_id}, "fields": { "company_id": <company_id_from_step_1> } }\` → guardar como **asset_detail**
-3. \`hudu_search_activity_audit_logs\` com \`{ "resource_type": "Asset", "resource_id": ${asset_id}, "page_size": 25 }\` → guardar como **logs**
+1. \`search_it_asset_inventory\` com \`{ "search": "${asset_id}", "page_size": 1 }\` (ou descubra company_id via search genérica) → guardar como **asset_current** e extrair \`company_id\`
+2. \`manage_it_asset_inventory\` com \`{ "action": "get", "id": ${asset_id}, "fields": { "company_id": <company_id_from_step_1> } }\` → guardar como **asset_detail**
+3. \`search_activity_audit_logs\` com \`{ "resource_type": "Asset", "resource_id": ${asset_id}, "page_size": 25 }\` → guardar como **logs**
 
 ## 📊 Formato de saída
 
@@ -600,13 +600,13 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`hudu_search_company_information\` com \`{ "search": "${company_name}", "page_size": 5 }\` → guardar como **matches**
-2. Se \`matches.length == 0\`: informar que a empresa não existe ainda e sugerir criação via \`hudu_manage_company_information\` com \`action=create\`
+1. \`search_company_information\` com \`{ "search": "${company_name}", "page_size": 5 }\` → guardar como **matches**
+2. Se \`matches.length == 0\`: informar que a empresa não existe ainda e sugerir criação via \`manage_company_information\` com \`action=create\`
 3. Se encontrada (pegue o primeiro match como **company**):
-   - \`hudu_search_it_asset_inventory\` com \`{ "company_id": company.id, "page_size": 25 }\` → **assets**
-   - \`hudu_search_knowledge_articles\` com \`{ "company_id": company.id, "page_size": 25 }\` → **articles**
-   - \`hudu_search_password_credentials\` com \`{ "company_id": company.id, "page_size": 25 }\` → **passwords**
-   - \`hudu_search_network_documentation\` com \`{ "company_id": company.id, "page_size": 25 }\` → **networks**
+   - \`search_it_asset_inventory\` com \`{ "company_id": company.id, "page_size": 25 }\` → **assets**
+   - \`search_knowledge_articles\` com \`{ "company_id": company.id, "page_size": 25 }\` → **articles**
+   - \`search_password_credentials\` com \`{ "company_id": company.id, "page_size": 25 }\` → **passwords**
+   - \`search_network_documentation\` com \`{ "company_id": company.id, "page_size": 25 }\` → **networks**
 
 ## 📊 Formato de saída
 
@@ -659,12 +659,12 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`hudu_manage_company_information\` com \`{ "action": "get", "id": ${company_id} }\` → **company**
-2. \`hudu_search_knowledge_articles\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → **articles**
-3. \`hudu_search_network_documentation\` com \`{ "company_id": ${company_id}, "page_size": 50 }\` → **networks**
-4. \`hudu_search_it_asset_inventory\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → **assets**
-5. \`hudu_search_password_credentials\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → **passwords**
-6. \`hudu_search_workflow_procedures\` com \`{ "company_id": ${company_id}, "page_size": 50 }\` → **procedures**
+1. \`manage_company_information\` com \`{ "action": "get", "id": ${company_id} }\` → **company**
+2. \`search_knowledge_articles\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → **articles**
+3. \`search_network_documentation\` com \`{ "company_id": ${company_id}, "page_size": 50 }\` → **networks**
+4. \`search_it_asset_inventory\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → **assets**
+5. \`search_password_credentials\` com \`{ "company_id": ${company_id}, "page_size": 100 }\` → **passwords**
+6. \`search_workflow_procedures\` com \`{ "company_id": ${company_id}, "page_size": 50 }\` → **procedures**
 
 Para detectar presença de artefatos obrigatórios, faça match case-insensitive no \`name\` dos artigos/procedures.
 
@@ -678,7 +678,7 @@ Para detectar presença de artefatos obrigatórios, faça match case-insensitive
 |---|---|---|
 | Diagrama de topologia | [✅/❌] | [id do artigo contendo "topologia" ou "diagrama de rede"] |
 | Inventário de switches/routers | [✅/❌] | [count assets com asset_type "Network Devices"] |
-| Documentação de VLANs | [✅/❌] | [count VLANs via hudu_search_network_vlan_records] |
+| Documentação de VLANs | [✅/❌] | [count VLANs via search_network_vlan_records] |
 | Firewall configuração | [✅/❌] | [artigo com "firewall"] |
 | Inventário de servidores | [✅/❌] | [count assets de servidor] |
 | Credenciais iDRAC/iLO/ESXi | [✅/❌] | [passwords com "idrac"/"ilo"/"esxi" no name] |
@@ -733,8 +733,8 @@ ${RULES_BLOCK}` }
 
 ## 🎯 Instruções para o agente
 
-1. \`hudu_search_knowledge_articles\` com \`{ "search": "${search_query}", "page_size": 20 }\` → **articles**
-2. \`hudu_search_workflow_procedures\` com \`{ "search": "${search_query}", "page_size": 10 }\` → **procedures**
+1. \`search_knowledge_articles\` com \`{ "search": "${search_query}", "page_size": 20 }\` → **articles**
+2. \`search_workflow_procedures\` com \`{ "search": "${search_query}", "page_size": 10 }\` → **procedures**
 
 ## 📊 Formato de saída
 
@@ -756,7 +756,7 @@ Para cada artigo listado, o usuário pode abrir pela URL usando \`hudu_read_reso
 - Artigo mais recente: **[max updated_at]** ID **[id]**
 
 ### Se nada encontrado
-Oriente o usuário a (a) verificar a grafia do termo, (b) abrir ticket de suporte, (c) criar novo artigo após solução via \`hudu_manage_knowledge_articles\` com \`action=create\`.
+Oriente o usuário a (a) verificar a grafia do termo, (b) abrir ticket de suporte, (c) criar novo artigo após solução via \`manage_knowledge_articles\` com \`action=create\`.
 
 ${RULES_BLOCK}` }
         }]
@@ -774,10 +774,10 @@ ${RULES_BLOCK}` }
 
 No Hudu, contatos geralmente são cadastrados como **ativos** com layout "Contatos" (asset_layout_id correspondente) ou como campo "primary_mail" em ativos técnicos.
 
-1. \`hudu_search_asset_layout_templates\` com \`{ "search": "Contato" }\` → **contact_layouts**
+1. \`search_asset_layout_templates\` com \`{ "search": "Contato" }\` → **contact_layouts**
 2. Pegue o \`id\` do layout "Contatos" como **contact_layout_id**
-3. \`hudu_search_it_asset_inventory\` com \`{ "asset_layout_id": contact_layout_id${company_id ? `, "company_id": ${company_id}` : ''}, "page_size": 50 }\` → **contacts**
-${company_id ? `4. \`hudu_manage_company_information\` com \`{ "action": "get", "id": ${company_id} }\` → **company** (para telefone/endereço da empresa)` : ''}
+3. \`search_it_asset_inventory\` com \`{ "asset_layout_id": contact_layout_id${company_id ? `, "company_id": ${company_id}` : ''}, "page_size": 50 }\` → **contacts**
+${company_id ? `4. \`manage_company_information\` com \`{ "action": "get", "id": ${company_id} }\` → **company** (para telefone/endereço da empresa)` : ''}
 
 ## 📊 Formato de saída
 
@@ -793,7 +793,7 @@ ${company_id ? `### Empresa
 [cada contato — extrair email de \`primary_mail\` ou campo personalizado]
 
 ### Observações
-- Se \`contacts.length == 0\`: sugira criar ativos com layout "Contatos" usando \`hudu_manage_it_asset_inventory\` com \`action=create\` e \`asset_layout_id=contact_layout_id\`.
+- Se \`contacts.length == 0\`: sugira criar ativos com layout "Contatos" usando \`manage_it_asset_inventory\` com \`action=create\` e \`asset_layout_id=contact_layout_id\`.
 - Escalonamento (plantão, on-call) não é dado estruturado no Hudu padrão — verifique se há artigo KB específico.
 
 ${RULES_BLOCK}` }
@@ -812,7 +812,7 @@ ${RULES_BLOCK}` }
 
 Calcule \`start_date\` = (agora - ${hours} horas) em formato ISO 8601 (AAAA-MM-DDTHH:mm:ssZ).
 
-1. \`hudu_search_activity_audit_logs\` com \`{ "start_date": "<start_date>", "page_size": 25 }\` → **logs**
+1. \`search_activity_audit_logs\` com \`{ "start_date": "<start_date>", "page_size": 25 }\` → **logs**
 2. Se necessário paginar: chame novamente com \`"page": 2\` até cobrir todos os logs no período (máx 5 páginas = 125 logs).
 
 ## 📊 Formato de saída

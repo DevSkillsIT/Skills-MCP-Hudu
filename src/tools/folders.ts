@@ -8,7 +8,7 @@ import type { HuduClient } from '../hudu-client.js';
  * Folders are used to organize knowledge base articles
  */
 export const foldersTool: Tool = {
-  name: 'hudu_manage_kb_article_folders',
+  name: 'manage_kb_article_folders',
   description: 'Pastas, diretórios e categorias de organização da base de conhecimento no Hudu — operações CRUD com suporte a hierarquia. Use quando precisar criar, editar ou excluir pastas para estruturar artigos no Hudu. Suporta aninhamento via parent_folder_id. Aceita action (create, get, update, delete). Retorna Markdown da pasta.',
   inputSchema: {
     type: 'object',
@@ -36,7 +36,7 @@ export const foldersTool: Tool = {
  * Folders query tool - Search and filter folders with pagination
  */
 export const foldersQueryTool: Tool = {
-  name: 'hudu_search_kb_article_folders',
+  name: 'search_kb_article_folders',
   description: 'Pastas, diretórios e categorias de organização da base de conhecimento no Hudu — busca e filtragem com paginação. Use quando precisar listar a estrutura de pastas que organizam artigos por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das pastas encontradas.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id

@@ -4,7 +4,7 @@ import { createActionSchema, createFieldsSchema, createQuerySchema, standardActi
 import type { HuduClient } from '../hudu-client.js';
 
 export const articlesTool: Tool = {
-  name: 'hudu_manage_knowledge_articles',
+  name: 'manage_knowledge_articles',
   description: 'Artigos, documentos e procedimentos da base de conhecimento no Hudu — operações CRUD completas incluindo arquivamento. Use quando precisar criar, editar ou excluir artigos técnicos, guias e runbooks no Hudu. Aceita action (create, get, update, delete, archive, unarchive). Retorna Markdown com dados do artigo.',
   inputSchema: {
     type: 'object',
@@ -30,7 +30,7 @@ export const articlesTool: Tool = {
 
 // Articles query tool
 export const articlesQueryTool: Tool = {
-  name: 'hudu_search_knowledge_articles',
+  name: 'search_knowledge_articles',
   description: 'Artigos, documentos e procedimentos da base de conhecimento no Hudu — busca e filtragem com paginação. Use quando precisar localizar guias, runbooks ou documentação técnica por texto ou empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos artigos encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id,

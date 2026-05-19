@@ -143,70 +143,70 @@ import type { ToolExecutor } from './base.js';
 // Working tool registry
 export const WORKING_TOOLS: Record<string, Tool> = {
   // Core resources
-  'hudu_manage_knowledge_articles': articlesTool,
-  'hudu_search_knowledge_articles': articlesQueryTool,
-  'hudu_manage_company_information': companiesTool,
-  'hudu_search_company_information': companiesQueryTool,
-  'hudu_manage_it_asset_inventory': assetsTool,
-  'hudu_search_it_asset_inventory': assetsQueryTool,
-  'hudu_manage_password_credentials': passwordsTool,
-  'hudu_search_password_credentials': passwordsQueryTool,
+  'manage_knowledge_articles': articlesTool,
+  'search_knowledge_articles': articlesQueryTool,
+  'manage_company_information': companiesTool,
+  'search_company_information': companiesQueryTool,
+  'manage_it_asset_inventory': assetsTool,
+  'search_it_asset_inventory': assetsQueryTool,
+  'manage_password_credentials': passwordsTool,
+  'search_password_credentials': passwordsQueryTool,
 
   // Specialized resources
-  'hudu_manage_workflow_procedures': proceduresTool,
-  'hudu_search_workflow_procedures': proceduresQueryTool,
-  'hudu_manage_procedure_task_items': procedureTasksTool,
-  'hudu_search_procedure_task_items': procedureTasksQueryTool,
+  'manage_workflow_procedures': proceduresTool,
+  'search_workflow_procedures': proceduresQueryTool,
+  'manage_procedure_task_items': procedureTasksTool,
+  'search_procedure_task_items': procedureTasksQueryTool,
 
   // Folders
-  'hudu_manage_kb_article_folders': foldersTool,
-  'hudu_search_kb_article_folders': foldersQueryTool,
+  'manage_kb_article_folders': foldersTool,
+  'search_kb_article_folders': foldersQueryTool,
 
   // Network resources
-  'hudu_manage_network_documentation': networksTool,
-  'hudu_search_network_documentation': networksQueryTool,
-  'hudu_manage_network_vlan_records': vlansTool,
-  'hudu_search_network_vlan_records': vlansQueryTool,
-  'hudu_manage_network_vlan_zones': vlanZonesTool,
-  'hudu_search_network_vlan_zones': vlanZonesQueryTool,
-  'hudu_manage_ip_address_records': ipAddressesTool,
-  'hudu_search_ip_address_records': ipAddressesQueryTool,
+  'manage_network_documentation': networksTool,
+  'search_network_documentation': networksQueryTool,
+  'manage_network_vlan_records': vlansTool,
+  'search_network_vlan_records': vlansQueryTool,
+  'manage_network_vlan_zones': vlanZonesTool,
+  'search_network_vlan_zones': vlanZonesQueryTool,
+  'manage_ip_address_records': ipAddressesTool,
+  'search_ip_address_records': ipAddressesQueryTool,
 
   // Storage resources
-  'hudu_manage_file_upload_records': uploadsTool,
-  'hudu_search_file_upload_records': uploadsQueryTool,
-  'hudu_manage_rack_storage_locations': rackStoragesTool,
-  'hudu_search_rack_storage_locations': rackStoragesQueryTool,
-  'hudu_manage_rack_storage_items': rackStorageItemsTool,
-  'hudu_search_rack_storage_items': rackStorageItemsQueryTool,
-  'hudu_manage_public_photo_gallery': publicPhotosTool,
-  'hudu_search_public_photo_gallery': publicPhotosQueryTool,
+  'manage_file_upload_records': uploadsTool,
+  'search_file_upload_records': uploadsQueryTool,
+  'manage_rack_storage_locations': rackStoragesTool,
+  'search_rack_storage_locations': rackStoragesQueryTool,
+  'manage_rack_storage_items': rackStorageItemsTool,
+  'search_rack_storage_items': rackStorageItemsQueryTool,
+  'manage_public_photo_gallery': publicPhotosTool,
+  'search_public_photo_gallery': publicPhotosQueryTool,
 
   // Utility tools
-  'hudu_admin_instance_operations': adminTool,
-  'hudu_search_all_resource_types': searchTool,
-  'hudu_navigate_to_resource_by_name': navigationTool,
+  'admin_instance_operations': adminTool,
+  'search_all_resource_types': searchTool,
+  'navigate_to_resource_by_name': navigationTool,
 
   // Expirations
-  'hudu_search_expiration_tracking': expirationsTool,
+  'search_expiration_tracking': expirationsTool,
   // Websites
-  'hudu_manage_website_monitoring': websitesTool,
-  'hudu_search_website_monitoring': websitesQueryTool,
+  'manage_website_monitoring': websitesTool,
+  'search_website_monitoring': websitesQueryTool,
   // Asset Layouts
-  'hudu_manage_asset_layout_templates': assetLayoutsTool,
-  'hudu_search_asset_layout_templates': assetLayoutsQueryTool,
+  'manage_asset_layout_templates': assetLayoutsTool,
+  'search_asset_layout_templates': assetLayoutsQueryTool,
   // Activity Logs
-  'hudu_search_activity_audit_logs': activityLogsTool,
+  'search_activity_audit_logs': activityLogsTool,
   // Relations
-  'hudu_manage_entity_relations': relationsTool,
-  'hudu_search_entity_relations': relationsQueryTool,
+  'manage_entity_relations': relationsTool,
+  'search_entity_relations': relationsQueryTool,
   // Magic Dash
-  'hudu_manage_dashboard_widgets': magicDashTool,
-  'hudu_search_dashboard_widgets': magicDashQueryTool,
-  // Prompts as tools (MCPHub bridge)
+  'manage_dashboard_widgets': magicDashTool,
+  'search_dashboard_widgets': magicDashQueryTool,
+  // Prompts as tools (MCPHub bridge — retain hudu_ prefix, part of bridge interface)
   'hudu_list_prompts': listPromptsTool,
   'hudu_get_prompt': getPromptTool,
-  // Resources as tools (MCPHub bridge)
+  // Resources as tools (MCPHub bridge — retain hudu_ prefix, part of bridge interface)
   'hudu_list_resources': listResourcesTool,
   'hudu_read_resource': readResourceTool,
 };
@@ -214,70 +214,70 @@ export const WORKING_TOOLS: Record<string, Tool> = {
 // Working tool executors
 export const WORKING_TOOL_EXECUTORS: Record<string, ToolExecutor> = {
   // Core resources
-  'hudu_manage_knowledge_articles': executeArticlesTool,
-  'hudu_search_knowledge_articles': executeArticlesQueryTool,
-  'hudu_manage_company_information': executeCompaniesTool,
-  'hudu_search_company_information': executeCompaniesQueryTool,
-  'hudu_manage_it_asset_inventory': executeAssetsTool,
-  'hudu_search_it_asset_inventory': executeAssetsQueryTool,
-  'hudu_manage_password_credentials': executePasswordsTool,
-  'hudu_search_password_credentials': executePasswordsQueryTool,
+  'manage_knowledge_articles': executeArticlesTool,
+  'search_knowledge_articles': executeArticlesQueryTool,
+  'manage_company_information': executeCompaniesTool,
+  'search_company_information': executeCompaniesQueryTool,
+  'manage_it_asset_inventory': executeAssetsTool,
+  'search_it_asset_inventory': executeAssetsQueryTool,
+  'manage_password_credentials': executePasswordsTool,
+  'search_password_credentials': executePasswordsQueryTool,
 
   // Specialized resources
-  'hudu_manage_workflow_procedures': executeProceduresTool,
-  'hudu_search_workflow_procedures': executeProceduresQueryTool,
-  'hudu_manage_procedure_task_items': executeProcedureTasksTool,
-  'hudu_search_procedure_task_items': executeProcedureTasksQueryTool,
+  'manage_workflow_procedures': executeProceduresTool,
+  'search_workflow_procedures': executeProceduresQueryTool,
+  'manage_procedure_task_items': executeProcedureTasksTool,
+  'search_procedure_task_items': executeProcedureTasksQueryTool,
 
   // Folders
-  'hudu_manage_kb_article_folders': executeFoldersTool,
-  'hudu_search_kb_article_folders': executeFoldersQueryTool,
+  'manage_kb_article_folders': executeFoldersTool,
+  'search_kb_article_folders': executeFoldersQueryTool,
 
   // Network resources
-  'hudu_manage_network_documentation': executeNetworksTool,
-  'hudu_search_network_documentation': executeNetworksQueryTool,
-  'hudu_manage_network_vlan_records': executeVlansTool,
-  'hudu_search_network_vlan_records': executeVlansQueryTool,
-  'hudu_manage_network_vlan_zones': executeVlanZonesTool,
-  'hudu_search_network_vlan_zones': executeVlanZonesQueryTool,
-  'hudu_manage_ip_address_records': executeIpAddressesTool,
-  'hudu_search_ip_address_records': executeIpAddressesQueryTool,
+  'manage_network_documentation': executeNetworksTool,
+  'search_network_documentation': executeNetworksQueryTool,
+  'manage_network_vlan_records': executeVlansTool,
+  'search_network_vlan_records': executeVlansQueryTool,
+  'manage_network_vlan_zones': executeVlanZonesTool,
+  'search_network_vlan_zones': executeVlanZonesQueryTool,
+  'manage_ip_address_records': executeIpAddressesTool,
+  'search_ip_address_records': executeIpAddressesQueryTool,
 
   // Storage resources
-  'hudu_manage_file_upload_records': executeUploadsTool,
-  'hudu_search_file_upload_records': executeUploadsQueryTool,
-  'hudu_manage_rack_storage_locations': executeRackStoragesTool,
-  'hudu_search_rack_storage_locations': executeRackStoragesQueryTool,
-  'hudu_manage_rack_storage_items': executeRackStorageItemsTool,
-  'hudu_search_rack_storage_items': executeRackStorageItemsQueryTool,
-  'hudu_manage_public_photo_gallery': executePublicPhotosTool,
-  'hudu_search_public_photo_gallery': executePublicPhotosQueryTool,
+  'manage_file_upload_records': executeUploadsTool,
+  'search_file_upload_records': executeUploadsQueryTool,
+  'manage_rack_storage_locations': executeRackStoragesTool,
+  'search_rack_storage_locations': executeRackStoragesQueryTool,
+  'manage_rack_storage_items': executeRackStorageItemsTool,
+  'search_rack_storage_items': executeRackStorageItemsQueryTool,
+  'manage_public_photo_gallery': executePublicPhotosTool,
+  'search_public_photo_gallery': executePublicPhotosQueryTool,
 
   // Utility tools
-  'hudu_admin_instance_operations': executeAdminTool,
-  'hudu_search_all_resource_types': executeSearchTool,
-  'hudu_navigate_to_resource_by_name': executeNavigationTool,
+  'admin_instance_operations': executeAdminTool,
+  'search_all_resource_types': executeSearchTool,
+  'navigate_to_resource_by_name': executeNavigationTool,
 
   // Expirations
-  'hudu_search_expiration_tracking': executeExpirationsTool,
+  'search_expiration_tracking': executeExpirationsTool,
   // Websites
-  'hudu_manage_website_monitoring': executeWebsitesTool,
-  'hudu_search_website_monitoring': executeWebsitesQueryTool,
+  'manage_website_monitoring': executeWebsitesTool,
+  'search_website_monitoring': executeWebsitesQueryTool,
   // Asset Layouts
-  'hudu_manage_asset_layout_templates': executeAssetLayoutsTool,
-  'hudu_search_asset_layout_templates': executeAssetLayoutsQueryTool,
+  'manage_asset_layout_templates': executeAssetLayoutsTool,
+  'search_asset_layout_templates': executeAssetLayoutsQueryTool,
   // Activity Logs
-  'hudu_search_activity_audit_logs': executeActivityLogsTool,
+  'search_activity_audit_logs': executeActivityLogsTool,
   // Relations
-  'hudu_manage_entity_relations': executeRelationsTool,
-  'hudu_search_entity_relations': executeRelationsQueryTool,
+  'manage_entity_relations': executeRelationsTool,
+  'search_entity_relations': executeRelationsQueryTool,
   // Magic Dash
-  'hudu_manage_dashboard_widgets': executeMagicDashTool,
-  'hudu_search_dashboard_widgets': executeMagicDashQueryTool,
-  // Prompts as tools (MCPHub bridge)
+  'manage_dashboard_widgets': executeMagicDashTool,
+  'search_dashboard_widgets': executeMagicDashQueryTool,
+  // Prompts as tools (MCPHub bridge — retain hudu_ prefix, part of bridge interface)
   'hudu_list_prompts': executeListPromptsTool,
   'hudu_get_prompt': executeGetPromptTool,
-  // Resources as tools (MCPHub bridge)
+  // Resources as tools (MCPHub bridge — retain hudu_ prefix, part of bridge interface)
   'hudu_list_resources': executeListResourcesTool,
   'hudu_read_resource': executeReadResourceTool,
 };

@@ -5,7 +5,7 @@ import type { HuduClient } from '../hudu-client.js';
 
 // Relations manage tool (CRUD)
 export const relationsTool: Tool = {
-  name: 'hudu_manage_entity_relations',
+  name: 'manage_entity_relations',
   description: 'Relacoes, vinculos e associacoes entre entidades no Hudu — operacoes CRUD para gerenciar relacionamentos entre recursos. Use quando precisar criar, consultar, atualizar ou excluir vinculos entre ativos, empresas, artigos ou outros objetos no Hudu. Aceita action (create, get, update, delete). Retorna Markdown com dados da relacao processada.',
   inputSchema: {
     type: 'object',
@@ -32,7 +32,7 @@ export const relationsTool: Tool = {
 
 // Relations query tool
 export const relationsQueryTool: Tool = {
-  name: 'hudu_search_entity_relations',
+  name: 'search_entity_relations',
   description: 'Relações, vínculos e associações entre entidades no Hudu — busca e filtragem de relacionamentos por tipo e ID de origem ou destino. Use quando precisar listar todos os vínculos de um recurso específico ou encontrar conexões entre entidades. Consulta somente leitura. Retorna lista paginada em Markdown.',
   inputSchema: createQuerySchema({
     fromable_type: { type: 'string', description: 'Filtrar por tipo da entidade de origem (ex: Asset, Company, Article)' },

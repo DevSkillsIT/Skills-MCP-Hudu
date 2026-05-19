@@ -5,7 +5,7 @@ import type { HuduClient } from '../hudu-client.js';
 
 // Expirations query tool (read-only, no CRUD)
 export const expirationsTool: Tool = {
-  name: 'hudu_search_expiration_tracking',
+  name: 'search_expiration_tracking',
   description: 'Expiracoes, vencimentos e validades de dominios, certificados SSL, garantias e licencas no Hudu — consulta com filtros de empresa e tipo. Use quando precisar monitorar datas de vencimento, renovacoes ou expiracoes de qualquer recurso no Hudu. Consulta somente leitura com paginacao. Retorna lista formatada em Markdown.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id,

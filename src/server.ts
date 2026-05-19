@@ -21,6 +21,7 @@ import { HuduClient } from './hudu-client.js';
 import { FilteredHuduClient } from './filtered-hudu-client.js';
 import { HuduConfig } from './types.js';
 import { WORKING_TOOLS, WORKING_TOOL_EXECUTORS, type ToolResponse } from './tools/working-index.js';
+import { resolveToolAlias } from './tools/aliases.js';
 import { HUDU_PROMPTS_LIST, getHuduPromptText } from './prompts.js';
 
 /**
@@ -386,9 +387,14 @@ export class HuduMcpServer {
 
     // Tool execution handler - proper MCP SDK pattern
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
+      const { name: rawName, arguments: args } = request.params;
+      // Resolve deprecated hudu_ prefixed aliases to new names
+      const { resolvedName: name, wasAliased } = resolveToolAlias(rawName);
+      if (wasAliased) {
+        this.logger.warn('Deprecated tool name used', { old: rawName, new: name });
+      }
       const requestId = Math.random().toString(36).substring(7);
-      
+
       this.logger.info('Tool execution started', {
         requestId,
         toolName: name,
@@ -766,7 +772,7 @@ export class HuduMcpServer {
 
     // OAuth2-Proxy User Context Middleware
     // Extracts user information from headers injected by OAuth2-Proxy
-    app.use((req, res, next) => {
+    app.use((req, _res, next) => {
       const oauthEnabled = process.env.OAUTH_ENABLED === 'true';
 
       if (oauthEnabled) {
@@ -926,8 +932,13 @@ export class HuduMcpServer {
             result = { tools };
             break;
             
-          case 'tools/call':
-            const { name, arguments: args } = params;
+          case 'tools/call': {
+            const { name: rawToolName, arguments: args } = params;
+            // Resolve deprecated hudu_ prefixed aliases to new names
+            const { resolvedName: name, wasAliased: toolWasAliased } = resolveToolAlias(rawToolName);
+            if (toolWasAliased) {
+              this.logger.warn('Deprecated tool name used', { old: rawToolName, new: name });
+            }
             const executor = WORKING_TOOL_EXECUTORS[name];
 
             if (!executor) {
@@ -969,6 +980,7 @@ export class HuduMcpServer {
               throw new McpError(ErrorCode.InternalError, toolResult.error || 'Tool execution failed');
             }
             break;
+          }
             
           case 'resources/list':
             result = { resources: listResources() };

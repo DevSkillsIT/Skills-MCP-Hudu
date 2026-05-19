@@ -4,7 +4,7 @@ import { createActionSchema, createFieldsSchema, createQuerySchema, standardActi
 import type { HuduClient } from '../hudu-client.js';
 
 export const companiesTool: Tool = {
-  name: 'hudu_manage_company_information',
+  name: 'manage_company_information',
   description: 'Empresas, clientes e organizações cadastradas no Hudu — operações CRUD completas incluindo arquivamento. Use quando precisar criar, editar ou excluir registros de contas e empresas clientes no Hudu. Aceita action (create, get, update, delete, archive, unarchive). Retorna Markdown com dados da empresa processada.',
   inputSchema: {
     type: 'object',
@@ -34,7 +34,7 @@ export const companiesTool: Tool = {
 
 // Companies query tool
 export const companiesQueryTool: Tool = {
-  name: 'hudu_search_company_information',
+  name: 'search_company_information',
   description: 'Empresas, clientes e organizações cadastradas no Hudu — busca e filtragem com paginação por nome. Use quando precisar listar ou localizar contas e empresas clientes sem saber o ID exato no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com dados resumidos das empresas encontradas.',
   inputSchema: createQuerySchema({}),
   annotations: {

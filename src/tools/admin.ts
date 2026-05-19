@@ -3,7 +3,7 @@ import { createErrorResponse, createSuccessResponse, type ToolResponse } from '.
 import type { HuduClient } from '../hudu-client.js';
 
 export const adminTool: Tool = {
-  name: 'hudu_admin_instance_operations',
+  name: 'admin_instance_operations',
   description: 'Administração, auditoria e monitoramento da instância do Hudu — info da API, logs, exportações e expirações. Use quando precisar consultar versão, auditar atividades ou verificar itens expirados no Hudu. Aceita action (get_api_info, get_activity_logs, delete_activity_logs, get_exports, get_s3_exports, get_expirations). Retorna Markdown.',
   inputSchema: {
     type: 'object',

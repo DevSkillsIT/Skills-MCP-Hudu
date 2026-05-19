@@ -8,7 +8,7 @@ import type { HuduClient } from '../hudu-client.js';
 // `file` field — upload is not viable via JSON MCP args. Only get/update/
 // delete are meaningful. For new uploads, use the Hudu web UI.
 export const uploadsTool: Tool = {
-  name: 'hudu_manage_file_upload_records',
+  name: 'manage_file_upload_records',
   description: 'Uploads, anexos e arquivos vinculados a recursos no Hudu — consulta e remoção de metadados. Criação (upload) exige multipart/form-data com arquivo binário e não é suportada via MCP — use a UI do Hudu. Aceita action (get, update, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
@@ -36,7 +36,7 @@ export const uploadsTool: Tool = {
 
 // Uploads query tool
 export const uploadsQueryTool: Tool = {
-  name: 'hudu_search_file_upload_records',
+  name: 'search_file_upload_records',
   description: 'Uploads, anexos e arquivos vinculados a recursos no Hudu — busca e filtragem com paginação. Use quando precisar localizar documentos ou arquivos anexados a ativos e empresas no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos uploads encontrados.',
   inputSchema: createQuerySchema({}),
   annotations: {
@@ -51,7 +51,7 @@ export const uploadsQueryTool: Tool = {
 // backend validator: height (rack units), width, starting_unit. location_id
 // references a location record (integer), NOT a free-text location string.
 export const rackStoragesTool: Tool = {
-  name: 'hudu_manage_rack_storage_locations',
+  name: 'manage_rack_storage_locations',
   description: 'Racks, armários e locais de armazenamento físico em datacenters documentados no Hudu — operações CRUD completas. Use quando precisar cadastrar, editar ou excluir racks e gabinetes no Hudu. Para criação, obrigatório: name, company_id, height (U), width, starting_unit. Aceita action (create, get, update, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
@@ -85,7 +85,7 @@ export const rackStoragesTool: Tool = {
 
 // Rack Storage query tool
 export const rackStoragesQueryTool: Tool = {
-  name: 'hudu_search_rack_storage_locations',
+  name: 'search_rack_storage_locations',
   description: 'Racks, armários e locais de armazenamento físico em datacenters documentados no Hudu — busca e filtragem com paginação. Use quando precisar localizar racks ou gabinetes por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos racks encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
@@ -104,7 +104,7 @@ export const rackStoragesQueryTool: Tool = {
 // record (rack_storage_role_id). This reflects Hudu's physical model where
 // a role groups items within a specific rack.
 export const rackStorageItemsTool: Tool = {
-  name: 'hudu_manage_rack_storage_items',
+  name: 'manage_rack_storage_items',
   description: 'Equipamentos, servidores e dispositivos montados em racks no Hudu — operações CRUD para itens de rack. Use quando precisar cadastrar, editar ou excluir hardware instalado em racks no Hudu. Para criação, obrigatório: rack_storage_role_id, start_unit, end_unit. Aceita action (create, get, update, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
@@ -137,7 +137,7 @@ export const rackStorageItemsTool: Tool = {
 // without it returns HTTP 400. We enforce the constraint in the schema AND
 // in the executor to give a clear error message before hitting the API.
 export const rackStorageItemsQueryTool: Tool = {
-  name: 'hudu_search_rack_storage_items',
+  name: 'search_rack_storage_items',
   description: 'Equipamentos, servidores e dispositivos montados em racks no Hudu — busca e filtragem com paginação. Use quando precisar localizar hardware instalado em um rack específico no Hudu. Exige rack_storage_id obrigatório — descubra IDs via hudu_search_rack_storage_locations. Consulta somente leitura. Retorna lista paginada em Markdown.',
   inputSchema: {
     type: 'object',
@@ -161,7 +161,7 @@ export const rackStorageItemsQueryTool: Tool = {
 // executor rejects create with a clear message directing the user to upload
 // the image via the Hudu UI first.
 export const publicPhotosTool: Tool = {
-  name: 'hudu_manage_public_photo_gallery',
+  name: 'manage_public_photo_gallery',
   description: 'Fotos públicas, imagens e capturas de tela compartilháveis na galeria do Hudu — operações de consulta, atualização de metadados e exclusão. A criação (upload) exige multipart/form-data com arquivo binário e não é suportada via MCP — use a UI do Hudu para upload. Aceita action (get, update, delete). Retorna Markdown.',
   inputSchema: {
     type: 'object',
@@ -192,7 +192,7 @@ export const publicPhotosTool: Tool = {
 
 // Public Photos query tool
 export const publicPhotosQueryTool: Tool = {
-  name: 'hudu_search_public_photo_gallery',
+  name: 'search_public_photo_gallery',
   description: 'Fotos públicas, imagens e capturas de tela compartilháveis na galeria do Hudu — busca e filtragem com paginação. Use quando precisar localizar imagens publicadas por texto no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das fotos encontradas na galeria.',
   inputSchema: createQuerySchema({}),
   annotations: {

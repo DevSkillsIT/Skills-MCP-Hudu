@@ -1,5 +1,15 @@
 import { WORKING_TOOLS, WORKING_TOOL_EXECUTORS } from '../../tools/working-index.js';
 
+// NOTE: Tool names were updated by P3-A (REQ-12) to remove the hudu_ prefix.
+// Bridge tools (hudu_list_prompts, hudu_get_prompt, hudu_list_resources, hudu_read_resource)
+// retain the hudu_ prefix as they are part of the MCPHub bridge interface.
+const BRIDGE_TOOLS = new Set([
+  'hudu_list_prompts',
+  'hudu_get_prompt',
+  'hudu_list_resources',
+  'hudu_read_resource',
+]);
+
 describe('Tool Registry', () => {
   test('registers at least 43 tools', () => {
     expect(Object.keys(WORKING_TOOLS).length).toBeGreaterThanOrEqual(43);
@@ -26,18 +36,18 @@ describe('Tool Registry', () => {
     }
   });
 
-  test('Phase 3 tools are registered', () => {
+  test('Phase 3 tools are registered (new names without hudu_ prefix)', () => {
     const expectedTools = [
-      'hudu_search_expiration_tracking',
-      'hudu_manage_website_monitoring',
-      'hudu_search_website_monitoring',
-      'hudu_manage_asset_layout_templates',
-      'hudu_search_asset_layout_templates',
-      'hudu_search_activity_audit_logs',
-      'hudu_manage_entity_relations',
-      'hudu_search_entity_relations',
-      'hudu_manage_dashboard_widgets',
-      'hudu_search_dashboard_widgets',
+      'search_expiration_tracking',
+      'manage_website_monitoring',
+      'search_website_monitoring',
+      'manage_asset_layout_templates',
+      'search_asset_layout_templates',
+      'search_activity_audit_logs',
+      'manage_entity_relations',
+      'search_entity_relations',
+      'manage_dashboard_widgets',
+      'search_dashboard_widgets',
     ];
     for (const name of expectedTools) {
       expect(WORKING_TOOLS[name]).toBeDefined();
@@ -45,16 +55,16 @@ describe('Tool Registry', () => {
     }
   });
 
-  test('core tools are registered', () => {
+  test('core tools are registered (new names without hudu_ prefix)', () => {
     const coreTools = [
-      'hudu_manage_knowledge_articles',
-      'hudu_search_knowledge_articles',
-      'hudu_manage_company_information',
-      'hudu_search_company_information',
-      'hudu_manage_it_asset_inventory',
-      'hudu_search_it_asset_inventory',
-      'hudu_manage_password_credentials',
-      'hudu_search_password_credentials',
+      'manage_knowledge_articles',
+      'search_knowledge_articles',
+      'manage_company_information',
+      'search_company_information',
+      'manage_it_asset_inventory',
+      'search_it_asset_inventory',
+      'manage_password_credentials',
+      'search_password_credentials',
     ];
     for (const name of coreTools) {
       expect(WORKING_TOOLS[name]).toBeDefined();
@@ -62,11 +72,11 @@ describe('Tool Registry', () => {
     }
   });
 
-  test('utility tools are registered', () => {
+  test('utility tools are registered (new names without hudu_ prefix)', () => {
     const utilityTools = [
-      'hudu_admin_instance_operations',
-      'hudu_search_all_resource_types',
-      'hudu_navigate_to_resource_by_name',
+      'admin_instance_operations',
+      'search_all_resource_types',
+      'navigate_to_resource_by_name',
     ];
     for (const name of utilityTools) {
       expect(WORKING_TOOLS[name]).toBeDefined();
@@ -74,9 +84,19 @@ describe('Tool Registry', () => {
     }
   });
 
-  test('tool names follow hudu_ prefix convention', () => {
+  test('non-bridge tool names do not have hudu_ prefix (P3-A convention)', () => {
     for (const [key, tool] of Object.entries(WORKING_TOOLS)) {
-      expect(tool.name).toMatch(/^hudu_/);
+      if (!BRIDGE_TOOLS.has(key)) {
+        expect(tool.name).not.toMatch(/^hudu_/);
+      }
+    }
+  });
+
+  test('bridge tools retain hudu_ prefix (MCPHub bridge interface)', () => {
+    for (const bridgeName of BRIDGE_TOOLS) {
+      if (WORKING_TOOLS[bridgeName]) {
+        expect(WORKING_TOOLS[bridgeName].name).toMatch(/^hudu_/);
+      }
     }
   });
 
