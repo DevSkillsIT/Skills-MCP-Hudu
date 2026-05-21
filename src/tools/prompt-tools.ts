@@ -1,7 +1,7 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
 import type { HuduClient } from '../hudu-client.js';
-import { HUDU_PROMPTS_LIST, getHuduPromptText } from '../prompts.js';
+import { HUDU_PROMPTS_LIST, getHuduPromptText, validatePromptArgs } from '../prompts.js';
 
 // List prompts tool - exposes MCP prompts as a tool for MCPHub bridge
 export const listPromptsTool: Tool = {
@@ -80,6 +80,17 @@ export async function executeGetPromptTool(args: any, _client: HuduClient): Prom
   const prompt = HUDU_PROMPTS_LIST.find(p => p.name === name);
   if (!prompt) {
     return createErrorResponse(`Prompt "${name}" não encontrado. Use hudu_list_prompts para ver os disponíveis.`);
+  }
+
+  // REQ-01 / BUG-01: validate required args BEFORE interpolation so the
+  // bridge-tool path cannot leak literal `undefined` into the prompt body.
+  const validationError = validatePromptArgs(name, promptArgs as Record<string, string>);
+  if (validationError) {
+    const missing = validationError.required.filter(r => !validationError.provided.includes(r));
+    return createErrorResponse(
+      `Argumento(s) obrigatório(s) ausente(s) para o prompt "${name}": ${missing.join(', ')}. ` +
+      `Informe ${missing.map(m => `"${m}"`).join(', ')} em "arguments".`
+    );
   }
 
   try {

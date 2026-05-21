@@ -25,8 +25,8 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import { HUDU_PROMPTS_LIST } from '../prompts.js';
-import { validatePromptArgs } from '../server.js';
+import { HUDU_PROMPTS_LIST, validatePromptArgs } from '../prompts.js';
+import { executeGetPromptTool } from '../tools/prompt-tools.js';
 
 describe('BUG-01: validatePromptArgs — missing required arguments', () => {
   // === Prompts that REQUIRE args: must return error shape ===
@@ -197,5 +197,35 @@ describe('BUG-01: validatePromptArgs — missing required arguments', () => {
     expect(names).toContain('hudu_new_client_setup');
     expect(names).toContain('hudu_documentation_checklist');
     expect(names).toContain('hudu_troubleshooting_wiki');
+  });
+});
+
+// REQ-01 live-gap regression: the hudu_get_prompt BRIDGE TOOL path
+// (executeGetPromptTool) must enforce validation too. Before the fix it
+// called getHuduPromptText directly and leaked literal "undefined" into the
+// rendered body — proven against the live server on 2026-05-21.
+describe('BUG-01: hudu_get_prompt bridge tool enforces validation', () => {
+  test('missing required arg returns an error and never leaks "undefined"', async () => {
+    const result = await executeGetPromptTool({ name: 'hudu_client_maturity', arguments: {} }, {} as any);
+    expect(result.success).toBe(false);
+    const text = JSON.stringify(result);
+    expect(text).toContain('company_id');
+    expect(text).not.toContain('undefined');
+  });
+
+  test('valid required arg renders the prompt without "undefined"', async () => {
+    const result = await executeGetPromptTool(
+      { name: 'hudu_client_maturity', arguments: { company_id: '42' } },
+      {} as any
+    );
+    expect(result.success).toBe(true);
+    const text = JSON.stringify(result);
+    expect(text).not.toContain('undefined');
+    expect(text).toContain('42');
+  });
+
+  test('prompt with no required args still renders via the bridge tool', async () => {
+    const result = await executeGetPromptTool({ name: 'hudu_security_audit', arguments: {} }, {} as any);
+    expect(result.success).toBe(true);
   });
 });

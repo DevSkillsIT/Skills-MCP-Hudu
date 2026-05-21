@@ -418,10 +418,12 @@ export function formatFolderDetail(f: any): string {
  * or "Type#N" as fallback.
  * REQ-09 / BUG-09
  */
-function formatRelationEndpoint(type: string, id: number, name?: string | null): string {
-  if (name && name.trim() !== '') {
-    return `${esc(type)} "${esc(name)}" (ID: ${id})`;
-  }
+// REQ-09 / BUG-09: the Hudu API returns endpoint TYPE + ID (and a per-endpoint
+// URL) but NOT a per-endpoint name. The relation-level `name` field carries the
+// related entity's name. We render each endpoint as `Type#id` (precise and
+// unambiguous) and surface the human-readable `name` plus the entity URLs as
+// separate columns/rows so the output is readable without N+1 lookups.
+function formatRelationEndpoint(type: string, id: number): string {
   return `${esc(type)}#${id}`;
 }
 
@@ -429,34 +431,35 @@ export function formatRelationList(paged: HuduPagedResponse<HuduRelation>): stri
   if (paged.records.length === 0) return 'Nenhuma relação encontrada.';
 
   const rows = paged.records.map((r) => {
-    // REQ-09 / BUG-09: show entity names when available via optional hydrated fields
-    const from = formatRelationEndpoint(r.fromable_type, r.fromable_id, (r as any).fromable_name);
-    const to = formatRelationEndpoint(r.toable_type, r.toable_id, (r as any).toable_name);
-    return `| ${r.id} | ${from} | ${to} | ${truncate(r.description, 60)} |`;
+    const from = formatRelationEndpoint(r.fromable_type, r.fromable_id);
+    const to = formatRelationEndpoint(r.toable_type, r.toable_id);
+    const nome = esc(r.name) || '-';
+    return `| ${r.id} | ${from} | ${to} | ${nome} | ${truncate(r.description, 50)} |`;
   });
 
   return [
     pageInfo(paged),
     '',
-    '| ID | De | Para | Descrição |',
-    '|---|---|---|---|',
+    '| ID | De | Para | Nome | Descrição |',
+    '|---|---|---|---|---|',
     ...rows,
   ].join('\n');
 }
 
 export function formatRelationDetail(r: HuduRelation): string {
-  // REQ-09 / BUG-09: show entity names when available via optional hydrated fields
-  const from = formatRelationEndpoint(r.fromable_type, r.fromable_id, (r as any).fromable_name);
-  const to = formatRelationEndpoint(r.toable_type, r.toable_id, (r as any).toable_name);
+  const from = formatRelationEndpoint(r.fromable_type, r.fromable_id);
+  const to = formatRelationEndpoint(r.toable_type, r.toable_id);
   return [
-    `# Relacao: ${esc(r.name) || `${from} -> ${to}`}`,
+    `# Relação: ${esc(r.name) || `${from} -> ${to}`}`,
     '',
     '| Campo | Valor |',
     '|---|---|',
     `| ID | ${r.id} |`,
     `| Nome | ${esc(r.name) || '-'} |`,
     `| Origem | ${from} |`,
+    ...(r.fromable_url ? [`| URL Origem | ${esc(r.fromable_url)} |`] : []),
     `| Destino | ${to} |`,
+    ...(r.toable_url ? [`| URL Destino | ${esc(r.toable_url)} |`] : []),
     `| Criado em | ${r.created_at ?? ''} |`,
     `| Atualizado em | ${r.updated_at ?? ''} |`,
     ...(r.description ? ['', '## Descrição', '', truncate(r.description, 2000)] : []),
@@ -544,25 +547,38 @@ export function formatNetworkDetail(n: HuduNetwork): string {
 
 // ---- IP Addresses ----
 
+// REQ-05 / BUG-05: the Hudu API does not expose network_id on IP records, but
+// it DOES return asset_name (and asset_url). Surface the asset as the primary
+// context. ipAssetLabel renders "Name (ID: N)" when the name is present.
+function ipAssetLabel(ip: { asset_id?: number; asset_name?: string }): string {
+  if (ip.asset_name && ip.asset_name.trim() !== '') {
+    return `${esc(ip.asset_name)}${ip.asset_id ? ` (ID: ${ip.asset_id})` : ''}`;
+  }
+  return ip.asset_id ? `ID: ${ip.asset_id}` : '-';
+}
+
 export function formatIpAddressList(paged: HuduPagedResponse<HuduIpAddress>): string {
   if (paged.records.length === 0) return 'Nenhum endereço IP encontrado.';
 
   const rows = paged.records.map(
     (ip) =>
-      `| ${ip.id} | ${esc(ip.address)} | ${esc(ip.hostname || ip.fqdn) || '-'} | ${ip.network_id ?? '-'} |`
+      `| ${ip.id} | ${esc(ip.address)} | ${esc(ip.hostname || ip.fqdn) || '-'} | ${ipAssetLabel(ip)} | ${esc(ip.status) || '-'} |`
   );
 
   return [
     pageInfo(paged),
     '',
-    '| ID | Endereço | Hostname | Rede ID |',
-    '|---|---|---|---|',
+    '| ID | Endereço | Hostname | Ativo | Status |',
+    '|---|---|---|---|---|',
     ...rows,
   ].join('\n');
 }
 
 export function formatIpAddressDetail(ip: any): string {
   if (!ip || typeof ip !== 'object') return 'Endereço IP indisponível.';
+  const empresa = ip.company_name
+    ? `${esc(ip.company_name)} (ID: ${ip.company_id})`
+    : (ip.company_id ? `ID: ${ip.company_id}` : '-');
   return [
     `# Endereço IP: ${esc(ip.address) || '-'}`,
     '',
@@ -571,9 +587,10 @@ export function formatIpAddressDetail(ip: any): string {
     `| ID | ${ip.id ?? '-'} |`,
     `| FQDN | ${esc(ip.fqdn) || '-'} |`,
     `| Status | ${esc(ip.status) || '-'} |`,
-    `| Rede ID | ${ip.network_id ?? '-'} |`,
-    `| Empresa ID | ${ip.company_id ?? '-'} |`,
-    `| Ativo ID | ${ip.asset_id ?? '-'} |`,
+    `| Ativo | ${ipAssetLabel(ip)} |`,
+    `| Empresa | ${empresa} |`,
+    // network_id is not returned by Hudu API 2.41.2; shown only when present.
+    ...(ip.network_id != null ? [`| Rede ID | ${ip.network_id} |`] : []),
     `| Criado em | ${ip.created_at ?? '-'} |`,
     `| Atualizado em | ${ip.updated_at ?? '-'} |`,
     ...(ip.description ? ['', '## Descrição', '', truncate(ip.description, 1000)] : []),

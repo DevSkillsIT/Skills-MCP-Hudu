@@ -299,19 +299,34 @@ export interface HuduIpAddress {
   fqdn?: string;
   status?: string;
   description?: string;
+  // NOTE: Hudu API 2.41.2 does NOT return network_id on the IP record payload
+  // (the OpenAPI schema declares it, but the live API omits it). The asset_*
+  // fields below ARE returned and carry the useful context. REQ-05 / BUG-05.
   network_id?: number;
+  asset_id?: number;
+  asset_name?: string;
+  asset_url?: string;
+  company_id?: number;
+  company_name?: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface HuduRelation {
   id: number;
+  // The Hudu API returns a single `name` (the related entity's name) plus a
+  // URL for each endpoint. It does NOT return separate fromable_name /
+  // toable_name fields. REQ-09 / BUG-09.
   name: string;
   description?: string;
+  is_inverse?: boolean;
   fromable_type: string;
   fromable_id: number;
+  fromable_url?: string;
   toable_type: string;
   toable_id: number;
+  toable_url?: string;
   created_at: string;
   updated_at: string;
 }

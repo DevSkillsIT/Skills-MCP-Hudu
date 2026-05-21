@@ -5,6 +5,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — Live-validation gap fixes (REQ-01, REQ-05, REQ-09)
+
+Found during live validation against doc.skillsit.com.br on 2026-05-21: three
+SPEC requirements passed their unit tests but did NOT deliver against the real
+consumption path / live API shape. The original implementations validated
+against mocks/isolated paths only.
+
+### [SPEC-HUDU-FIX-001 / REQ-01 / BUG-01] Prompt validation bypassed by bridge tool
+- Root cause: `validatePromptArgs` was wired only into the native `GetPromptRequestSchema` handler. The `hudu_get_prompt` BRIDGE TOOL (`executeGetPromptTool`) called `getHuduPromptText` directly, so missing required args still leaked literal `undefined` into the rendered prompt (reproduced live).
+- Fix: moved `validatePromptArgs` from `server.ts` to `prompts.ts` (avoids circular import); `executeGetPromptTool` now validates before interpolation and returns an error listing the missing args. `server.ts` imports it from `prompts.ts`.
+- Test: `BUG-01-prompt-validation.test.ts` extended with 3 bridge-tool path tests asserting no `undefined` leak. Live-verified.
+
+### [SPEC-HUDU-FIX-001 / REQ-05 / BUG-05] IP record context — network_id not exposed by API
+- Live finding: Hudu API 2.41.2 does NOT return `network_id` on the IP record payload (OpenAPI declares it; live endpoint omits it). The earlier "no change needed" conclusion + characterization test pinned the buggy `Rede ID: -` output.
+- The API DOES return `asset_id` + `asset_name` (+ `asset_url`) and `company_id`. Fix surfaces the asset as primary context (`| Ativo | Name (ID: N) |`), hydrates company when available, and only renders the `Rede ID` row when `network_id` is actually present (no misleading `-`).
+- Files: `src/types.ts` (HuduIpAddress + asset_name/asset_url/company fields), `src/formatters/markdown.ts` (formatIpAddressList/Detail + ipAssetLabel helper). Test rewritten against real API shape. Live-verified: `| Ativo | GWPMWESCSC - Firewall (ID: 976) |`.
+
+### [SPEC-HUDU-FIX-001 / REQ-09 / BUG-09] Relation readability — per-endpoint names not exposed by API
+- Live finding: the relations API returns a single `name` (the related entity's name) + per-endpoint `*_url`, but NO separate fromable_name/toable_name. The earlier implementation relied on those nonexistent fields, so relations rendered as opaque `Company#37`.
+- Fix: render endpoints as `Type#id` (precise) and surface the `name` field as a Nome column (list) and the endpoint URLs (detail). No N+1 lookups. Full per-endpoint name resolution would require lookups and is deferred with rationale.
+- Files: `src/types.ts` (HuduRelation + fromable_url/toable_url/is_inverse), `src/formatters/markdown.ts` (formatRelationList/Detail). Test rewritten against real API shape. Live-verified: Nome column shows "Skills IT Palmas", "GWPMWESCSC - Firewall".
+
+---
+
 ## [Unreleased] — Search ergonomics (query decomposition pilot)
 
 ### [ENH-HUDU-SEARCH-001] Query over-literalization fix + token fallback

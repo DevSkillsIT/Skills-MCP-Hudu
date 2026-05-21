@@ -110,6 +110,47 @@ const RULES_BLOCK = `## 📝 Regras para o agente
 6. Preserve a estrutura de seções (headings, bullets) do formato abaixo.`;
 
 /**
+ * Validates prompt arguments against the required fields declared in
+ * HUDU_PROMPTS_LIST. Called BEFORE template interpolation to prevent
+ * literal `undefined` from leaking into the rendered prompt body.
+ *
+ * Returns an error descriptor on failure, or null when args are valid.
+ * Shape on error: { error, prompt, required, provided }
+ *
+ * REQ-01 / BUG-01 / SPEC-HUDU-FIX-001. Lives here (not in server.ts) so both
+ * the native GetPromptRequestSchema handler AND the hudu_get_prompt bridge
+ * tool can enforce it without a circular import.
+ */
+export function validatePromptArgs(
+  promptName: string,
+  args: Record<string, string> | null | undefined
+): { error: string; prompt: string; required: string[]; provided: string[] } | null {
+  const promptDef = HUDU_PROMPTS_LIST.find((p: any) => p.name === promptName);
+
+  // Unknown prompts are not validated here — the caller handles them.
+  if (!promptDef) return null;
+
+  const requiredArgs: string[] = (promptDef.arguments ?? [])
+    .filter((a: any) => a.required === true)
+    .map((a: any) => a.name as string);
+
+  if (requiredArgs.length === 0) return null;
+
+  const safeArgs = args ?? {};
+  const provided = Object.keys(safeArgs).filter(k => safeArgs[k] !== undefined && safeArgs[k] !== '');
+  const missing = requiredArgs.filter(name => !provided.includes(name));
+
+  if (missing.length === 0) return null;
+
+  return {
+    error: 'MISSING_REQUIRED_ARG',
+    prompt: promptName,
+    required: requiredArgs,
+    provided
+  };
+}
+
+/**
  * Handler para prompts do Hudu
  * Retorna template com instruções de tool-calling explícitas para o LLM.
  */
