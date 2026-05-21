@@ -16,7 +16,16 @@ export const createFieldsSchema = (properties: Record<string, any>, required?: s
 export const createQuerySchema = (properties: Record<string, any>) => ({
   type: 'object' as const,
   properties: {
-    search: { type: 'string', description: 'Texto de busca para filtrar resultados' },
+    search: {
+      type: 'string',
+      description:
+        'Termo-CHAVE da busca — use APENAS o nome próprio do recurso/sistema/ativo ' +
+        '(ex: "Sankhya", "Oracle", "Firewall"), NÃO a frase completa do usuário. ' +
+        'Para filtrar por empresa use o parâmetro company_id ' +
+        '(descubra o ID via search_company_information). ' +
+        'NÃO inclua verbos de intenção (preciso, quero, buscar) nem substantivos ' +
+        'genéricos (senha, acesso, banco de dados) no termo.'
+    },
     name: { type: 'string', description: 'Filtrar por nome exato ou parcial' },
     page: { type: 'number', minimum: 1, default: 1, description: 'Número da página para paginação' },
     page_size: { type: 'number', minimum: 1, maximum: 25, default: 25, description: 'Quantidade de resultados por pagina (padrao e maximo: 25, limite da API Hudu)' },

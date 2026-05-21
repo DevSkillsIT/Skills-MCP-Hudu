@@ -63,6 +63,11 @@ export function validatePromptArgs(
 }
 import { formatToolResponse } from './formatters/response-formatter.js';
 import { InvalidResourceUriError, listResources, readResource } from './resources.js';
+import {
+  normalizeSearchTerm,
+  searchTokens,
+  isSearchToolName,
+} from './utils/query-normalizer.js';
 
 export interface HuduMcpServerConfig {
   huduConfig: HuduConfig;
@@ -415,7 +420,7 @@ export class HuduMcpServer {
           throw new McpError(ErrorCode.InvalidRequest, `Unknown tool: ${name}`);
         }
 
-        const result: ToolResponse = await executor(args, this.huduClient);
+        const result: ToolResponse = await this.runSearchAwareExecutor(name, executor, args, this.huduClient);
         const duration = Date.now() - startTime;
 
         if (result.success) {
@@ -956,7 +961,7 @@ export class HuduMcpServer {
               arguments: JSON.stringify(args).substring(0, 200) // First 200 chars only
             });
 
-            const toolResult = await executor(args, this.huduClient);
+            const toolResult = await this.runSearchAwareExecutor(name, executor, args, this.huduClient);
 
             if (toolResult.success) {
               this.logger.info('Tool execution completed', {
@@ -1070,6 +1075,96 @@ export class HuduMcpServer {
     
     // Keep the server running
     await new Promise(() => {});
+  }
+
+  /**
+   * Determines whether a formatted ToolResponse text represents an empty result.
+   * Matches the PT-BR "Nenhum*" / "Nenhuma*" strings returned by all Markdown
+   * formatters when a search yields no records.
+   */
+  private looksEmpty(response: ToolResponse): boolean {
+    // The server formats the response via formatToolResponse; we inspect data to
+    // detect emptiness before formatting to avoid re-calling the formatter.
+    // An array result with length 0 is definitively empty.
+    if (Array.isArray(response.data) && response.data.length === 0) return true;
+    // An object result that looks like a paged response with zero records is empty.
+    if (
+      response.data &&
+      typeof response.data === 'object' &&
+      !Array.isArray(response.data) &&
+      'records' in response.data &&
+      Array.isArray((response.data as any).records) &&
+      (response.data as any).records.length === 0
+    ) {
+      return true;
+    }
+    // Inspect the message field for PT-BR "Nenhum*" prefix used by formatters.
+    if (response.message && /Nenhum[a]?\b/i.test(response.message)) return true;
+    return false;
+  }
+
+  /**
+   * Search-aware executor wrapper.
+   *
+   * For search tools only (isSearchToolName(name) === true):
+   *   1. Normalises the `search` or `query` field to strip PT-BR stopwords /
+   *      intent verbs, keeping the meaningful proper-noun tokens.
+   *   2. Calls the executor with the normalised term.
+   *   3. If the result is empty AND the original phrase contained >= 2 significant
+   *      tokens, iterates over those tokens (longest first, capped at 4) and
+   *      returns the first non-empty hit (token fallback).
+   *
+   * For non-search tools the executor is called unchanged.
+   *
+   * Both transport paths (SDK handler, HTTP handler) delegate here so the logic
+   * lives in exactly ONE place.
+   */
+  private async runSearchAwareExecutor(
+    name: string,
+    executor: (args: any, client: any) => Promise<ToolResponse>,
+    args: any,
+    client: any
+  ): Promise<ToolResponse> {
+    if (!isSearchToolName(name)) {
+      // Non-search tools: passthrough, no normalisation.
+      return executor(args, client);
+    }
+
+    // Determine which field holds the search string.
+    const searchField: string = typeof args?.query === 'string' ? 'query' : 'search';
+    const original: string | undefined = args?.[searchField];
+
+    if (typeof original !== 'string' || original.trim() === '') {
+      return executor(args, client);
+    }
+
+    // Step 1: normalise the query.
+    const normalised = normalizeSearchTerm(original);
+    const normalizedArgs = { ...args, [searchField]: normalised };
+
+    // Step 2: call executor with normalised term.
+    const result = await executor(normalizedArgs, client);
+
+    // Step 3: token fallback when the normalised call returns empty.
+    if (this.looksEmpty(result)) {
+      const tokens = searchTokens(original);
+      if (tokens.length >= 2) {
+        for (const token of tokens) {
+          const fallbackArgs = { ...args, [searchField]: token };
+          const fallbackResult = await executor(fallbackArgs, client);
+          if (!this.looksEmpty(fallbackResult)) {
+            this.logger.info('Search token fallback succeeded', {
+              toolName: name,
+              originalQuery: original,
+              matchedToken: token,
+            });
+            return fallbackResult;
+          }
+        }
+      }
+    }
+
+    return result;
   }
 
   async run(): Promise<void> {

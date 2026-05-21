@@ -5,6 +5,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — Search ergonomics (query decomposition pilot)
+
+### [ENH-HUDU-SEARCH-001] Query over-literalization fix + token fallback
+
+**Problem:** LLMs forward full natural-language phrases (e.g. "preciso da senha do banco de dados do Sankhya na Oracle da Acme") into the `search` field. Hudu indexes short proper names ("Sankhya", "Oracle-PROD"), so the literal phrase matches nothing.
+
+**Solution (two layers):**
+
+**Layer 1 — Description guidance:** Updated the `search` field description in `src/tools/schema-utils.ts` (shared by ~30 search tools) and the `query` field in `src/tools/search.ts` (`search_all_resource_types`) to explicitly instruct the LLM to use only the key proper noun, not the full phrase.
+
+**Layer 2 — Server-side normalisation + token fallback (self-contained utility):**
+- Added `src/utils/query-normalizer.ts` — zero Hudu-specific imports, copy-pasteable to GLPI/WHM/Veeam/Sankhya MCPs.
+  - `STOPWORDS_PT`: 40 PT-BR function words + intent verbs (articles, prepositions, conjunctions, and verbs like `preciso`, `quero`, `buscar`). Generic nouns (`senha`, `banco`, `dados`) are intentionally NOT stripped.
+  - `normalizeSearchTerm(raw)`: strips stopwords, keeps proper nouns, preserves original casing, never returns empty when input was non-empty.
+  - `searchTokens(raw)`: returns significant tokens deduped and ordered by length descending, capped at 4.
+  - `isSearchToolName(name)`: true for `search_*` and `navigate_to_resource_by_name`.
+- Added `HuduMcpServer.runSearchAwareExecutor()` private method in `src/server.ts`:
+  1. Normalises `search`/`query` field for all search tools.
+  2. If result is empty AND original phrase had ≥ 2 significant tokens: iterates tokens one by one, returns first non-empty hit.
+  3. Logs `Search token fallback succeeded` with original query and matched token.
+- Wired into BOTH transport dispatch paths (SDK handler ~line 418; HTTP handler ~line 959) via the single private method — no logic duplication.
+
+**Tests added (26 new):**
+- `src/__tests__/query-normalizer.test.ts` — 21 unit tests (normaliseSearchTerm, searchTokens, isSearchToolName).
+- `src/__tests__/query-decomposition.test.ts` — 5 integration-style tests with mocked client, covering: verbose-phrase fallback, single-term passthrough, non-search tool passthrough, company search fallback, all-tokens-exhausted graceful return.
+
+**Before/after example:**
+- Input: `"preciso da senha do banco de dados do Sankhya na Oracle da Acme"`
+- After normalisation: `"senha banco dados Sankhya Oracle Acme"` (stopwords stripped)
+- If empty → token fallback tries: `Sankhya` (7), `Oracle` (6), `Acme` (4), `senha` (5) — first hit wins.
+
+---
+
 ## [Unreleased] — SPEC-HUDU-FIX-001 Phase 2C (P2 polish and schema hygiene)
 
 ### [SPEC-HUDU-FIX-001 / REQ-12 / PRB-01] Tool name prefix cleanup

@@ -9,7 +9,16 @@ export const searchTool: Tool = {
   inputSchema: {
     type: 'object',
     properties: {
-      query: { type: 'string', description: 'Texto de busca para localizar recursos' },
+      query: {
+        type: 'string',
+        description:
+          'Termo-CHAVE da busca — use APENAS o nome próprio do recurso/sistema/ativo ' +
+          '(ex: "Sankhya", "Oracle", "Firewall"), NÃO a frase completa do usuário. ' +
+          'Para filtrar por empresa use o parâmetro company_id ' +
+          '(descubra o ID via search_company_information). ' +
+          'NÃO inclua verbos de intenção (preciso, quero, buscar) nem substantivos ' +
+          'genéricos (senha, acesso, banco de dados) no termo.'
+      },
       type: {
         type: 'string',
         enum: ['articles', 'assets', 'passwords', 'companies'],
