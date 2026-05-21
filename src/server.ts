@@ -21,7 +21,6 @@ import { HuduClient } from './hudu-client.js';
 import { FilteredHuduClient } from './filtered-hudu-client.js';
 import { HuduConfig } from './types.js';
 import { WORKING_TOOLS, WORKING_TOOL_EXECUTORS, type ToolResponse } from './tools/working-index.js';
-import { resolveToolAlias } from './tools/aliases.js';
 import { HUDU_PROMPTS_LIST, getHuduPromptText } from './prompts.js';
 
 /**
@@ -392,12 +391,7 @@ export class HuduMcpServer {
 
     // Tool execution handler - proper MCP SDK pattern
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
-      const { name: rawName, arguments: args } = request.params;
-      // Resolve deprecated hudu_ prefixed aliases to new names
-      const { resolvedName: name, wasAliased } = resolveToolAlias(rawName);
-      if (wasAliased) {
-        this.logger.warn('Deprecated tool name used', { old: rawName, new: name });
-      }
+      const { name, arguments: args } = request.params;
       const requestId = Math.random().toString(36).substring(7);
 
       this.logger.info('Tool execution started', {
@@ -938,12 +932,7 @@ export class HuduMcpServer {
             break;
             
           case 'tools/call': {
-            const { name: rawToolName, arguments: args } = params;
-            // Resolve deprecated hudu_ prefixed aliases to new names
-            const { resolvedName: name, wasAliased: toolWasAliased } = resolveToolAlias(rawToolName);
-            if (toolWasAliased) {
-              this.logger.warn('Deprecated tool name used', { old: rawToolName, new: name });
-            }
+            const { name, arguments: args } = params;
             const executor = WORKING_TOOL_EXECUTORS[name];
 
             if (!executor) {

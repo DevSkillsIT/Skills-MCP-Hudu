@@ -7,7 +7,7 @@ import type { HuduClient } from '../hudu-client.js';
 const procedureActions = ['create', 'get', 'update', 'delete', 'kickoff', 'duplicate', 'create_from_template'];
 
 export const proceduresTool: Tool = {
-  name: 'manage_workflow_procedures',
+  name: 'hudu_manage_workflow_procedures',
   description: 'Procedimentos, rotinas e checklists operacionais no Hudu — CRUD avançado com execução e duplicação. Use quando precisar criar, editar, iniciar ou duplicar fluxos de trabalho e runbooks no Hudu. Aceita action (create, get, update, delete, kickoff, duplicate, create_from_template). Retorna Markdown do procedimento.',
   inputSchema: {
     type: 'object',
@@ -33,7 +33,7 @@ export const proceduresTool: Tool = {
 
 // Procedures query tool
 export const proceduresQueryTool: Tool = {
-  name: 'search_workflow_procedures',
+  name: 'hudu_search_workflow_procedures',
   description: 'Procedimentos, rotinas e checklists operacionais no Hudu — busca e filtragem com paginação. Use quando precisar localizar fluxos de trabalho ou runbooks por texto ou empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados dos procedimentos encontrados.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
@@ -49,7 +49,7 @@ export const proceduresQueryTool: Tool = {
 const taskActions = ['create', 'get', 'update', 'delete'];
 
 export const procedureTasksTool: Tool = {
-  name: 'manage_procedure_task_items',
+  name: 'hudu_manage_procedure_task_items',
   description: 'Tarefas, etapas e passos dentro de procedimentos no Hudu — operações CRUD para itens individuais de checklists. Use quando precisar criar, editar ou excluir etapas de um fluxo de trabalho específico no Hudu. Requer procedure_id. Aceita action (create, get, update, delete). Retorna Markdown da tarefa.',
   inputSchema: {
     type: 'object',
@@ -76,7 +76,7 @@ export const procedureTasksTool: Tool = {
 
 // Procedure tasks query tool
 export const procedureTasksQueryTool: Tool = {
-  name: 'search_procedure_task_items',
+  name: 'hudu_search_procedure_task_items',
   description: 'Tarefas, etapas e passos dentro de procedimentos no Hudu — busca e filtragem com paginação. Use quando precisar listar itens de um checklist ou fluxo de trabalho específico no Hudu. Filtra por procedure_id. Consulta somente leitura. Retorna lista paginada em Markdown com dados das tarefas encontradas.',
   inputSchema: createQuerySchema({
     procedure_id: { type: 'number', description: 'Filtrar por ID do procedimento' }

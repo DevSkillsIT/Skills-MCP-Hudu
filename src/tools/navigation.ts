@@ -13,7 +13,7 @@ import type { HuduClient } from '../hudu-client.js';
 // (/companies?name= and /assets?name=) while preserving the original action
 // enum so existing prompts/agents keep working.
 export const navigationTool: Tool = {
-  name: 'navigate_to_resource_by_name',
+  name: 'hudu_navigate_to_resource_by_name',
   description: 'Navegação rápida por nome de registros, fichas e empresas no Hudu — localiza a ficha ou empresa correspondente ao nome informado. Use quando precisar saltar para um recurso específico no Hudu sem ter o ID em mãos. Aceita action (card_jump, card_lookup, company_jump). Internamente usa os endpoints de busca do Hudu para retornar URL e metadados. Retorna Markdown com os registros encontrados.',
   inputSchema: {
     type: 'object',

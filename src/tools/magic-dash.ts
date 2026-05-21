@@ -9,7 +9,7 @@ import type { HuduClient } from '../hudu-client.js';
 // widgets. There is no GET-by-ID or PATCH endpoint, so only create and
 // delete are advertised here. Listing remains available via the query tool.
 export const magicDashTool: Tool = {
-  name: 'manage_dashboard_widgets',
+  name: 'hudu_manage_dashboard_widgets',
   description: 'Widgets de dashboard, painéis de controle e indicadores no Hudu (Magic Dash) — operações disponíveis: criar e excluir. A API do Hudu 2.41.2 NÃO expõe GET por ID nem PATCH para widgets; para listar widgets existentes use search_dashboard_widgets. Use create para painéis customizados, cards de status ou indicadores por empresa; use delete para remover. Retorna Markdown com dados do widget processado.',
   inputSchema: {
     type: 'object',
@@ -38,7 +38,7 @@ export const magicDashTool: Tool = {
 
 // Magic Dash query tool
 export const magicDashQueryTool: Tool = {
-  name: 'search_dashboard_widgets',
+  name: 'hudu_search_dashboard_widgets',
   description: 'Widgets de dashboard, painéis de controle e indicadores no Hudu — busca e filtragem de itens do Magic Dash por nome ou empresa. Use quando precisar listar ou localizar widgets e cards de status existentes no Hudu sem saber o ID exato. Consulta somente leitura. Retorna lista paginada em Markdown.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id

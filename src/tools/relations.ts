@@ -9,7 +9,7 @@ import type { HuduClient } from '../hudu-client.js';
 // only create and delete are advertised here. Reference: WIP audit on
 // wip/hudu-pre-spec-2026-05-19.
 export const relationsTool: Tool = {
-  name: 'manage_entity_relations',
+  name: 'hudu_manage_entity_relations',
   description: 'Relações, vínculos e associações entre entidades no Hudu — operações disponíveis: criar e excluir relacionamentos entre recursos. Use quando precisar criar ou excluir vínculos entre ativos, empresas, artigos ou outros objetos no Hudu. A API do Hudu 2.41.2 não expõe get-by-id ou update para relações. Retorna Markdown com dados da relação processada.',
   inputSchema: {
     type: 'object',
@@ -36,7 +36,7 @@ export const relationsTool: Tool = {
 
 // Relations query tool
 export const relationsQueryTool: Tool = {
-  name: 'search_entity_relations',
+  name: 'hudu_search_entity_relations',
   description: 'Relações, vínculos e associações entre entidades no Hudu — busca e filtragem de relacionamentos por tipo e ID de origem ou destino. Use quando precisar listar todos os vínculos de um recurso específico ou encontrar conexões entre entidades. Consulta somente leitura. Retorna lista paginada em Markdown.',
   inputSchema: createQuerySchema({
     fromable_type: { type: 'string', description: 'Filtrar por tipo da entidade de origem (ex: Asset, Company, Article)' },

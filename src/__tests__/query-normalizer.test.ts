@@ -100,17 +100,25 @@ describe('isSearchToolName', () => {
     expect(isSearchToolName('search_it_asset_inventory')).toBe(true);
   });
 
-  test('returns true for navigate_to_resource_by_name', () => {
+  test('returns true for hudu_-prefixed search tools (namespaced form)', () => {
+    expect(isSearchToolName('hudu_search_password_credentials')).toBe(true);
+    expect(isSearchToolName('hudu_search_company_information')).toBe(true);
+    expect(isSearchToolName('hudu_search_all_resource_types')).toBe(true);
+  });
+
+  test('returns true for navigate_to_resource_by_name (both forms)', () => {
     expect(isSearchToolName('navigate_to_resource_by_name')).toBe(true);
+    expect(isSearchToolName('hudu_navigate_to_resource_by_name')).toBe(true);
   });
 
-  test('returns false for manage_ tools', () => {
+  test('returns false for manage_ tools (both forms)', () => {
     expect(isSearchToolName('manage_password_credentials')).toBe(false);
-    expect(isSearchToolName('manage_company_information')).toBe(false);
+    expect(isSearchToolName('hudu_manage_company_information')).toBe(false);
   });
 
-  test('returns false for admin tool', () => {
+  test('returns false for admin tool (both forms)', () => {
     expect(isSearchToolName('admin_instance_operations')).toBe(false);
+    expect(isSearchToolName('hudu_admin_instance_operations')).toBe(false);
   });
 
   test('returns false for empty string', () => {

@@ -4,7 +4,7 @@ import type { HuduClient } from '../hudu-client.js';
 
 // Global search tool
 export const searchTool: Tool = {
-  name: 'search_all_resource_types',
+  name: 'hudu_search_all_resource_types',
   description: 'Busca global unificada em todos os recursos do Hudu — artigos, ativos, senhas e empresas simultaneamente. Use quando precisar localizar qualquer informação sem saber o tipo exato do recurso no Hudu. Permite filtrar por tipo e company_id. Retorna Markdown consolidado com resultados agrupados por tipo de recurso.',
   inputSchema: {
     type: 'object',

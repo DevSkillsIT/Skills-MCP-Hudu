@@ -40,10 +40,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased] — SPEC-HUDU-FIX-001 Phase 2C (P2 polish and schema hygiene)
 
-### [SPEC-HUDU-FIX-001 / REQ-12 / PRB-01] Tool name prefix cleanup
-- Dropped redundant `hudu_` prefix from registered tool names so mcphub-aggregated names read as `hudu-manage_*` / `hudu-search_*` instead of `hudu-hudu_manage_*` / `hudu-hudu_search_*`.
-- Added `src/tools/aliases.ts` exporting `TOOL_ALIASES` map and `resolveToolAlias()` so old `hudu_<verb>_<noun>` names continue to resolve for one minor version. CallToolRequestSchema handler in `src/server.ts` resolves the alias before dispatch and emits a deprecation warning when the old name is used. Bridge tools (`hudu_list_*`, `hudu_get_prompt`, `hudu_card_lookup`, `hudu_read_resource`, `hudu_navigate_*`) are intentionally NOT renamed because their names are part of the MCPHub bridge interface.
-- Commit: 1d96d42. Test: `src/__tests__/PRB-01-tool-aliases.test.ts`.
+### [SPEC-HUDU-FIX-001 / REQ-12 / PRB-01] Tool name prefix cleanup — REVERTED
+- ~~Dropped redundant `hudu_` prefix from registered tool names.~~
+- **REVERTED on 2026-05-21.** The `hudu_` prefix is the MCP server's namespace, not a mcphub-only artifact. This MCP can be connected directly to any client (Claude Desktop, Gemini CLI, etc.) where tool names share a flat namespace across all connected MCPs; without the prefix, names like `search_company_information` collide with other MCPs and lose their origin. The original premise (rename only matters for the mcphub double-prefix `hudu-hudu_*`) was wrong.
+- Revert restored `hudu_*` names on all tool definitions and on the `WORKING_TOOLS` / `WORKING_TOOL_EXECUTORS` registry keys; removed `src/tools/aliases.ts`, the `resolveToolAlias` dispatch in `src/server.ts`, and `src/__tests__/PRB-01-tool-aliases.test.ts`. `isSearchToolName()` in `query-normalizer.ts` updated to accept the `hudu_` prefix so the search-ergonomics pilot keeps working. Registry tests now assert the prefix is present.
+- Net effect: tool names are exactly as before the SPEC (`hudu_manage_*`, `hudu_search_*`). All other SPEC-HUDU-FIX-001 fixes (REQ-01..11, REQ-13..23) remain in place.
 
 ### [SPEC-HUDU-FIX-001 / REQ-13 / PRB-02] Total record count metadata
 - Added optional `total?: number` to `HuduPagedResponse<T>` interface in `src/types.ts`.

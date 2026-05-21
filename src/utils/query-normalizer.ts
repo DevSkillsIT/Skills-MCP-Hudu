@@ -133,5 +133,8 @@ export function searchTokens(raw?: string): string[] {
 
 export function isSearchToolName(name: string): boolean {
   if (!name) return false;
-  return name.startsWith('search_') || name === 'navigate_to_resource_by_name';
+  // Tools are namespaced with a `hudu_` prefix; accept both the prefixed and
+  // the bare form so the helper stays portable across MCPs.
+  const bare = name.startsWith('hudu_') ? name.slice('hudu_'.length) : name;
+  return bare.startsWith('search_') || bare === 'navigate_to_resource_by_name';
 }
