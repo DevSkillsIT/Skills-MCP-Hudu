@@ -7,7 +7,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased] — Live-validation gap fixes (REQ-01, REQ-05, REQ-09)
 
-Found during live validation against doc.skillsit.com.br on 2026-05-21: three
+Found during live validation against a live Hudu instance on 2026-05-21: three
 SPEC requirements passed their unit tests but did NOT deliver against the real
 consumption path / live API shape. The original implementations validated
 against mocks/isolated paths only.
