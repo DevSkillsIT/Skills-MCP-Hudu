@@ -16,7 +16,9 @@ import { join } from 'path';
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import { randomUUID } from 'crypto';
+import { randomUUID, timingSafeEqual } from 'crypto';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
+import axios from 'axios';
 import { HuduClient } from './hudu-client.js';
 import { FilteredHuduClient } from './filtered-hudu-client.js';
 import { HuduConfig } from './types.js';
@@ -670,6 +672,8 @@ export class HuduMcpServer {
     const allowedOrigins = process.env.MCP_ALLOWED_ORIGINS?.split(',') || [
       'http://localhost',
       'http://127.0.0.1',
+      'https://claude.ai',             // Claude.ai custom connectors
+      /^https?:\/\/.*\.claude\.ai$/,   // Claude.ai subdomains
       /^http:\/\/localhost:\d+$/,
       /^http:\/\/127\.0\.0\.1:\d+$/,
       /^http:\/\/192\.168\.\d+\.\d+:\d+$/,  // Local network
@@ -698,7 +702,8 @@ export class HuduMcpServer {
         }
       },
       credentials: true,
-      methods: ['GET', 'POST', 'OPTIONS'],
+      // DELETE is required by the MCP spec for session termination (DELETE /mcp).
+      methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Mcp-Session-Id']
     }));
 
@@ -730,6 +735,263 @@ export class HuduMcpServer {
       limit: '50mb',
       strict: false
     }));
+
+    // ============================================
+    // MCP Authentication (ported from upstream PR #1 by @OmB9)
+    // Option A: Static Bearer token (MCP_BEARER_TOKEN) — Claude Code / Claude Desktop
+    // Option B: Azure AD OAuth 2.1 (MCP_OAUTH_ENABLED=true) — Claude.ai custom connectors
+    // Use one or the other, never both: OAuth wins when enabled.
+    //
+    // @MX:WARN: This block is the ONLY authentication barrier in front of /mcp.
+    // @MX:REASON: Without it the 47 tools (including write/CRUD on Hudu) are reachable
+    // by anyone able to open a TCP connection to the listening port (0.0.0.0).
+    // ============================================
+    const mcpOauthEnabled = process.env.MCP_OAUTH_ENABLED === 'true';
+    const mcpServerUrl = (process.env.MCP_SERVER_URL || `http://localhost:${port}`).replace(/\/$/, '');
+    const azureTenantId = process.env.AZURE_TENANT_ID;
+    const azureClientId = process.env.AZURE_CLIENT_ID;
+    const staticBearerToken = process.env.MCP_BEARER_TOKEN;
+    const BEARER_PLACEHOLDER = 'your-secure-bearer-token-here';
+
+    if (staticBearerToken && !mcpOauthEnabled) {
+      // Fail fast rather than serving a publicly documented placeholder as a credential.
+      if (staticBearerToken === BEARER_PLACEHOLDER || staticBearerToken.length < 16) {
+        throw new Error(
+          'MCP_BEARER_TOKEN is the .env.example placeholder or shorter than 16 chars. ' +
+          'Generate a real one with: openssl rand -hex 32'
+        );
+      }
+
+      const expectedToken = Buffer.from(staticBearerToken, 'utf8');
+
+      // Static Bearer token — simple and reliable for Claude Desktop / Claude Code.
+      app.use('/mcp', (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        const authHeader = req.headers.authorization;
+        if (!authHeader?.startsWith('Bearer ')) {
+          res.status(401)
+            .set('WWW-Authenticate', 'Bearer realm="Hudu MCP"')
+            .json({ error: 'unauthorized', error_description: 'Bearer token required' });
+          return;
+        }
+
+        // Constant-time comparison: a plain !== leaks the token byte by byte through timing.
+        const presented = Buffer.from(authHeader.slice(7), 'utf8');
+        const matches =
+          presented.length === expectedToken.length &&
+          timingSafeEqual(presented, expectedToken);
+
+        if (!matches) {
+          this.logger.warn('Invalid bearer token attempt', { ip: req.ip, path: req.path });
+          res.status(401)
+            .set('WWW-Authenticate', 'Bearer realm="Hudu MCP", error="invalid_token"')
+            .json({ error: 'invalid_token', error_description: 'Invalid bearer token' });
+          return;
+        }
+        next();
+      });
+      this.logger.info('Static Bearer token auth enabled for /mcp');
+    } else if (mcpOauthEnabled) {
+      if (!azureTenantId || !azureClientId) {
+        throw new Error('AZURE_TENANT_ID and AZURE_CLIENT_ID are required when MCP_OAUTH_ENABLED=true');
+      }
+
+      // Narrowed copies so the handlers below never need non-null assertions.
+      const tenantId: string = azureTenantId;
+      const clientId: string = azureClientId;
+      const azureAudience = process.env.AZURE_AUDIENCE || clientId;
+
+      const azureScope = `api://${clientId}/access_as_user openid profile email offline_access`;
+      const azureAuthorizeUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize`;
+      const azureTokenUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
+      const azureJwksUrl = `https://login.microsoftonline.com/${tenantId}/discovery/v2.0/keys`;
+
+      // Protected Resource Metadata (RFC 9728).
+      // `resource` must include the /mcp path; authorization_servers points back at us
+      // because we serve a valid RFC 8414 AS metadata document below.
+      app.get('/.well-known/oauth-protected-resource', (_req, res) => {
+        res.json({
+          resource: `${mcpServerUrl}/mcp`,
+          authorization_servers: [mcpServerUrl],
+          bearer_methods_supported: ['header'],
+          scopes_supported: [`api://${clientId}/access_as_user`, 'openid', 'profile', 'email']
+        });
+      });
+
+      // Authorization Server Metadata (RFC 8414).
+      // `issuer` MUST match the URL this document is served from (us, not Azure AD).
+      // /authorize and /token are our proxy endpoints forwarding to Azure AD.
+      app.get('/.well-known/oauth-authorization-server', (_req, res) => {
+        res.json({
+          issuer: mcpServerUrl,
+          authorization_endpoint: `${mcpServerUrl}/authorize`,
+          token_endpoint: `${mcpServerUrl}/token`,
+          jwks_uri: azureJwksUrl,
+          registration_endpoint: `${mcpServerUrl}/register`,
+          scopes_supported: [`api://${clientId}/access_as_user`, 'openid', 'profile', 'email'],
+          response_types_supported: ['code'],
+          grant_types_supported: ['authorization_code', 'refresh_token'],
+          code_challenge_methods_supported: ['S256'],
+          token_endpoint_auth_methods_supported: ['none']
+        });
+      });
+
+      // Dynamic Client Registration (RFC 7591).
+      // Claude.ai always POSTs to /register at the root regardless of the advertised
+      // registration_endpoint, so we answer there and hand back our Azure AD client_id.
+      app.post('/register', (req, res) => {
+        const requestedUris: string[] = req.body?.redirect_uris || [];
+        this.logger.info('OAuth Dynamic Client Registration', {
+          redirect_uris: requestedUris,
+          client_name: req.body?.client_name
+        });
+        res.status(201).json({
+          client_id: clientId,
+          client_name: req.body?.client_name || 'MCP Client',
+          redirect_uris: requestedUris,
+          grant_types: ['authorization_code', 'refresh_token'],
+          response_types: ['code'],
+          token_endpoint_auth_method: 'none',
+          scope: azureScope
+        });
+      });
+
+      // Authorization proxy — Claude.ai always builds /authorize on our domain.
+      // We redirect to Azure AD, substituting our client_id and scope.
+      app.get('/authorize', (req, res) => {
+        const q = req.query as Record<string, string>;
+        const params = new URLSearchParams({
+          response_type: 'code',
+          client_id: clientId,
+          redirect_uri: q['redirect_uri'] || '',
+          scope: azureScope,
+          state: q['state'] || ''
+        });
+        if (q['code_challenge']) {
+          params.set('code_challenge', q['code_challenge']);
+          params.set('code_challenge_method', 'S256');
+        }
+        if (q['nonce']) params.set('nonce', q['nonce']);
+        this.logger.info('OAuth /authorize proxy -> Azure AD', {
+          redirect_uri: q['redirect_uri'],
+          state: q['state']
+        });
+        res.redirect(302, `${azureAuthorizeUrl}?${params.toString()}`);
+      });
+
+      // Token proxy — Claude.ai always builds /token on our domain.
+      // We forward the code/refresh exchange to Azure AD with our client_id and scope.
+      app.post('/token', express.urlencoded({ extended: false }), async (req: express.Request, res: express.Response) => {
+        const body: Record<string, string> = {
+          grant_type: req.body.grant_type,
+          client_id: clientId,
+          scope: azureScope
+        };
+        if (req.body.redirect_uri)  body['redirect_uri']  = req.body.redirect_uri;
+        if (req.body.code)          body['code']          = req.body.code;
+        if (req.body.code_verifier) body['code_verifier'] = req.body.code_verifier;
+        if (req.body.refresh_token) body['refresh_token'] = req.body.refresh_token;
+
+        this.logger.info('OAuth /token proxy -> Azure AD', {
+          grant_type: req.body.grant_type,
+          redirect_uri: req.body.redirect_uri
+        });
+
+        try {
+          const response = await axios.post(azureTokenUrl, new URLSearchParams(body).toString(), {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+          });
+          res.json(response.data);
+        } catch (err: unknown) {
+          const axiosErr = err as { response?: { status?: number; data?: unknown }; message?: string };
+          const status = axiosErr.response?.status || 500;
+          const data = axiosErr.response?.data || {
+            error: 'token_exchange_failed',
+            error_description: axiosErr.message
+          };
+          this.logger.error('OAuth /token proxy failed', { status, data });
+          res.status(status).json(data);
+        }
+      });
+
+      // Bearer (JWT) validation via Azure AD JWKS — applied only to /mcp routes.
+      const JWKS = createRemoteJWKSet(new URL(azureJwksUrl));
+
+      app.use('/mcp', async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+        const authHeader = req.headers.authorization;
+        if (!authHeader?.startsWith('Bearer ')) {
+          res.status(401)
+            .set('WWW-Authenticate', `Bearer resource_metadata="${mcpServerUrl}/.well-known/oauth-protected-resource", scope="api://${clientId}/access_as_user"`)
+            .json({ error: 'unauthorized', error_description: 'Bearer token required' });
+          return;
+        }
+
+        const token = authHeader.slice(7);
+        // Azure AD stamps different audiences depending on the scopes requested, so we
+        // try the configured value, the bare client_id and the api:// form.
+        const audiencesToTry = [...new Set([azureAudience, clientId, `api://${clientId}`])].filter(Boolean);
+        let validatedPayload: Record<string, unknown> | undefined;
+        let lastError: unknown;
+
+        for (const aud of audiencesToTry) {
+          try {
+            const { payload } = await jwtVerify(token, JWKS, {
+              issuer: `https://login.microsoftonline.com/${tenantId}/v2.0`,
+              audience: aud
+            });
+            validatedPayload = payload as Record<string, unknown>;
+            this.logger.debug('Bearer token validated', { audience: aud });
+            break;
+          } catch (err) {
+            lastError = err;
+          }
+        }
+
+        if (!validatedPayload) {
+          // Decode (without verifying) purely to log why the token was rejected.
+          try {
+            const parts = token.split('.');
+            const rawClaims = parts.length === 3 ? parts[1] : undefined;
+            if (rawClaims) {
+              const claims = JSON.parse(Buffer.from(rawClaims, 'base64url').toString());
+              this.logger.warn('Bearer token validation failed', {
+                error: (lastError as Error)?.message,
+                tokenAudience: claims.aud,
+                tokenIssuer: claims.iss,
+                tokenSubject: claims.sub,
+                triedAudiences: audiencesToTry
+              });
+            }
+          } catch { /* ignore decode errors */ }
+
+          res.status(401)
+            .set('WWW-Authenticate', `Bearer resource_metadata="${mcpServerUrl}/.well-known/oauth-protected-resource", error="invalid_token"`)
+            .json({ error: 'invalid_token', error_description: 'Token validation failed' });
+          return;
+        }
+
+        req.user = {
+          email: (validatedPayload['email'] as string) || (validatedPayload['preferred_username'] as string),
+          name: validatedPayload['name'] as string,
+          groups: (validatedPayload['groups'] as string[]) || []
+        };
+        next();
+      });
+
+      this.logger.info('MCP OAuth 2.1 enabled', {
+        serverUrl: mcpServerUrl,
+        tenantId,
+        audience: azureAudience,
+        discoveryEndpoints: [
+          `${mcpServerUrl}/.well-known/oauth-protected-resource`,
+          `${mcpServerUrl}/.well-known/oauth-authorization-server`,
+          `${mcpServerUrl}/register`
+        ]
+      });
+    } else {
+      this.logger.warn(
+        'MCP endpoint is UNAUTHENTICATED — set MCP_BEARER_TOKEN or MCP_OAUTH_ENABLED=true to protect /mcp'
+      );
+    }
 
     // OAuth2-Proxy User Context Middleware
     // Extracts user information from headers injected by OAuth2-Proxy
