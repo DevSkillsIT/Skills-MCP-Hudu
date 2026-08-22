@@ -76,3 +76,5 @@ temp/
 
 # Test artifacts
 test-results/
+# MoAI local session state (nunca versionar)
+.moai/state/
