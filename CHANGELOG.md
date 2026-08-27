@@ -20,12 +20,12 @@ against mocks/isolated paths only.
 ### [SPEC-HUDU-FIX-001 / REQ-05 / BUG-05] IP record context — network_id not exposed by API
 - Live finding: Hudu API 2.41.2 does NOT return `network_id` on the IP record payload (OpenAPI declares it; live endpoint omits it). The earlier "no change needed" conclusion + characterization test pinned the buggy `Rede ID: -` output.
 - The API DOES return `asset_id` + `asset_name` (+ `asset_url`) and `company_id`. Fix surfaces the asset as primary context (`| Ativo | Name (ID: N) |`), hydrates company when available, and only renders the `Rede ID` row when `network_id` is actually present (no misleading `-`).
-- Files: `src/types.ts` (HuduIpAddress + asset_name/asset_url/company fields), `src/formatters/markdown.ts` (formatIpAddressList/Detail + ipAssetLabel helper). Test rewritten against real API shape. Live-verified: `| Ativo | GWPMWESCSC - Firewall (ID: 976) |`.
+- Files: `src/types.ts` (HuduIpAddress + asset_name/asset_url/company fields), `src/formatters/markdown.ts` (formatIpAddressList/Detail + ipAssetLabel helper). Test rewritten against real API shape. Live-verified against a production instance: the Ativo cell renders `<asset name> (ID: <n>)`.
 
 ### [SPEC-HUDU-FIX-001 / REQ-09 / BUG-09] Relation readability — per-endpoint names not exposed by API
 - Live finding: the relations API returns a single `name` (the related entity's name) + per-endpoint `*_url`, but NO separate fromable_name/toable_name. The earlier implementation relied on those nonexistent fields, so relations rendered as opaque `Company#37`.
 - Fix: render endpoints as `Type#id` (precise) and surface the `name` field as a Nome column (list) and the endpoint URLs (detail). No N+1 lookups. Full per-endpoint name resolution would require lookups and is deferred with rationale.
-- Files: `src/types.ts` (HuduRelation + fromable_url/toable_url/is_inverse), `src/formatters/markdown.ts` (formatRelationList/Detail). Test rewritten against real API shape. Live-verified: Nome column shows "Skills IT Palmas", "GWPMWESCSC - Firewall".
+- Files: `src/types.ts` (HuduRelation + fromable_url/toable_url/is_inverse), `src/formatters/markdown.ts` (formatRelationList/Detail). Test rewritten against real API shape. Live-verified against a production instance: the Nome column shows the related entity's own name.
 
 ---
 
