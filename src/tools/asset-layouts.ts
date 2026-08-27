@@ -1,6 +1,15 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, commonProperties } from './schema-utils.js';
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  createWarnedResponse,
+  type ToolResponse
+} from './base.js';
+import {
+  createActionSchema,
+  createFieldsSchema,
+  idForActions
+} from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 // Asset layouts manage tool (CRUD without delete)
@@ -11,7 +20,7 @@ export const assetLayoutsTool: Tool = {
     type: 'object',
     properties: {
       action: createActionSchema(['create', 'get', 'update'], 'Ação a executar. Valores: create (criar novo layout), get (obter por ID), update (atualizar por ID). Delete não é suportado para layouts de ativos.'),
-      id: commonProperties.id,
+      id: idForActions(['create', 'get', 'update']),
       fields: createFieldsSchema({
         name: { type: 'string', description: 'Nome do layout de ativo (obrigatório para criação)' },
         icon: { type: 'string', description: 'Classe de icone Font Awesome para o layout, ex: fa-server' },
@@ -50,7 +59,7 @@ const ASSET_LAYOUTS_PAGE_SIZE_CAP = 25;
 
 export const assetLayoutsQueryTool: Tool = {
   name: 'hudu_search_asset_layout_templates',
-  description: 'Layouts, templates e modelos de ativos no Hudu — busca e filtragem de estruturas de campos personalizados, tipos de equipamento e categorias por nome. Use quando precisar listar ou localizar layouts disponíveis no Hudu sem saber o ID exato. Consulta somente leitura. Nota Hudu API 2.41.2: o endpoint /asset_layouts limita silenciosamente cada página a 25 itens; quando esse limite é atingido a resposta inclui o metadado page_size_capped: 25. Retorna lista paginada em Markdown.',
+  description: 'Layouts, templates e modelos de ativos no Hudu — busca e filtragem de estruturas de campos personalizados, tipos de equipamento e categorias por nome. Use quando precisar listar layouts do Hudu sem saber o ID exato. Consulta somente leitura. Nota da API 2.41.2: /asset_layouts limita cada página a 25 itens e sinaliza com page_size_capped. Retorna lista paginada em Markdown.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -110,12 +119,23 @@ export async function executeAssetLayoutsTool(args: any, client: HuduClient): Pr
 export async function executeAssetLayoutsQueryTool(args: any, client: HuduClient): Promise<ToolResponse> {
   try {
     const layouts = await client.getAssetLayouts(args);
-    // REQ-14 / PRB-03: surface the API-level page size cap when reached so
-    // consumers know there may be unseen records on subsequent pages.
-    if (Array.isArray(layouts) && layouts.length >= ASSET_LAYOUTS_PAGE_SIZE_CAP) {
-      return createSuccessResponse({ records: layouts, page_size_capped: ASSET_LAYOUTS_PAGE_SIZE_CAP });
-    }
-    return createSuccessResponse(layouts);
+    // REQ-14 / PRB-03: /asset_layouts ceilings each page at 25 whatever
+    // page_size says, so a saturated page probably hides records.
+    //
+    // BUG-17: that signal used to be sent by returning
+    // `{records, page_size_capped}` instead of the array. The formatter calls
+    // `.map()` on what it receives, so every call on an instance with 25+
+    // layouts died with "paged.records.map is not a function" — the tool was
+    // dead here, including with no arguments at all. The caveat travels in
+    // `warning` now, which reaches the caller without changing the shape.
+    const capped =
+      Array.isArray(layouts) && layouts.length >= ASSET_LAYOUTS_PAGE_SIZE_CAP;
+    return createWarnedResponse(
+      layouts,
+      capped
+        ? `A API do Hudu limita /asset_layouts a ${ASSET_LAYOUTS_PAGE_SIZE_CAP} itens por página, independente de page_size. Vieram ${ASSET_LAYOUTS_PAGE_SIZE_CAP}, então pode haver mais — peça a próxima página para confirmar.`
+        : null
+    );
   } catch (error: any) {
     return createErrorResponse(`Asset layouts query failed: ${error.message}`);
   }

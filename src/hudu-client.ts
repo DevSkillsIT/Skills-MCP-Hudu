@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { redactSensitive } from './utils/redact.js';
 import {
   HuduConfig,
   HuduArticle,
@@ -28,7 +29,11 @@ import {
   HuduRackStorage,
   HuduRackStorageItem,
   HuduPublicPhoto,
-  HuduCard
+  HuduCard,
+  HuduLabel,
+  HuduLabelType,
+  HuduFlag,
+  HuduFlagType
 } from './types.js';
 
 /**
@@ -117,6 +122,59 @@ export class HuduClient {
       },
       timeout: config.timeout,
     });
+
+    // The Hudu API answers a rejected write with the reason:
+    //   {"error":"Validation failed","details":["Color must be one of: Red, ..."]}
+    // Axios throws with `message = "Request failed with status code 422"` and
+    // the body only on `error.response`, so that reason never reached the
+    // model — it saw a status code and had no way to correct the call. Fold
+    // the body into the message the executors already surface.
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        const detail = HuduClient.describeApiError(error);
+        if (detail) error.message = detail;
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  /**
+   * Renders a Hudu API error body as one line. Returns null when there is
+   * nothing better to say than what axios already said.
+   */
+  private static describeApiError(error: any): string | null {
+    const status = error?.response?.status;
+    const body = error?.response?.data;
+    if (!status) return null;
+
+    // Everything appended to `parts` is attacker-adjacent: it is whatever the
+    // Hudu instance chose to put in the response body, and it ends up in the
+    // winston file log AND the model's context. Redact on the way out.
+    const parts: string[] = [];
+    if (typeof body === 'string') {
+      // Rails renders routing and 500 errors as an HTML page. Quoting it would
+      // bury the useful part, so say what happened instead.
+      const trimmed = body.trim();
+      if (trimmed.startsWith('<')) {
+        parts.push(
+          status === 404
+            ? 'endpoint não encontrado (verifique o método HTTP e o caminho)'
+            : 'a API respondeu com uma página HTML, não JSON'
+        );
+      } else if (trimmed) {
+        parts.push(trimmed.slice(0, 300));
+      }
+    } else if (body && typeof body === 'object') {
+      const message = body.error ?? body.message;
+      if (message) parts.push(String(message));
+      const details = body.details ?? body.errors;
+      if (Array.isArray(details) && details.length) parts.push(details.join('; '));
+      else if (typeof details === 'string') parts.push(details);
+    }
+
+    if (!parts.length) return null;
+    return `HTTP ${status}: ${redactSensitive(parts.join(' — '))}`;
   }
 
   // ---------------------------------------------------------------------------
@@ -552,9 +610,20 @@ export class HuduClient {
     name?: string;
     company_id?: number;
     page?: number;
+    page_size?: number;
+    /** "process" = definition/template, "run" = one execution of a process. */
+    type?: 'process' | 'run';
+    /** Only meaningful with type=process: global templates vs company processes. */
+    process_scope?: 'global' | 'company';
+    /** Runs started from this process. */
+    parent_process_id?: number;
+    slug?: string;
+    archived?: boolean | string;
+    created_at?: string;
+    updated_at?: string;
   }): Promise<HuduProcedure[]> {
     const response = await this.client.get<{ procedures: HuduProcedure[] }>('/procedures', { params });
-    return response.data.procedures;
+    return extractArrayResponse(response.data, 'procedures');
   }
 
   async getProcedure(id: number): Promise<HuduProcedure> {
@@ -578,19 +647,45 @@ export class HuduClient {
     await this.client.delete(`/procedures/${id}`);
   }
 
-  async kickoffProcedure(id: number): Promise<HuduProcedure> {
-    const response = await this.client.put<{ procedure: HuduProcedure }>(`/procedures/${id}/kickoff`);
-    return response.data.procedure;
+  /**
+   * Starts a run from a process.
+   *
+   * The route is POST, not PUT. It was PUT here until 2026-08 and every call
+   * hit the Rails routing 404 (an HTML error page, so the failure surfaced as
+   * a JSON parse error rather than "not found"). The optional params are the
+   * whole point of the action: without `name` the run is a nameless clone.
+   */
+  async kickoffProcedure(
+    id: number,
+    params?: { name?: string; asset_id?: number }
+  ): Promise<HuduProcedure> {
+    const response = await this.client.post<{ procedure: HuduProcedure }>(
+      `/procedures/${id}/kickoff`,
+      params ?? {}
+    );
+    return response.data?.procedure ?? (response.data as unknown as HuduProcedure);
   }
 
-  async duplicateProcedure(id: number): Promise<HuduProcedure> {
-    const response = await this.client.put<{ procedure: HuduProcedure }>(`/procedures/${id}/duplicate`);
-    return response.data.procedure;
+  async duplicateProcedure(
+    id: number,
+    params?: { name?: string; description?: string; company_id?: number }
+  ): Promise<HuduProcedure> {
+    const response = await this.client.post<{ procedure: HuduProcedure }>(
+      `/procedures/${id}/duplicate`,
+      params ?? {}
+    );
+    return response.data?.procedure ?? (response.data as unknown as HuduProcedure);
   }
 
-  async createFromTemplate(id: number): Promise<HuduProcedure> {
-    const response = await this.client.put<{ procedure: HuduProcedure }>(`/procedures/${id}/create_from_template`);
-    return response.data.procedure;
+  async createFromTemplate(
+    id: number,
+    params?: { name?: string; description?: string; company_id?: number }
+  ): Promise<HuduProcedure> {
+    const response = await this.client.post<{ procedure: HuduProcedure }>(
+      `/procedures/${id}/create_from_template`,
+      params ?? {}
+    );
+    return response.data?.procedure ?? (response.data as unknown as HuduProcedure);
   }
 
   // Procedure Tasks
@@ -619,6 +714,152 @@ export class HuduClient {
 
   async deleteProcedureTask(id: number): Promise<void> {
     await this.client.delete(`/procedure_tasks/${id}`);
+  }
+
+  // ---------------------------------------------------------------------
+  // Label types (the label catalogue) and labels (assignments on records)
+  // ---------------------------------------------------------------------
+
+  async getLabelTypes(params?: {
+    name?: string;
+    color?: string;
+    slug?: string;
+    created_at?: string;
+    updated_at?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<HuduLabelType[]> {
+    const response = await this.client.get<{ label_types: HuduLabelType[] }>('/label_types', { params });
+    return extractArrayResponse(response.data, 'label_types');
+  }
+
+  async getLabelType(id: number): Promise<HuduLabelType> {
+    const response = await this.client.get<{ label_type: HuduLabelType }>(`/label_types/${id}`);
+    return response.data?.label_type ?? (response.data as unknown as HuduLabelType);
+  }
+
+  async createLabelType(labelType: Partial<HuduLabelType>): Promise<HuduLabelType> {
+    const response = await this.client.post<{ label_type: HuduLabelType }>('/label_types', {
+      label_type: labelType
+    });
+    return response.data?.label_type ?? (response.data as unknown as HuduLabelType);
+  }
+
+  async updateLabelType(id: number, labelType: Partial<HuduLabelType>): Promise<HuduLabelType> {
+    const response = await this.client.put<{ label_type: HuduLabelType }>(`/label_types/${id}`, {
+      label_type: labelType
+    });
+    return response.data?.label_type ?? (response.data as unknown as HuduLabelType);
+  }
+
+  async deleteLabelType(id: number): Promise<void> {
+    await this.client.delete(`/label_types/${id}`);
+  }
+
+  async getLabels(params?: {
+    label_type_id?: number;
+    labelable_type?: string;
+    labelable_id?: number;
+    user_id?: number;
+    created_at?: string;
+    updated_at?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<HuduLabel[]> {
+    const response = await this.client.get<{ labels: HuduLabel[] }>('/labels', { params });
+    return extractArrayResponse(response.data, 'labels');
+  }
+
+  async getLabel(id: number): Promise<HuduLabel> {
+    const response = await this.client.get<{ label: HuduLabel }>(`/labels/${id}`);
+    return response.data?.label ?? (response.data as unknown as HuduLabel);
+  }
+
+  async createLabel(label: Partial<HuduLabel>): Promise<HuduLabel> {
+    const response = await this.client.post<{ label: HuduLabel }>('/labels', { label });
+    return response.data?.label ?? (response.data as unknown as HuduLabel);
+  }
+
+  async updateLabel(id: number, label: Partial<HuduLabel>): Promise<HuduLabel> {
+    const response = await this.client.put<{ label: HuduLabel }>(`/labels/${id}`, { label });
+    return response.data?.label ?? (response.data as unknown as HuduLabel);
+  }
+
+  async deleteLabel(id: number): Promise<void> {
+    await this.client.delete(`/labels/${id}`);
+  }
+
+  // ---------------------------------------------------------------------
+  // Flag types and flags (attention markers on records)
+  // ---------------------------------------------------------------------
+
+  async getFlagTypes(params?: {
+    name?: string;
+    color?: string;
+    slug?: string;
+    created_at?: string;
+    updated_at?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<HuduFlagType[]> {
+    const response = await this.client.get<{ flag_types: HuduFlagType[] }>('/flag_types', { params });
+    return extractArrayResponse(response.data, 'flag_types');
+  }
+
+  async getFlagType(id: number): Promise<HuduFlagType> {
+    const response = await this.client.get<{ flag_type: HuduFlagType }>(`/flag_types/${id}`);
+    return response.data?.flag_type ?? (response.data as unknown as HuduFlagType);
+  }
+
+  async createFlagType(flagType: Partial<HuduFlagType>): Promise<HuduFlagType> {
+    const response = await this.client.post<{ flag_type: HuduFlagType }>('/flag_types', {
+      flag_type: flagType
+    });
+    return response.data?.flag_type ?? (response.data as unknown as HuduFlagType);
+  }
+
+  async updateFlagType(id: number, flagType: Partial<HuduFlagType>): Promise<HuduFlagType> {
+    const response = await this.client.put<{ flag_type: HuduFlagType }>(`/flag_types/${id}`, {
+      flag_type: flagType
+    });
+    return response.data?.flag_type ?? (response.data as unknown as HuduFlagType);
+  }
+
+  async deleteFlagType(id: number): Promise<void> {
+    await this.client.delete(`/flag_types/${id}`);
+  }
+
+  async getFlags(params?: {
+    flag_type_id?: number;
+    flagable_type?: string;
+    flagable_id?: number;
+    description?: string;
+    created_at?: string;
+    updated_at?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<HuduFlag[]> {
+    const response = await this.client.get<{ flags: HuduFlag[] }>('/flags', { params });
+    return extractArrayResponse(response.data, 'flags');
+  }
+
+  async getFlag(id: number): Promise<HuduFlag> {
+    const response = await this.client.get<{ flag: HuduFlag }>(`/flags/${id}`);
+    return response.data?.flag ?? (response.data as unknown as HuduFlag);
+  }
+
+  async createFlag(flag: Partial<HuduFlag>): Promise<HuduFlag> {
+    const response = await this.client.post<{ flag: HuduFlag }>('/flags', { flag });
+    return response.data?.flag ?? (response.data as unknown as HuduFlag);
+  }
+
+  async updateFlag(id: number, flag: Partial<HuduFlag>): Promise<HuduFlag> {
+    const response = await this.client.put<{ flag: HuduFlag }>(`/flags/${id}`, { flag });
+    return response.data?.flag ?? (response.data as unknown as HuduFlag);
+  }
+
+  async deleteFlag(id: number): Promise<void> {
+    await this.client.delete(`/flags/${id}`);
   }
 
   // Networks - CORRIGIDO: API retorna array direto, não objeto

@@ -43,8 +43,25 @@ import {
   formatRackStorageDetail,
   formatRackStorageItemDetail,
   formatPublicPhotoDetail,
+  formatLabelTypeList,
+  formatLabelTypeDetail,
+  formatLabelList,
+  formatLabelDetail,
+  formatFlagTypeList,
+  formatFlagTypeDetail,
+  formatFlagList,
+  formatFlagDetail,
   toPagedResponse,
 } from './markdown.js';
+
+/**
+ * apply/remove and flag/unflag answer with an outcome record, not the entity.
+ * Rendering that through the detail formatter would print a table of nulls, so
+ * the executor's message is what the caller should see.
+ */
+function isOutcomeReceipt(data: any): boolean {
+  return !!data && typeof data === 'object' && typeof data.removed === 'boolean';
+}
 
 // Tool payloads variam bastante entre CRUD, buscas e utilitarios.
 // O formatter central aceita `any` de forma intencional para preservar
@@ -279,6 +296,50 @@ const TOOL_FORMATTERS: Record<string, (data: any, args: any) => string> = {
   },
   'hudu_search_dashboard_widgets': (data, args) =>
     formatMagicDashList(toPagedResponse(data, args?.page, args?.page_size)),
+
+  // Labels
+  'hudu_manage_label_definitions': (data, args) => {
+    if (!data) return 'Operação realizada com sucesso.';
+    if (Array.isArray(data))
+      return formatLabelTypeList(toPagedResponse(data, args?.page, args?.page_size));
+    return formatLabelTypeDetail(data);
+  },
+  'hudu_search_label_definitions': (data, args) =>
+    formatLabelTypeList(toPagedResponse(data, args?.page, args?.page_size)),
+  'hudu_manage_labeled_records': (data, args) => {
+    if (!data) return 'Operação realizada com sucesso.';
+    if (isOutcomeReceipt(data))
+      return data.removed
+        ? `Etiqueta removida do registro (aplicação #${data.id}).`
+        : 'Esta etiqueta não estava aplicada ao registro; nada foi alterado.';
+    if (Array.isArray(data))
+      return formatLabelList(toPagedResponse(data, args?.page, args?.page_size));
+    return formatLabelDetail(data);
+  },
+  'hudu_search_labeled_records': (data, args) =>
+    formatLabelList(toPagedResponse(data, args?.page, args?.page_size)),
+
+  // Flags
+  'hudu_manage_flag_definitions': (data, args) => {
+    if (!data) return 'Operação realizada com sucesso.';
+    if (Array.isArray(data))
+      return formatFlagTypeList(toPagedResponse(data, args?.page, args?.page_size));
+    return formatFlagTypeDetail(data);
+  },
+  'hudu_search_flag_definitions': (data, args) =>
+    formatFlagTypeList(toPagedResponse(data, args?.page, args?.page_size)),
+  'hudu_manage_flagged_records': (data, args) => {
+    if (!data) return 'Operação realizada com sucesso.';
+    if (isOutcomeReceipt(data))
+      return data.removed
+        ? `Sinalização retirada do registro (sinalização #${data.id}).`
+        : 'O registro não estava sinalizado com este tipo; nada foi alterado.';
+    if (Array.isArray(data))
+      return formatFlagList(toPagedResponse(data, args?.page, args?.page_size));
+    return formatFlagDetail(data);
+  },
+  'hudu_search_flagged_records': (data, args) =>
+    formatFlagList(toPagedResponse(data, args?.page, args?.page_size)),
 
   // Prompts and Resources as tools (executors already return formatted strings)
   'hudu_list_prompts': (data) => typeof data === 'string' ? data : JSON.stringify(data, null, 2),

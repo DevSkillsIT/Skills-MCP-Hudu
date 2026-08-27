@@ -27,7 +27,11 @@ import {
   HuduExport,
   HuduRackStorage,
   HuduRackStorageItem,
-  HuduPublicPhoto
+  HuduPublicPhoto,
+  HuduLabel,
+  HuduLabelType,
+  HuduFlag,
+  HuduFlagType
 } from './types.js';
 
 /**
@@ -848,5 +852,140 @@ export class FilteredHuduClient {
 
   async getCompanyAsset(companyId: number, assetId: number): Promise<HuduAsset> {
     return this.wrappedClient.getCompanyAsset(companyId, assetId);
+  }
+
+  // -------------------------------------------------------------------------
+  // Labels and flags
+  //
+  // These endpoints take no company_id, so injectCompanyFilter has nothing to
+  // act on: a Label is `{label_type_id, labelable_type, labelable_id}` and the
+  // company is only reachable through the labelled record. Scoping therefore
+  // falls to the Hudu API key itself — `Api::V1::LabelsController` narrows to
+  // `Label.for_company(@api_key.company.id)` when the key is company-scoped.
+  //
+  // The consequence is worth stating plainly: with a global API key and a
+  // non-ALL HUDU_ALLOWED_COMPANY_IDS, these calls are NOT restricted by the
+  // MCP allowlist. Use a company-scoped Hudu API key for that deployment.
+  // -------------------------------------------------------------------------
+
+  private warnedUnscoped = false;
+
+  /**
+   * Message for tools whose endpoints cannot honour the company allowlist, or
+   * null when there is nothing to warn about.
+   *
+   * The log warning alone was not a defence: `FilteredHuduClient` is built once
+   * per process, so `warnedUnscoped` latches and under pm2 the line appears
+   * once in weeks of uptime — while every response continues to look clean.
+   * The caller has to see this in the answer it is reading.
+   */
+  scopeWarningForUnscopedEndpoints(): string | null {
+    if (this.isAllAccess) return null;
+    return (
+      'ATENÇÃO: etiquetas e sinalizações não aceitam filtro por empresa na API do Hudu, ' +
+      `então o allowlist deste MCP (${this.allowedCompanyIds.join(', ')}) NÃO foi aplicado aqui. ` +
+      'Estes resultados podem incluir registros de outras empresas. Confirme a empresa de cada ' +
+      'registro antes de repassar.'
+    );
+  }
+
+  private warnUnscoped(method: string): void {
+    if (this.isAllAccess || this.warnedUnscoped) return;
+    this.warnedUnscoped = true;
+    this.logger.warn(
+      'Label/flag endpoints carry no company_id and cannot honour HUDU_ALLOWED_COMPANY_IDS. ' +
+        'Scoping depends on the Hudu API key. Use a company-scoped key for filtered deployments.',
+      { method, allowedCompanyIds: this.allowedCompanyIds }
+    );
+  }
+
+  async getLabelTypes(params?: Parameters<HuduClient['getLabelTypes']>[0]): Promise<HuduLabelType[]> {
+    return this.wrappedClient.getLabelTypes(params);
+  }
+
+  async getLabelType(id: number): Promise<HuduLabelType> {
+    return this.wrappedClient.getLabelType(id);
+  }
+
+  async createLabelType(labelType: Partial<HuduLabelType>): Promise<HuduLabelType> {
+    return this.wrappedClient.createLabelType(labelType);
+  }
+
+  async updateLabelType(id: number, labelType: Partial<HuduLabelType>): Promise<HuduLabelType> {
+    return this.wrappedClient.updateLabelType(id, labelType);
+  }
+
+  async deleteLabelType(id: number): Promise<void> {
+    return this.wrappedClient.deleteLabelType(id);
+  }
+
+  async getLabels(params?: Parameters<HuduClient['getLabels']>[0]): Promise<HuduLabel[]> {
+    this.warnUnscoped('getLabels');
+    return this.wrappedClient.getLabels(params);
+  }
+
+  async getLabel(id: number): Promise<HuduLabel> {
+    this.warnUnscoped('getLabel');
+    return this.wrappedClient.getLabel(id);
+  }
+
+  async createLabel(label: Partial<HuduLabel>): Promise<HuduLabel> {
+    this.warnUnscoped('createLabel');
+    return this.wrappedClient.createLabel(label);
+  }
+
+  async updateLabel(id: number, label: Partial<HuduLabel>): Promise<HuduLabel> {
+    this.warnUnscoped('updateLabel');
+    return this.wrappedClient.updateLabel(id, label);
+  }
+
+  async deleteLabel(id: number): Promise<void> {
+    this.warnUnscoped('deleteLabel');
+    return this.wrappedClient.deleteLabel(id);
+  }
+
+  async getFlagTypes(params?: Parameters<HuduClient['getFlagTypes']>[0]): Promise<HuduFlagType[]> {
+    return this.wrappedClient.getFlagTypes(params);
+  }
+
+  async getFlagType(id: number): Promise<HuduFlagType> {
+    return this.wrappedClient.getFlagType(id);
+  }
+
+  async createFlagType(flagType: Partial<HuduFlagType>): Promise<HuduFlagType> {
+    return this.wrappedClient.createFlagType(flagType);
+  }
+
+  async updateFlagType(id: number, flagType: Partial<HuduFlagType>): Promise<HuduFlagType> {
+    return this.wrappedClient.updateFlagType(id, flagType);
+  }
+
+  async deleteFlagType(id: number): Promise<void> {
+    return this.wrappedClient.deleteFlagType(id);
+  }
+
+  async getFlags(params?: Parameters<HuduClient['getFlags']>[0]): Promise<HuduFlag[]> {
+    this.warnUnscoped('getFlags');
+    return this.wrappedClient.getFlags(params);
+  }
+
+  async getFlag(id: number): Promise<HuduFlag> {
+    this.warnUnscoped('getFlag');
+    return this.wrappedClient.getFlag(id);
+  }
+
+  async createFlag(flag: Partial<HuduFlag>): Promise<HuduFlag> {
+    this.warnUnscoped('createFlag');
+    return this.wrappedClient.createFlag(flag);
+  }
+
+  async updateFlag(id: number, flag: Partial<HuduFlag>): Promise<HuduFlag> {
+    this.warnUnscoped('updateFlag');
+    return this.wrappedClient.updateFlag(id, flag);
+  }
+
+  async deleteFlag(id: number): Promise<void> {
+    this.warnUnscoped('deleteFlag');
+    return this.wrappedClient.deleteFlag(id);
   }
 }

@@ -19,6 +19,15 @@ export interface ToolResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
+  /**
+   * Caveat that must travel WITH the answer, not merely be logged.
+   *
+   * `message` is not a substitute: server.ts only falls back to it when the
+   * formatter produced nothing, so anything important said there is invisible
+   * whenever a tool renders a table. A warning is prepended to the rendered
+   * output instead.
+   */
+  warning?: string;
 }
 
 export type ToolExecutor = (args: any, client: any) => Promise<ToolResponse>;
@@ -38,6 +47,17 @@ export function createSuccessResponse<T>(data: T, message?: string): ToolRespons
     data,
     message
   };
+}
+
+/** Same as createSuccessResponse, plus a caveat rendered above the answer. */
+export function createWarnedResponse<T>(
+  data: T,
+  warning: string | null,
+  message?: string
+): ToolResponse<T> {
+  const res = createSuccessResponse(data, message);
+  if (warning) res.warning = warning;
+  return res;
 }
 
 // Common field schemas that are reused across resources

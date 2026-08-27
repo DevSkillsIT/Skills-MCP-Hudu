@@ -1,6 +1,9 @@
+import { HUDU_PASSWORDABLE_TYPES } from '../types.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, standardActions, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, createQuerySchema, standardActions, commonProperties,
+  idForActions
+} from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 export const passwordsTool: Tool = {
@@ -10,7 +13,7 @@ export const passwordsTool: Tool = {
     type: 'object',
     properties: {
       action: createActionSchema(standardActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID), archive (arquivar por ID), unarchive (desarquivar por ID)'),
-      id: commonProperties.id,
+      id: idForActions(standardActions),
       fields: createFieldsSchema({
         name: { type: 'string', description: 'Nome identificador da credencial (obrigatório para criação)' },
         password: { type: 'string', description: 'Valor da senha (obrigatório para criação)' },
@@ -18,7 +21,11 @@ export const passwordsTool: Tool = {
         url: { type: 'string', description: 'URL do serviço ou sistema relacionado' },
         description: commonProperties.description,
         company_id: commonProperties.company_id,
-        passwordable_type: { type: 'string', description: 'Tipo do recurso pai vinculado, ex: Asset, Company, Article (opcional)' },
+        passwordable_type: {
+          type: 'string',
+          enum: [...HUDU_PASSWORDABLE_TYPES],
+          description: 'Tipo do recurso pai vinculado (opcional). O Hudu só aceita "Asset" — ALLOWED_PASSWORDABLE_TYPES tem esse único valor; Company e Article são recusados.'
+        },
         passwordable_id: { type: 'number', description: 'ID do recurso pai vinculado à credencial (opcional)' },
         in_portal: { type: 'boolean', description: 'Se a senha deve ficar visível no portal do cliente' },
         password_folder_id: { type: 'number', description: 'ID da pasta de senhas (opcional)' },

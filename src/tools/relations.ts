@@ -1,6 +1,11 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, commonProperties } from './schema-utils.js';
+import {
+  createActionSchema,
+  createFieldsSchema,
+  createQuerySchema,
+  idForActions
+} from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 // Relations manage tool (CRUD)
@@ -15,7 +20,7 @@ export const relationsTool: Tool = {
     type: 'object',
     properties: {
       action: createActionSchema(['create', 'delete'], 'Ação a executar. Valores: create (criar nova relação), delete (excluir por ID). A API do Hudu não suporta get-by-id ou update para relações.'),
-      id: commonProperties.id,
+      id: idForActions(['create', 'delete']),
       fields: createFieldsSchema({
         description: { type: 'string', description: 'Descrição do vínculo entre as entidades' },
         fromable_type: { type: 'string', enum: ['Asset', 'Company', 'Article', 'Procedure', 'Website', 'Network', 'IpAddress', 'Vlan', 'VlanZone', 'AssetPassword'], description: 'Tipo da entidade de origem (obrigatório para criação). Valores: Asset, Company, Article, Procedure, Website, Network, IpAddress, Vlan, VlanZone, AssetPassword' },
@@ -37,7 +42,7 @@ export const relationsTool: Tool = {
 // Relations query tool
 export const relationsQueryTool: Tool = {
   name: 'hudu_search_entity_relations',
-  description: 'Relações, vínculos e associações entre entidades no Hudu — busca e filtragem de relacionamentos por tipo e ID de origem ou destino. Use quando precisar listar todos os vínculos de um recurso específico ou encontrar conexões entre entidades. Consulta somente leitura. Retorna lista paginada em Markdown.',
+  description: 'Relações, vínculos e associações entre entidades no Hudu — busca e filtragem de relacionamentos por tipo e ID de origem ou destino. Use quando precisar listar todos os vínculos de um recurso do Hudu ou encontrar conexões entre entidades. Consulta somente leitura. Retorna lista paginada em Markdown.',
   inputSchema: createQuerySchema({
     fromable_type: { type: 'string', description: 'Filtrar por tipo da entidade de origem (ex: Asset, Company, Article)' },
     fromable_id: { type: 'number', description: 'Filtrar por ID da entidade de origem' },

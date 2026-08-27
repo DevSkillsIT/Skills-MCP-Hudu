@@ -1,17 +1,19 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, basicActions, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, createQuerySchema, basicActions, commonProperties,
+  idForActions
+} from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 // Websites manage tool (CRUD)
 export const websitesTool: Tool = {
   name: 'hudu_manage_website_monitoring',
-  description: 'Sites, portais e URLs monitorados no Hudu — operacoes CRUD para registros de monitoramento de website. Use quando precisar cadastrar, editar, consultar ou excluir sites monitorados vinculados a empresas no Hudu. Aceita action (create, get, update, delete). Retorna Markdown com dados do site processado.',
+  description: 'Sites, portais e URLs monitorados no Hudu — operações CRUD para registros de monitoramento de website. Use quando precisar cadastrar, editar, consultar ou excluir sites monitorados vinculados a empresas no Hudu. Aceita action (create, get, update, delete). Retorna Markdown com dados do site processado.',
   inputSchema: {
     type: 'object',
     properties: {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
-      id: commonProperties.id,
+      id: idForActions(basicActions),
       fields: createFieldsSchema({
         name: { type: 'string', description: 'URL do website para monitoramento, ex: https://exemplo.com (obrigatório para criação). No Hudu, o campo name recebe a URL do site.' },
         company_id: { ...commonProperties.company_id, description: 'ID da empresa associada (OBRIGATÓRIO para criação)' },

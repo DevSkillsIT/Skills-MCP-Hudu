@@ -164,6 +164,7 @@ export interface HuduUser {
 export interface HuduProcedure {
   id: number;
   name: string;
+  slug?: string;
   description?: string;
   company_id?: number;
   company_name?: string;
@@ -175,6 +176,17 @@ export interface HuduProcedure {
   created_at: string;
   updated_at: string;
   tasks?: HuduProcedureTask[];
+  // Process/Run split (Hudu 2.4x). `run` distinguishes an execution from the
+  // process it was started from; `process_type` is only set on processes.
+  run?: boolean;
+  parent_process_id?: number | null;
+  process_type?: 'global' | 'company' | null;
+  status?: string;
+  url?: string;
+  share_url?: string | null;
+  asset?: number | null;
+  object_type?: string;
+  procedure_tasks_attributes?: HuduProcedureTask[];
 }
 
 export interface HuduProcedureTask {
@@ -186,6 +198,157 @@ export interface HuduProcedureTask {
   completed: boolean;
   created_at: string;
   updated_at: string;
+  // Fields the Hudu API has always returned but the MCP never surfaced.
+  due_date?: string | null;
+  formatted_due_date?: string | null;
+  completed_date?: string | null;
+  priority?: string | null;
+  completion_notes?: string | null;
+  optional?: boolean;
+  assigned_users?: number[];
+  first_assigned_user_id?: number | null;
+  first_assigned_user_name?: string | null;
+  user_id?: number | null;
+  user_name?: string | null;
+  parent_task_id?: number | null;
+  subtask_ids?: number[];
+  subtask_count?: number;
+  has_subtasks?: boolean;
+  url?: string;
+}
+
+/**
+ * Labels — the Hudu 2.4x tagging system. A LabelType is the definition
+ * (name, colour, where it may be applied); a Label is one assignment of a
+ * type to a record.
+ */
+export const HUDU_LABELABLE_TYPES = [
+  'Article',
+  'Asset',
+  'AssetPassword',
+  'Website',
+  'IpAddress',
+  'Vlan',
+  'VlanZone',
+  'Procedure',
+  'Network',
+  'RackStorage',
+] as const;
+
+export type HuduLabelableType = (typeof HUDU_LABELABLE_TYPES)[number];
+
+export interface HuduLabelType {
+  id: number;
+  name: string;
+  color: string;
+  slug?: string;
+  applicable_record_types?: string[];
+  access_level?: 'all_companies' | 'specific_companies';
+  allowed_company_ids?: number[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface HuduLabel {
+  id: number;
+  label_type_id: number;
+  labelable_type: string;
+  labelable_id: number;
+  user_id?: number | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Flags — attention markers on records. Structurally similar to labels but a
+ * separate Hudu feature: a flag carries a free-text description and is used to
+ * mark something as needing review, not to categorise it.
+ */
+export const HUDU_FLAGABLE_TYPES = [
+  'Asset',
+  'Website',
+  'Article',
+  'AssetPassword',
+  'Company',
+  'Procedure',
+  'RackStorage',
+  'Network',
+  'IpAddress',
+  'Vlan',
+  'VlanZone',
+] as const;
+
+export type HuduFlagableType = (typeof HUDU_FLAGABLE_TYPES)[number];
+
+/**
+ * Closed sets that are NOT the same as the label/flag ones, verified against
+ * the live models. Reusing a single "Hudu record types" list here would be
+ * wrong in both directions:
+ *
+ *   Upload   `validates :uploadable_type, inclusion: { in: [...] }` — 10 types,
+ *            no Company; offering Company would earn a 422.
+ *   Password `ALLOWED_PASSWORDABLE_TYPES = ["Asset"]` — exactly one.
+ *
+ * Relations (`fromable`/`toable`) and activity logs (`recordingable`) are
+ * polymorphic with NO inclusion validation on the model, so they stay free text
+ * on purpose: an enum there would invent a restriction the server does not have.
+ */
+export const HUDU_UPLOADABLE_TYPES = [
+  'Article',
+  'AssetPassword',
+  'Asset',
+  'IpAddress',
+  'Network',
+  'Procedure',
+  'RackStorage',
+  'VlanZone',
+  'Vlan',
+  'Website',
+] as const;
+
+export const HUDU_PASSWORDABLE_TYPES = ['Asset'] as const;
+
+/**
+ * Flag colours are a fixed palette of names, NOT hex — unlike label colours,
+ * which are hex. `FlagType` validates inclusion in this list and answers 422
+ * with the full list when it does not match.
+ */
+export const HUDU_FLAG_COLORS = [
+  'Red',
+  'Blue',
+  'Green',
+  'Yellow',
+  'Purple',
+  'Orange',
+  'LightPink',
+  'LightBlue',
+  'LightGreen',
+  'LightPurple',
+  'LightOrange',
+  'LightYellow',
+  'White',
+  'Grey',
+] as const;
+
+export type HuduFlagColor = (typeof HUDU_FLAG_COLORS)[number];
+
+export interface HuduFlagType {
+  id: number;
+  name: string;
+  color: string;
+  slug?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface HuduFlag {
+  id: number;
+  flag_type_id: number;
+  description?: string | null;
+  flagable_type: string;
+  flagable_id: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface HuduNetwork {
@@ -450,6 +613,12 @@ export interface HuduPagedResponse<T> {
   records: T[];
   page: number;
   hasMore: boolean;
+  /**
+   * Set when the page came back shorter than requested but landed exactly on a
+   * known server ceiling — the end of the set and a capped page are
+   * indistinguishable there, so neither is asserted.
+   */
+  capSuspected?: boolean;
   total?: number;
 }
 

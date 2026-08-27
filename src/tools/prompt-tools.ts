@@ -6,7 +6,7 @@ import { HUDU_PROMPTS_LIST, getHuduPromptText, validatePromptArgs } from '../pro
 // List prompts tool - exposes MCP prompts as a tool for MCPHub bridge
 export const listPromptsTool: Tool = {
   name: 'hudu_list_prompts',
-  description: 'Prompts e modelos prontos no Hudu — catálogo de 15 templates para gestores e analistas de suporte MSP. Use quando precisar descobrir quais relatórios, auditorias e análises estão disponíveis no Hudu. Retorna nome, descrição, argumentos e categoria de cada prompt disponível.',
+  description: 'Prompts e modelos prontos no Hudu — catálogo de 15 templates de relatório para gestores e analistas de suporte MSP. Use quando precisar descobrir quais auditorias, inventários e análises o Hudu já traz prontos, antes de executar um com hudu_get_prompt. Consulta somente leitura. Retorna nome, descrição, argumentos e categoria de cada prompt.',
   inputSchema: {
     type: 'object',
     properties: {}
@@ -21,7 +21,7 @@ export const listPromptsTool: Tool = {
 // Get/execute prompt tool
 export const getPromptTool: Tool = {
   name: 'hudu_get_prompt',
-  description: 'Prompt e execução de modelo no Hudu — processa um relatório ou análise específica com argumentos customizados. Use quando precisar gerar relatório de auditoria, compliance, inventário ou checklist no Hudu. Retorna resultado formatado em Markdown.',
+  description: 'Prompt, relatório ou checklist do Hudu — executa um template do catálogo com os argumentos informados. Use quando precisar gerar auditoria de segurança, dashboard executivo, inventário ou onboarding de cliente no Hudu; descubra os nomes válidos em hudu_list_prompts. Retorna o resultado do prompt formatado em Markdown.',
   inputSchema: {
     type: 'object',
     properties: {

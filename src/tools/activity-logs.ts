@@ -6,7 +6,7 @@ import type { HuduClient } from '../hudu-client.js';
 // Activity logs query tool (read-only, no CRUD)
 export const activityLogsTool: Tool = {
   name: 'hudu_search_activity_audit_logs',
-  description: 'Logs de atividade, auditoria e historico de alteracoes no Hudu — consulta de acoes realizadas por usuarios com filtros avancados. Use quando precisar auditar alteracoes, rastrear quem modificou recursos ou investigar acoes recentes. Consulta somente leitura. Retorna lista paginada em Markdown.',
+  description: 'Logs de atividade, auditoria e histórico de alterações no Hudu — consulta de ações realizadas por usuários com filtros avançados. Use quando precisar auditar alterações, rastrear quem modificou recursos ou investigar ações recentes no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown.',
   inputSchema: createQuerySchema({
     user_id: { type: 'number', description: 'Filtrar por ID do usuário que realizou a ação' },
     user_email: { type: 'string', description: 'Filtrar por e-mail do usuário que realizou a ação' },

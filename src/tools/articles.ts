@@ -1,6 +1,8 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, standardActions, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, createQuerySchema, standardActions, commonProperties,
+  idForActions
+} from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 export const articlesTool: Tool = {
@@ -10,7 +12,7 @@ export const articlesTool: Tool = {
     type: 'object',
     properties: {
       action: createActionSchema(standardActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID), archive (arquivar por ID), unarchive (desarquivar por ID)'),
-      id: commonProperties.id,
+      id: idForActions(standardActions),
       fields: createFieldsSchema({
         name: { type: 'string', description: 'Nome do artigo (obrigatório para criação)' },
         content: { type: 'string', description: 'Conteúdo do artigo em HTML ou Markdown (obrigatório para criação)' },

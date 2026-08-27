@@ -21,6 +21,10 @@ import type {
   HuduRackStorageItem,
   HuduPublicPhoto,
   HuduPagedResponse,
+  HuduLabel,
+  HuduLabelType,
+  HuduFlag,
+  HuduFlagType,
 } from '../types.js';
 import { stripHtml, truncate, escapeMarkdown } from '../utils/html-stripper.js';
 import { resolveNetworkType } from './enums.js';
@@ -31,27 +35,63 @@ const esc = escapeMarkdown;
 // Wrapper to convert T[] to HuduPagedResponse<T>.
 // The optional total argument carries the X-Total-Count header value when
 // the caller has access to it (REQ-13 / PRB-02).
+/**
+ * Page sizes the Hudu API is known to ceiling at. When fewer rows come back
+ * than were asked for AND the count lands exactly on one of these, the page was
+ * almost certainly capped server-side rather than exhausted — `/asset_layouts`
+ * ceilings at 25 (PRB-03) no matter what page_size says.
+ */
+const SERVER_PAGE_CEILINGS = [25, 50, 100, 250, 500, 1000];
+
 export function toPagedResponse<T>(
-  records: T[],
+  records: T[] | { records?: T[] } | null | undefined,
   page: number = 1,
   pageSize: number = 25,
   total?: number
 ): HuduPagedResponse<T> {
+  // An executor that wrapped its rows in an envelope used to reach the
+  // formatters as an object, and `.map()` on it killed the whole call (BUG-17).
+  // Accept the envelope rather than let a shape mismatch become a crash.
+  const list: T[] = Array.isArray(records)
+    ? records
+    : Array.isArray((records as { records?: T[] })?.records)
+      ? ((records as { records: T[] }).records)
+      : [];
   const paged: HuduPagedResponse<T> = {
-    records: records || [],
+    records: list,
     page,
-    hasMore: (records || []).length >= pageSize,
+    hasMore: list.length >= pageSize,
   };
   if (typeof total === 'number') {
     paged.total = total;
+    // A real total answers the question outright; never guess over it.
+    paged.hasMore = page * pageSize < total;
+    return paged;
+  }
+  // Short page with a round count: cannot tell "set ended" from "server
+  // capped". Saying "sem mais resultados" here is an assertion we cannot
+  // support, and it is how a 25-row cap got reported as a 25-row instance.
+  if (list.length > 0 && list.length < pageSize && SERVER_PAGE_CEILINGS.includes(list.length)) {
+    paged.capSuspected = true;
   }
   return paged;
 }
 
-function pageInfo(paged: { page: number; hasMore: boolean; records: unknown[]; total?: number }): string {
-  const more = paged.hasMore
-    ? ` | Página ${paged.page}, mais disponíveis (próxima: ${paged.page + 1})`
-    : ` | Página ${paged.page}, sem mais resultados`;
+function pageInfo(paged: {
+  page: number;
+  hasMore: boolean;
+  records: unknown[];
+  total?: number;
+  capSuspected?: boolean;
+}): string {
+  let more: string;
+  if (paged.hasMore) {
+    more = ` | Página ${paged.page}, mais disponíveis (próxima: ${paged.page + 1})`;
+  } else if (paged.capSuspected) {
+    more = ` | Página ${paged.page}, a API limitou a página a ${paged.records.length}; pode haver mais (peça a página ${paged.page + 1} para confirmar)`;
+  } else {
+    more = ` | Página ${paged.page}, sem mais resultados`;
+  }
   const totalSuffix = typeof paged.total === 'number' ? ` | Total: ${paged.total}` : '';
   return `**${paged.records.length} resultados**${more}${totalSuffix}`;
 }
@@ -468,37 +508,97 @@ export function formatRelationDetail(r: HuduRelation): string {
 
 // ---- Procedures ----
 
+/**
+ * A Hudu list can mix processes (the definition) with runs (one execution of
+ * it). Rendering both as "procedimento" made a finished run look like a
+ * finished process, so the kind is now a column of its own.
+ */
+function procedureKind(p: HuduProcedure): string {
+  if (p.run === true || (p.parent_process_id !== undefined && p.parent_process_id !== null)) {
+    return 'Execução';
+  }
+  if (p.process_type === 'global') return 'Template global';
+  if (p.process_type === 'company') return 'Processo';
+  return 'Processo';
+}
+
+/**
+ * Progress, or a dash when the API did not send it.
+ *
+ * `${p.completed ?? 0}/${p.total ?? 0}` turned two absent fields into "0/0",
+ * which reads as "a process with no tasks at all" — a claim invented from
+ * missing data. Absence gets rendered as absence.
+ */
+function progressLabel(p: HuduProcedure): string {
+  if (p.completed === undefined && p.total === undefined) return '-';
+  const done = p.completed ?? 0;
+  const total = p.total ?? 0;
+  const pct = p.completion_percentage ? ` (${p.completion_percentage})` : '';
+  return `${done}/${total}${pct}`;
+}
+
 export function formatProcedureList(paged: HuduPagedResponse<HuduProcedure>): string {
   if (paged.records.length === 0) return 'Nenhum procedimento encontrado.';
 
   const rows = paged.records.map(
     (p) =>
-      `| ${p.id} | ${esc(p.name)} | ${esc(p.company_name) || 'Global'} | ${p.completion_percentage ?? '-'} | ${p.updated_at ?? ''} |`
+      `| ${p.id} | ${esc(p.name)} | ${procedureKind(p)} | ${esc(p.company_name) || 'Global'} | ${p.status ?? '-'} | ${progressLabel(p)} | ${p.updated_at ?? ''} |`
   );
+
+  const mixed =
+    paged.records.some((p) => procedureKind(p) === 'Execução') &&
+    paged.records.some((p) => procedureKind(p) !== 'Execução');
 
   return [
     pageInfo(paged),
+    ...(mixed
+      ? [
+          '',
+          '> A lista mistura processos e execuções. Use type="process" ou type="run" para separar.',
+        ]
+      : []),
     '',
-    '| ID | Nome | Empresa | Progresso | Atualizado |',
-    '|---|---|---|---|---|',
+    '| ID | Nome | Tipo | Empresa | Status | Progresso | Atualizado |',
+    '|---|---|---|---|---|---|---|',
     ...rows,
   ].join('\n');
 }
 
 export function formatProcedureDetail(p: HuduProcedure): string {
+  const kind = procedureKind(p);
+  const tasks = p.procedure_tasks_attributes ?? p.tasks ?? [];
   return [
-    `# Procedimento: ${p.name}`,
+    `# ${kind}: ${p.name}`,
     '',
     '| Campo | Valor |',
     '|---|---|',
     `| ID | ${p.id} |`,
     `| Nome | ${esc(p.name)} |`,
+    `| Tipo | ${kind} |`,
     `| Empresa | ${esc(p.company_name) || 'Global'} |`,
-    `| Progresso | ${p.completed ?? 0}/${p.total ?? 0} (${p.completion_percentage ?? '-'}) |`,
+    `| Status | ${p.status ?? '-'} |`,
+    `| Progresso | ${progressLabel(p)} |`,
+    ...(kind === 'Execução'
+      ? [`| Processo de origem | ${p.parent_process_id ?? '-'} |`]
+      : []),
+    ...(p.asset ? [`| Ativo associado | ${p.asset} |`] : []),
     `| Criado em | ${p.created_at ?? ''} |`,
     `| Atualizado em | ${p.updated_at ?? ''} |`,
     ...(p.description
       ? ['', '## Descrição', '', truncate(stripHtml(p.description), 3000)]
+      : []),
+    ...(tasks.length
+      ? [
+          '',
+          `## Tarefas (${tasks.length})`,
+          '',
+          '| ID | Tarefa | Status | Responsável | Prazo |',
+          '|---|---|---|---|---|',
+          ...tasks.map(
+            (t) =>
+              `| ${t.id} | ${esc(t.name) || '-'} | ${t.completed ? 'Concluída' : 'Pendente'} | ${esc(t.first_assigned_user_name) || '-'} | ${t.due_date ?? '-'} |`
+          ),
+        ]
       : []),
   ].join('\n');
 }
@@ -988,19 +1088,30 @@ export function formatNavigationResult(data: any): string {
 
 // ---- Procedure Tasks ----
 
+/**
+ * Owner column. The serializer only names the FIRST of `assigned_users`, so a
+ * task owned by three people rendered as one name with nothing to say the
+ * others existed — a wrong answer, not a terse one.
+ */
+function ownersLabel(t: any): string {
+  const first = escapeMarkdown(t.first_assigned_user_name) || '-';
+  const total = Array.isArray(t.assigned_users) ? t.assigned_users.length : 0;
+  return total > 1 ? `${first} +${total - 1}` : first;
+}
+
 export function formatProcedureTaskList(paged: HuduPagedResponse<any>): string {
   if (paged.records.length === 0) return 'Nenhuma tarefa de procedimento encontrada.';
 
   const rows = paged.records.map(
     (t) =>
-      `| ${t.id} | ${esc(t.name) || '-'} | ${t.procedure_id ?? '-'} | ${t.position ?? '-'} | ${t.completed ? 'Concluída' : 'Pendente'} |`
+      `| ${t.id} | ${esc(t.name) || '-'} | ${t.procedure_id ?? '-'} | ${t.position ?? '-'} | ${t.completed ? 'Concluída' : 'Pendente'} | ${ownersLabel(t)} | ${t.due_date ?? '-'} | ${t.priority ?? '-'} | ${t.has_subtasks ? (t.subtask_count ?? 'sim') : '-'} |`
   );
 
   return [
     pageInfo(paged),
     '',
-    '| ID | Nome | Procedimento ID | Posição | Status |',
-    '|---|---|---|---|---|',
+    '| ID | Nome | Procedimento | Posição | Status | Responsável | Prazo | Prioridade | Subtarefas |',
+    '|---|---|---|---|---|---|---|---|---|',
     ...rows,
   ].join('\n');
 }
@@ -1016,9 +1127,26 @@ export function formatProcedureTaskDetail(t: any): string {
     `| Procedimento ID | ${t.procedure_id ?? '-'} |`,
     `| Posição | ${t.position ?? '-'} |`,
     `| Concluída | ${t.completed ? 'Sim' : 'Não'} |`,
+    ...(t.completed && t.completed_date ? [`| Concluída em | ${t.completed_date} |`] : []),
+    ...(t.completed && t.user_name ? [`| Concluída por | ${esc(t.user_name)} |`] : []),
+    ...(t.completion_notes ? [`| Observações | ${esc(truncate(t.completion_notes, 500))} |`] : []),
+    `| Prazo | ${t.formatted_due_date ?? t.due_date ?? '-'} |`,
+    `| Prioridade | ${t.priority ?? '-'} |`,
+    `| Opcional | ${t.optional ? 'Sim' : 'Não'} |`,
+    `| Responsável | ${esc(t.first_assigned_user_name) || '-'} |`,
+    ...(Array.isArray(t.assigned_users) && t.assigned_users.length > 1
+      ? [
+          // "Demais" has to exclude the one already named above; it listed all
+          // of them, so the principal appeared twice under a heading saying
+          // "the others".
+          `| Demais responsáveis (IDs) | ${t.assigned_users.filter((u: number) => u !== t.first_assigned_user_id).join(', ')} |`
+        ]
+      : []),
+    ...(t.parent_task_id ? [`| Subtarefa de | ${t.parent_task_id} |`] : []),
+    ...(t.has_subtasks ? [`| Subtarefas | ${t.subtask_count ?? (t.subtask_ids?.length ?? '-')} |`] : []),
     `| Criada em | ${t.created_at ?? '-'} |`,
     `| Atualizada em | ${t.updated_at ?? '-'} |`,
-    ...(t.description ? ['', '## Descrição', '', truncate(t.description, 2000)] : []),
+    ...(t.description ? ['', '## Descrição', '', truncate(stripHtml(t.description), 2000)] : []),
   ].join('\n');
 }
 
@@ -1054,5 +1182,211 @@ export function formatVlanZoneDetail(z: any): string {
     `| Criada em | ${z.created_at ?? '-'} |`,
     `| Atualizada em | ${z.updated_at ?? '-'} |`,
     ...(z.description ? ['', '## Descrição', '', truncate(z.description, 1000)] : []),
+  ].join('\n');
+}
+
+// ---- Labels ----
+
+const LABELABLE_LABELS: Record<string, string> = {
+  Article: 'Artigo',
+  Asset: 'Ativo',
+  AssetPassword: 'Senha',
+  Website: 'Site',
+  IpAddress: 'Endereço IP',
+  Vlan: 'VLAN',
+  VlanZone: 'Zona de VLAN',
+  Procedure: 'Procedimento',
+  Network: 'Rede',
+  RackStorage: 'Rack',
+};
+
+function recordTypeLabel(type: string | undefined, map: Record<string, string>): string {
+  if (!type) return '-';
+  return map[type] ? `${map[type]} (${type})` : type;
+}
+
+function labelScope(t: HuduLabelType): string {
+  if (t.access_level === 'specific_companies' && t.allowed_company_ids?.length) {
+    return `${t.allowed_company_ids.length} empresa(s)`;
+  }
+  return 'Todas as empresas';
+}
+
+export function formatLabelTypeList(paged: HuduPagedResponse<HuduLabelType>): string {
+  if (paged.records.length === 0) return 'Nenhuma etiqueta encontrada no catálogo.';
+
+  // Columns follow the include groups the caller actually asked for. The
+  // groups were being fetched and then dropped here: `include: ["meta"]` put
+  // created_at/updated_at in the payload and the table had no column for them,
+  // so the model asked for dates, got none, and concluded there were none.
+  const hasScope = paged.records.some(
+    (t) => t.applicable_record_types !== undefined || t.access_level !== undefined
+  );
+  const hasMeta = paged.records.some((t) => t.created_at !== undefined || t.updated_at !== undefined);
+
+  const cols: string[] = ['ID', 'Nome', 'Cor', 'Slug'];
+  if (hasScope) cols.push('Aplicável a', 'Escopo');
+  if (hasMeta) cols.push('Criada em', 'Atualizada em');
+
+  const rows = paged.records.map((t) => {
+    const cells: string[] = [String(t.id), esc(t.name), t.color ?? '-', t.slug ?? '-'];
+    if (hasScope) {
+      cells.push(
+        t.applicable_record_types?.length ? t.applicable_record_types.join(', ') : 'Todos',
+        labelScope(t)
+      );
+    }
+    if (hasMeta) cells.push(t.created_at ?? '-', t.updated_at ?? '-');
+    return `| ${cells.join(' | ')} |`;
+  });
+
+  return [
+    pageInfo(paged),
+    '',
+    `| ${cols.join(' | ')} |`,
+    `|${cols.map(() => '---').join('|')}|`,
+    ...rows,
+  ].join('\n');
+}
+
+export function formatLabelTypeDetail(t: HuduLabelType): string {
+  if (!t || typeof t !== 'object') return 'Etiqueta indisponível.';
+  return [
+    `# Etiqueta: ${esc(t.name)}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${t.id} |`,
+    `| Nome | ${esc(t.name)} |`,
+    `| Cor | ${t.color ?? '-'} |`,
+    `| Slug | ${t.slug ?? '-'} |`,
+    `| Aplicável a | ${t.applicable_record_types?.length ? t.applicable_record_types.join(', ') : 'Todos os tipos'} |`,
+    `| Escopo | ${labelScope(t)} |`,
+    ...(t.allowed_company_ids?.length
+      ? [`| Empresas permitidas (IDs) | ${t.allowed_company_ids.join(', ')} |`]
+      : []),
+    `| Criada em | ${t.created_at ?? '-'} |`,
+    `| Atualizada em | ${t.updated_at ?? '-'} |`,
+  ].join('\n');
+}
+
+type HydratedLabel = HuduLabel & { label_type_name?: string; label_type_color?: string };
+
+export function formatLabelList(paged: HuduPagedResponse<HydratedLabel>): string {
+  if (paged.records.length === 0) return 'Nenhuma etiqueta aplicada encontrada.';
+
+  const rows = paged.records.map(
+    (l) =>
+      `| ${l.id} | ${esc(l.label_type_name) || `#${l.label_type_id}`} | ${recordTypeLabel(l.labelable_type, LABELABLE_LABELS)} | ${l.labelable_id} | ${l.created_at ?? '-'} |`
+  );
+
+  return [
+    pageInfo(paged),
+    '',
+    '| ID | Etiqueta | Tipo de registro | ID do registro | Aplicada em |',
+    '|---|---|---|---|---|',
+    ...rows,
+  ].join('\n');
+}
+
+export function formatLabelDetail(l: HydratedLabel): string {
+  if (!l || typeof l !== 'object') return 'Aplicação de etiqueta indisponível.';
+  return [
+    `# Etiqueta aplicada: ${esc(l.label_type_name) || `#${l.label_type_id}`}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID da aplicação | ${l.id} |`,
+    `| Etiqueta | ${esc(l.label_type_name) || '-'} (ID ${l.label_type_id}) |`,
+    ...(l.label_type_color ? [`| Cor | ${l.label_type_color} |`] : []),
+    `| Tipo de registro | ${recordTypeLabel(l.labelable_type, LABELABLE_LABELS)} |`,
+    `| ID do registro | ${l.labelable_id} |`,
+    `| Aplicada por (user ID) | ${l.user_id ?? '-'} |`,
+    `| Aplicada em | ${l.created_at ?? '-'} |`,
+  ].join('\n');
+}
+
+// ---- Flags ----
+
+const FLAGABLE_LABELS: Record<string, string> = {
+  Asset: 'Ativo',
+  Website: 'Site',
+  Article: 'Artigo',
+  AssetPassword: 'Senha',
+  Company: 'Empresa',
+  Procedure: 'Procedimento',
+  RackStorage: 'Rack',
+  Network: 'Rede',
+  IpAddress: 'Endereço IP',
+  Vlan: 'VLAN',
+  VlanZone: 'Zona de VLAN',
+};
+
+export function formatFlagTypeList(paged: HuduPagedResponse<HuduFlagType>): string {
+  if (paged.records.length === 0) return 'Nenhum tipo de sinalização cadastrado.';
+
+  const rows = paged.records.map(
+    (t) => `| ${t.id} | ${esc(t.name)} | ${t.color ?? '-'} | ${t.slug ?? '-'} | ${t.created_at ?? '-'} |`
+  );
+
+  return [
+    pageInfo(paged),
+    '',
+    '| ID | Nome | Cor | Slug | Criado em |',
+    '|---|---|---|---|---|',
+    ...rows,
+  ].join('\n');
+}
+
+export function formatFlagTypeDetail(t: HuduFlagType): string {
+  if (!t || typeof t !== 'object') return 'Tipo de sinalização indisponível.';
+  return [
+    `# Tipo de sinalização: ${esc(t.name)}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID | ${t.id} |`,
+    `| Nome | ${esc(t.name)} |`,
+    `| Cor | ${t.color ?? '-'} |`,
+    `| Slug | ${t.slug ?? '-'} |`,
+    `| Criado em | ${t.created_at ?? '-'} |`,
+    `| Atualizado em | ${t.updated_at ?? '-'} |`,
+  ].join('\n');
+}
+
+type HydratedFlag = HuduFlag & { flag_type_name?: string; flag_type_color?: string };
+
+export function formatFlagList(paged: HuduPagedResponse<HydratedFlag>): string {
+  if (paged.records.length === 0) return 'Nenhum registro sinalizado encontrado.';
+
+  const rows = paged.records.map(
+    (f) =>
+      `| ${f.id} | ${esc(f.flag_type_name) || `#${f.flag_type_id}`} | ${recordTypeLabel(f.flagable_type, FLAGABLE_LABELS)} | ${f.flagable_id} | ${esc(truncate(f.description ?? '', 80)) || '-'} | ${f.created_at ?? '-'} |`
+  );
+
+  return [
+    pageInfo(paged),
+    '',
+    '| ID | Sinalização | Tipo de registro | ID do registro | Motivo | Sinalizado em |',
+    '|---|---|---|---|---|---|',
+    ...rows,
+  ].join('\n');
+}
+
+export function formatFlagDetail(f: HydratedFlag): string {
+  if (!f || typeof f !== 'object') return 'Sinalização indisponível.';
+  return [
+    `# Sinalização: ${esc(f.flag_type_name) || `#${f.flag_type_id}`}`,
+    '',
+    '| Campo | Valor |',
+    '|---|---|',
+    `| ID da sinalização | ${f.id} |`,
+    `| Tipo | ${esc(f.flag_type_name) || '-'} (ID ${f.flag_type_id}) |`,
+    ...(f.flag_type_color ? [`| Cor | ${f.flag_type_color} |`] : []),
+    `| Tipo de registro | ${recordTypeLabel(f.flagable_type, FLAGABLE_LABELS)} |`,
+    `| ID do registro | ${f.flagable_id} |`,
+    `| Sinalizado em | ${f.created_at ?? '-'} |`,
+    `| Atualizado em | ${f.updated_at ?? '-'} |`,
+    ...(f.description ? ['', '## Motivo', '', truncate(stripHtml(f.description), 2000)] : []),
   ].join('\n');
 }

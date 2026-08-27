@@ -1,6 +1,8 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createQuerySchema, basicActions, commonProperties } from './schema-utils.js';
+import { createActionSchema, createQuerySchema, basicActions, commonProperties,
+  idForActions
+} from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 /**
@@ -30,7 +32,7 @@ export const networksTool: Tool = {
     type: 'object',
     properties: {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
-      id: commonProperties.id,
+      id: idForActions(basicActions),
       fields: {
         type: 'object',
         description: 'Dados para operações de criação ou atualização',
@@ -82,7 +84,7 @@ export const vlansTool: Tool = {
     type: 'object',
     properties: {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
-      id: commonProperties.id,
+      id: idForActions(basicActions),
       fields: {
         type: 'object',
         description: 'Dados para operações de criação ou atualização',
@@ -111,7 +113,7 @@ export const vlansTool: Tool = {
 // VLANs query tool
 export const vlansQueryTool: Tool = {
   name: 'hudu_search_network_vlan_records',
-  description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — busca e filtragem com paginação. Use quando precisar localizar VLANs de uma rede específica por network_id no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das VLANs encontradas.',
+  description: 'VLANs, segmentos virtuais e redes lógicas documentadas no Hudu — busca e filtragem com paginação. Use quando precisar localizar VLANs de uma rede específica por network_id ou por empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das VLANs encontradas.',
   inputSchema: createQuerySchema({
     network_id: { type: 'number', description: 'Filtrar por ID da rede' }
   }),
@@ -132,7 +134,7 @@ export const vlanZonesTool: Tool = {
     type: 'object',
     properties: {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
-      id: commonProperties.id,
+      id: idForActions(basicActions),
       fields: {
         type: 'object',
         description: 'Dados para operações de criação ou atualização',
@@ -180,7 +182,7 @@ export const ipAddressesTool: Tool = {
     type: 'object',
     properties: {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
-      id: commonProperties.id,
+      id: idForActions(basicActions),
       fields: {
         type: 'object',
         description: 'Dados para operações de criação ou atualização',

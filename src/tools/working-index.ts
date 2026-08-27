@@ -52,6 +52,26 @@ export {
   executePublicPhotosTool,
   executePublicPhotosQueryTool
 } from './storage.js';
+export {
+  labelTypesTool,
+  labelTypesQueryTool,
+  labelsTool,
+  labelsQueryTool,
+  executeLabelTypesTool,
+  executeLabelTypesQueryTool,
+  executeLabelsTool,
+  executeLabelsQueryTool
+} from './labels.js';
+export {
+  flagTypesTool,
+  flagTypesQueryTool,
+  flagsTool,
+  flagsQueryTool,
+  executeFlagTypesTool,
+  executeFlagTypesQueryTool,
+  executeFlagsTool,
+  executeFlagsQueryTool
+} from './flags.js';
 export { adminTool, executeAdminTool } from './admin.js';
 export { searchTool, executeSearchTool } from './search.js';
 export { navigationTool, executeNavigationTool } from './navigation.js';
@@ -110,6 +130,26 @@ import {
   executePublicPhotosTool,
   executePublicPhotosQueryTool
 } from './storage.js';
+import {
+  labelTypesTool,
+  labelTypesQueryTool,
+  labelsTool,
+  labelsQueryTool,
+  executeLabelTypesTool,
+  executeLabelTypesQueryTool,
+  executeLabelsTool,
+  executeLabelsQueryTool
+} from './labels.js';
+import {
+  flagTypesTool,
+  flagTypesQueryTool,
+  flagsTool,
+  flagsQueryTool,
+  executeFlagTypesTool,
+  executeFlagTypesQueryTool,
+  executeFlagsTool,
+  executeFlagsQueryTool
+} from './flags.js';
 import { adminTool, executeAdminTool } from './admin.js';
 import { searchTool, executeSearchTool } from './search.js';
 import { navigationTool, executeNavigationTool } from './navigation.js';
@@ -203,6 +243,16 @@ export const WORKING_TOOLS: Record<string, Tool> = {
   // Magic Dash
   'hudu_manage_dashboard_widgets': magicDashTool,
   'hudu_search_dashboard_widgets': magicDashQueryTool,
+  // Labels (etiquetas)
+  'hudu_manage_label_definitions': labelTypesTool,
+  'hudu_search_label_definitions': labelTypesQueryTool,
+  'hudu_manage_labeled_records': labelsTool,
+  'hudu_search_labeled_records': labelsQueryTool,
+  // Flags (sinalizações)
+  'hudu_manage_flag_definitions': flagTypesTool,
+  'hudu_search_flag_definitions': flagTypesQueryTool,
+  'hudu_manage_flagged_records': flagsTool,
+  'hudu_search_flagged_records': flagsQueryTool,
   // Prompts as tools (MCPHub bridge — retain hudu_ prefix, part of bridge interface)
   'hudu_list_prompts': listPromptsTool,
   'hudu_get_prompt': getPromptTool,
@@ -274,6 +324,16 @@ export const WORKING_TOOL_EXECUTORS: Record<string, ToolExecutor> = {
   // Magic Dash
   'hudu_manage_dashboard_widgets': executeMagicDashTool,
   'hudu_search_dashboard_widgets': executeMagicDashQueryTool,
+  // Labels (etiquetas)
+  'hudu_manage_label_definitions': executeLabelTypesTool,
+  'hudu_search_label_definitions': executeLabelTypesQueryTool,
+  'hudu_manage_labeled_records': executeLabelsTool,
+  'hudu_search_labeled_records': executeLabelsQueryTool,
+  // Flags (sinalizações)
+  'hudu_manage_flag_definitions': executeFlagTypesTool,
+  'hudu_search_flag_definitions': executeFlagTypesQueryTool,
+  'hudu_manage_flagged_records': executeFlagsTool,
+  'hudu_search_flagged_records': executeFlagsQueryTool,
   // Prompts as tools (MCPHub bridge — retain hudu_ prefix, part of bridge interface)
   'hudu_list_prompts': executeListPromptsTool,
   'hudu_get_prompt': executeGetPromptTool,

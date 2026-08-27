@@ -81,14 +81,24 @@ export function stripHtml(html: string): string {
 }
 
 /**
- * Escapes pipe characters so values are safe to embed in Markdown tables.
+ * Escapes a value for embedding in a Markdown table cell.
+ *
+ * Pipes need escaping, and so do newlines: a raw newline ends the table row,
+ * so every row after it stops being parsed as part of the table. That was
+ * latent while cell contents were short names, and became reachable with
+ * free-text fields — a flag's reason and a task's notes are written by hand and
+ * routinely span lines.
+ *
  * Returns an empty string for null / undefined values.
  */
 export function escapeMarkdown(
   value: string | number | boolean | null | undefined
 ): string {
   if (value === null || value === undefined) return "";
-  return String(value).replace(/\|/g, "\\|");
+  return String(value)
+    .replace(/\|/g, "\\|")
+    .replace(/\r\n?|\n/g, " ")
+    .replace(/ {2,}/g, " ");
 }
 
 /**

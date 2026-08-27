@@ -1,6 +1,9 @@
+import { HUDU_UPLOADABLE_TYPES } from '../types.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, basicActions, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, createQuerySchema, basicActions, commonProperties,
+  idForActions
+} from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 // Uploads resource tool
@@ -19,10 +22,14 @@ export const uploadsTool: Tool = {
         enum: ['get', 'delete'],
         description: 'Ação a executar. Valores: get (obter por ID), delete (excluir por ID). A API do Hudu 2.41.2 não suporta update para uploads; para substituir um arquivo, exclua e faça novo upload via UI.'
       },
-      id: commonProperties.id,
+      id: idForActions(['get', 'delete']),
       fields: createFieldsSchema({
         name: { type: 'string', description: 'Novo nome descritivo do upload' },
-        uploadable_type: { type: 'string', description: 'Tipo do recurso pai (ex: Asset, Article)' },
+        uploadable_type: {
+          type: 'string',
+          enum: [...HUDU_UPLOADABLE_TYPES],
+          description: `Tipo do recurso pai. Conjunto fechado no Hudu: ${HUDU_UPLOADABLE_TYPES.join(', ')}. Empresas não aceitam upload por esta via.`
+        },
         uploadable_id: { type: 'number', description: 'ID do recurso pai ao qual o arquivo está vinculado' }
       })
     },
@@ -58,7 +65,7 @@ export const rackStoragesTool: Tool = {
     type: 'object',
     properties: {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
-      id: commonProperties.id,
+      id: idForActions(basicActions),
       fields: {
         type: 'object',
         description: 'Dados para operações de criação ou atualização',
@@ -111,7 +118,7 @@ export const rackStorageItemsTool: Tool = {
     type: 'object',
     properties: {
       action: createActionSchema(basicActions, 'Ação a executar. Valores: create (criar novo registro), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
-      id: commonProperties.id,
+      id: idForActions(basicActions),
       fields: createFieldsSchema({
         rack_storage_role_id: { type: 'number', description: 'ID do papel (role) do rack onde o item será montado (obrigatório para criação — consulte roles do rack primeiro)' },
         asset_id: { type: 'number', description: 'ID do ativo Hudu que ocupa esta posição (opcional; informar quando o hardware já existir no inventário de ativos)' },
@@ -171,7 +178,7 @@ export const publicPhotosTool: Tool = {
         enum: ['update'],
         description: 'Ação a executar. Valor: update (atualizar metadados por ID). A API do Hudu 2.41.2 não suporta get-by-id ou delete-by-id para fotos públicas; criação requer upload binário via UI.'
       },
-      id: commonProperties.id,
+      id: idForActions(['update']),
       fields: {
         type: 'object',
         description: 'Dados para operação de atualização',

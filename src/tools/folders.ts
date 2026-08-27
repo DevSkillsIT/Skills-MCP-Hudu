@@ -1,6 +1,8 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, createQuerySchema, commonProperties,
+  idForActions
+} from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 /**
@@ -14,7 +16,7 @@ export const foldersTool: Tool = {
     type: 'object',
     properties: {
       action: createActionSchema(['create', 'get', 'update', 'delete'], 'Ação a executar. Valores: create (criar nova pasta), get (obter por ID), update (atualizar por ID), delete (excluir por ID)'),
-      id: commonProperties.id,
+      id: idForActions(['create', 'get', 'update', 'delete']),
       fields: createFieldsSchema({
         name: { type: 'string', description: 'Nome da pasta (obrigatório para criação)' },
         icon: { type: 'string', description: 'Ícone da pasta (classe Font Awesome, ex: fa-folder)' },

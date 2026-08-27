@@ -70,6 +70,12 @@ Monitoramento e auditoria:
 - hudu_manage_website_monitoring / hudu_search_website_monitoring
 - hudu_search_activity_audit_logs
 
+Etiquetas e sinalizacoes:
+- hudu_manage_label_definitions / hudu_search_label_definitions
+- hudu_manage_labeled_records / hudu_search_labeled_records
+- hudu_manage_flag_definitions / hudu_search_flag_definitions
+- hudu_manage_flagged_records / hudu_search_flagged_records
+
 Templates, relacoes e dashboard:
 - hudu_manage_asset_layout_templates / hudu_search_asset_layout_templates
 - hudu_manage_entity_relations / hudu_search_entity_relations
@@ -111,7 +117,15 @@ Utilitarios:
 === DICAS ===
 - Todas as respostas de tool sao entregues em Markdown.
 - Use resources hudu://companies, hudu://assets e hudu://articles para leitura direta.
-- Prefira filtros por company_id em ambientes MSP com varios clientes.`;
+- Prefira filtros por company_id em ambientes MSP com varios clientes.
+- Procedimentos: passe type="process" (o modelo) ou type="run" (uma execucao).
+  Sem esse filtro os dois voltam misturados e um run concluido parece um
+  processo concluido.
+- Etiqueta (label) categoriza e usa cor HEXADECIMAL. Sinalizacao (flag) marca
+  algo que exige revisao e usa NOME de cor de uma paleta fixa. Nao troque uma
+  pela outra.
+- page_size aceita ate 1000; o padrao 25 existe para poupar contexto, nao por
+  limite da API.`;
 
 function listRegisteredTools() {
   return Object.values(WORKING_TOOLS);
@@ -389,10 +403,17 @@ export class HuduMcpServer {
             dataSize: JSON.stringify(result.data).length
           });
 
+          const body =
+            formatToolResponse(name, result.data, args) ||
+            result.message ||
+            'Operacao realizada com sucesso.';
+
           return {
             content: [{
               type: 'text',
-              text: formatToolResponse(name, result.data, args) || result.message || 'Operacao realizada com sucesso.'
+              // A caveat the caller must act on goes above the answer, where it
+              // cannot be missed, rather than into a log line nobody reads.
+              text: result.warning ? `> ${result.warning}\n\n${body}` : body
             }]
           };
         } else {
@@ -743,7 +764,7 @@ export class HuduMcpServer {
     // Use one or the other, never both: OAuth wins when enabled.
     //
     // @MX:WARN: This block is the ONLY authentication barrier in front of /mcp.
-    // @MX:REASON: Without it the 47 tools (including write/CRUD on Hudu) are reachable
+    // @MX:REASON: Without it the 55 tools (including write/CRUD on Hudu) are reachable
     // by anyone able to open a TCP connection to the listening port (0.0.0.0).
     // ============================================
     const mcpOauthEnabled = process.env.MCP_OAUTH_ENABLED === 'true';
@@ -1183,10 +1204,19 @@ export class HuduMcpServer {
                 success: true
               });
 
+              const httpBody =
+                formatToolResponse(name, toolResult.data, args) ||
+                toolResult.message ||
+                'Operacao realizada com sucesso.';
+
               result = {
                 content: [{
                   type: 'text',
-                  text: formatToolResponse(name, toolResult.data, args) || toolResult.message || 'Operacao realizada com sucesso.'
+                  // Second of the two response paths. The Streamable HTTP
+                  // transport this deployment runs on goes through HERE, not
+                  // through the SDK handler above — a caveat added only there
+                  // never reached a real caller.
+                  text: toolResult.warning ? `> ${toolResult.warning}\n\n${httpBody}` : httpBody
                 }]
               };
             } else {

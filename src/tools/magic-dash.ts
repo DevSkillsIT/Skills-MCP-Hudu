@@ -1,6 +1,8 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { createErrorResponse, createSuccessResponse, type ToolResponse } from './base.js';
-import { createActionSchema, createFieldsSchema, createQuerySchema, commonProperties } from './schema-utils.js';
+import { createActionSchema, createFieldsSchema, createQuerySchema, commonProperties,
+  idForActions
+} from './schema-utils.js';
 import type { HuduClient } from '../hudu-client.js';
 
 // Magic Dash manage tool
@@ -10,12 +12,12 @@ import type { HuduClient } from '../hudu-client.js';
 // delete are advertised here. Listing remains available via the query tool.
 export const magicDashTool: Tool = {
   name: 'hudu_manage_dashboard_widgets',
-  description: 'Widgets de dashboard, painéis de controle e indicadores no Hudu (Magic Dash) — operações disponíveis: criar e excluir. A API do Hudu 2.41.2 NÃO expõe GET por ID nem PATCH para widgets; para listar widgets existentes use search_dashboard_widgets. Use create para painéis customizados, cards de status ou indicadores por empresa; use delete para remover. Retorna Markdown com dados do widget processado.',
+  description: 'Widgets de dashboard, painéis de controle e indicadores no Hudu (Magic Dash) — operações: criar e excluir. A API do Hudu 2.41.2 não expõe GET por ID nem PATCH para widgets; para listar os existentes use search_dashboard_widgets. Use create para painéis customizados, cards de status ou indicadores por empresa; use delete para remover. Retorna Markdown do widget.',
   inputSchema: {
     type: 'object',
     properties: {
       action: createActionSchema(['create', 'delete'], 'Ação a executar. Valores: create (criar novo widget), delete (excluir por ID). A API do Hudu 2.41.2 não suporta get-by-id ou update para widgets de dashboard.'),
-      id: commonProperties.id,
+      id: idForActions(['create', 'delete']),
       fields: createFieldsSchema({
         title: { type: 'string', description: 'Título do widget no dashboard (obrigatório para criação)' },
         company_name: { type: 'string', description: 'Nome EXATO da empresa associada ao widget, ex: "Empresa Exemplo Ltda" (obrigatório para criação — é o nome, não o ID)' },
