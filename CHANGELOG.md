@@ -103,7 +103,7 @@ API that answers 200 with the record unchanged. In every one of these the
 response body already in hand contradicted the claim being made about it.
 
 Every finding below was reconfirmed here before being fixed, with an
-independent read-back through the REST API. Tests 486 → 522.
+independent read-back through the REST API. Tests 486 → 543.
 
 ### Fixed — [BUG-18] An unparseable `due_date` ERASED the stored deadline
 The worst of the set, and worse than BUG-13: that one failed to write, this one
