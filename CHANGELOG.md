@@ -5,6 +5,304 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — Black-box round: writes that reported success
+
+The third audit ran against the live instance and found a family the two static
+reviews could not: **the MCP read HTTP 200 as proof a write happened**, on an
+API that answers 200 with the record unchanged. In every one of these the
+response body already in hand contradicted the claim being made about it.
+
+Every finding below was reconfirmed here before being fixed, with an
+independent read-back through the REST API. Tests 486 → 522.
+
+### Fixed — [BUG-18] An unparseable `due_date` ERASED the stored deadline
+The worst of the set, and worse than BUG-13: that one failed to write, this one
+destroyed what was there. Proven on a run task, reading back after each write:
+
+    due_date="2026-12-31"  -> 200, servidor: 2026-12-31
+    due_date="banana"      -> 200, servidor: None      <- apagou
+    due_date="2026-12-31"  -> 200, restaurado
+    due_date="12/31/2026"  -> 200, servidor: None      <- apagou
+    due_date="31/12/2026"  -> 200, servidor: 2026-12-31
+
+Rails parses an unreadable date to nil and stores the nil. Accepted formats are
+now validated before the request: ISO 8601 and DD/MM/YYYY. Note the trap the
+third line exposes — the date FILTERS use MM/DD with slashes, the opposite
+order, in the same MCP. The refusal message says so.
+
+### Added — echo verification on writes
+`src/utils/echo-check.ts` compares what was requested against what the response
+carries back and, on divergence, refuses to call it a success. This catches the
+whole family rather than its known members: `position` on a process task
+answered 200 and kept the old value; a repeat flag kept the old reason. A field
+absent from the response is not treated as divergence — many endpoints return a
+projection, and crying wolf on every write would make the signal worthless.
+
+### Fixed — [BUG-19] Procedure search did nothing, and `name` was exact
+Two ways to narrow, both broken, silently and in opposite directions:
+
+    sem filtro        -> 9
+    search=zzzzzzzz   -> 9      <- the parameter is inert
+    name=teste        -> 2
+    name=test         -> 0      <- exact, though the schema said "exato ou parcial"
+
+So no partial search of procedures existed by any route: a term matching
+nothing returned everything, and a partial name returned nothing, which reads
+as "does not exist". `search` also carries the most prescriptive description in
+the schema, teaching the model to extract a key term — for nothing.
+
+Filtering now happens locally for procedures (small collection, one wide page)
+and the response says so. `/procedure_tasks` differs — `name` IS partial there —
+so a task search is routed to the parameter that works.
+
+### Fixed — the rest of the black-box round
+- A label or flag could be attached to an id that does not exist, creating a
+  phantom pendency indistinguishable from a real one. Existence is checked
+  first. Hudu answers "no such record" three different ways — 200 with a `null`
+  body for articles, a JSON 404 for companies, an HTML 404 for assets — and all
+  three now read as missing. A check that fails for another reason does not
+  block the write, and says it did not happen.
+- Re-flagging with a different `description` discarded it in silence; the caller
+  is now told the reason was not stored and pointed at `action="update"`.
+- An out-of-enum value in a search filter answered "Nenhuma etiqueta aplicada
+  encontrada." — a wrong answer wearing the face of a fact. Wrong case
+  (`asset`) and cross-domain values (`Company` is valid for flags, not labels)
+  are refused with the reason. An unknown `type` on procedures returned the
+  whole collection; also refused.
+- The task list named only the first of N owners with nothing to mark the rest.
+  It shows `Ana +2`. "Demais responsáveis" no longer repeats the principal.
+- The date filters advertise what they actually do: the range end is EXCLUSIVE
+  (the schema's own former example, `2026-01-01,2026-01-31`, discarded the 31st
+  entirely), an invalid date is ignored and returns everything, and slashes mean
+  MM/DD here versus DD/MM in `due_date`.
+
+### Note on the audit itself
+Of the three audits, the two static ones produced the critical BUG-13 and
+BUG-14 — and also three false findings and one recommendation that would have
+introduced a bug, all from reasoning over the bundled `Hudu.json`, which
+predates 2.44.3. A stale spec inside the repository is worse than none: it
+reads as primary source. The black-box audit corrected one of its own findings
+after discovering its harness could not tell "wrote nothing" from "returned
+422".
+
+---
+
+## [Unreleased] — Audit round: what the parity pass got wrong
+
+Three independent audits over the parity pass below — an adversarial code
+review, a naming review of all 55 tools, and black-box calls against a live
+Hudu 2.44.3 instance. Findings were re-verified here before being accepted:
+three of the code review's were refuted (it reasoned from the bundled
+`Hudu.json`, which predates 2.44.3), and one of the naming review's
+recommendations would have introduced a bug.
+
+Tool count unchanged at 55. Tests 429 → 486.
+
+### Fixed — [BUG-13] `complete` reported success and did nothing (CRITICAL)
+Live: the tool answered "Tarefa marcada como concluída." while an independent
+read of the same task still said `completed: false`. The rendered table said
+`| Concluída | Não |` directly beneath the success message.
+
+`Api::V1::ProcedureTasksController#update` calls `update!(procedure_task_params)`
+and that `permit` does not list `completed` or `completion_notes`. Rails drops
+them; the update succeeds having changed nothing.
+
+Marking a task done is **not possible over the public REST API**. The official
+in-product MCP can do it (`RunTaskCompleteTool`) because it goes through
+ActiveRecord and never meets strong params — parity was assumed, not verified.
+`complete`/`uncomplete` now refuse with a message naming the limitation and the
+routes that still work; `completed` and `completion_notes` were removed from
+`fields`, and sending either is refused rather than dropped in silence.
+
+The unit test that shipped with the feature passed because it asserted the
+payload SENT and never what the server did with it. It has been replaced.
+
+### Fixed — [BUG-14] API error bodies reached the log and the model unfiltered
+`describeApiError` copied the response body into `error.message`, which lands in
+the winston DailyRotateFile on disk AND the model's context. The repo masks
+secrets on every success path (`search.ts`, `formatPasswordDetail`) and had
+nothing here. Demonstrated against the built client: a 401 body echoing a key,
+and a uniqueness error quoting a password value, both passed through verbatim.
+
+`src/utils/redact.ts` now masks labelled secrets (en + pt-BR), quoted values
+after a secret word, and bare high-entropy runs, then caps the message. The
+actionable part survives — `Color must be one of: Red, Blue, …` is unchanged.
+
+### Fixed — [BUG-15] "sem mais resultados" became a lie
+`toPagedResponse` infers `hasMore` from `records.length >= pageSize`. That held
+only while the cap was 25 and coincided with the API's own ceiling. After the
+cap rose to 1000, asking for 100 and receiving 25 printed "sem mais resultados"
+— so `/asset_layouts`, which ceilings at 25, reported a 25-record instance.
+A short page landing exactly on a known ceiling is now reported as
+indeterminate; an arbitrary count is still a genuine end; a known total
+overrides the guess entirely.
+
+### Fixed — [BUG-16] `id` advertised actions the tool did not have
+One shared literal named "get, update, delete ou archive" for 21 tools. 17 had
+no `archive`; three were much further off (`hudu_manage_dashboard_widgets` and
+`hudu_manage_entity_relations` offer only create and delete,
+`hudu_manage_public_photo_gallery` only update). The sentence is now generated
+from each tool's own action enum, and a test walks every registered tool so the
+drift cannot come back.
+
+### Fixed — [BUG-17] `hudu_search_asset_layout_templates` was dead (pre-existing)
+Found by live revalidation, not by any audit. On saturation the executor
+returned `{records, page_size_capped}` instead of the array, and the formatter
+called `.map()` on it: **every call** on an instance with 25+ layouts died with
+`paged.records.map is not a function`, including the no-argument one. Present
+since before this work. The cap now travels in the response `warning` channel.
+
+Same commit: the warning was rendered only on the SDK handler path, while the
+Streamable HTTP transport this deployment serves goes through a second path
+that dropped it — a caveat that existed in code and reached no caller. Both
+paths render it, and a test asserts every `formatToolResponse` call site does.
+
+### Fixed — smaller, all from the audits
+- `priority` had no enum and claimed to vary per instance. It is closed:
+  `unsure, low, normal, high, urgent`. Two of the five were unreachable.
+- `include: ["meta"]` was fetched and then discarded by the label formatter.
+- Absent progress rendered as `0/0`, inventing "a process with no tasks".
+- `remove`/`unflag` skipped the record-type validation `apply`/`flag` perform.
+- `escapeMarkdown` escaped `|` but not newlines, so a multi-line flag reason
+  broke the table from that row down.
+- Labels/flags bypass `HUDU_ALLOWED_COMPANY_IDS`; the log warning was a
+  process-level latch. The caveat now rides in the response body.
+- `uploadable_type` and `passwordable_type` gained enums — from their OWN
+  validations. A blanket "reuse the record-type list" would have been wrong
+  both ways: uploads exclude Company, and `ALLOWED_PASSWORDABLE_TYPES` is
+  `["Asset"]` alone. Relations and activity logs stay free text because their
+  models carry no inclusion validation.
+
+### Changed — naming
+- `hudu_manage_record_labels` → `hudu_manage_labeled_records`,
+  `hudu_search_record_labels` → `hudu_search_labeled_records`. The pair was
+  named from the label side while the flag pair was named from the record side;
+  the cause was `hudu_manage_record_flags` landing at 24 characters against a
+  25-character floor. Renamed before publication, so nothing broke.
+- All 55 tools now satisfy the naming rules: names in range, descriptions in
+  280–400, and the MCP identifier named at least twice. 10 of the 12
+  descriptions that failed the last rule came from the parity pass.
+
+### Norm
+`DIRETRIZES-OBRIGATORIAS-MCP-TOOLS-NOMENCLATURA.md` gained an explicit
+exemption for bridge tools. The naming rules prescribe `{MCP_ID}_get_prompt`
+and also demand 25+ characters — mutually unsatisfiable for a short prefix
+(`hudu_get_prompt` is 15, and `hudu_list_mcp_resources` still only 23). The
+amendment states the arithmetic so the next audit does not re-flag it, and
+keeps bridge DESCRIPTIONS bound by every other rule.
+
+---
+
+## [Unreleased] — Parity pass against the official Hudu MCP (labels, flags, process/run)
+
+Hudu 2.4x ships its own in-product MCP server (Rails, `app/tools/*.rb`, OAuth,
+`POST /mcp`). This round compared it tool by tool against ours and closed the
+gaps that mattered. The two are not interchangeable: theirs reads through
+ActiveRecord with per-user Pundit scoping over ~8 domains; ours is an external
+REST client covering ~20 with write access. Validated live against a Hudu
+2.44.3 instance on 2026-08-27 (30/30 checks, all test records cleaned up).
+
+Tool count: 47 → 55.
+
+### Added — Labels (4 tools)
+The REST API exposes `/labels` and `/label_types` with full CRUD and the MCP
+covered neither.
+- `hudu_manage_label_definitions` / `hudu_search_label_definitions` — the
+  catalogue: name, colour (hex), applicable record types, company scope.
+- `hudu_manage_labeled_records` / `hudu_search_labeled_records` — assignments.
+  `apply` is idempotent (a repeat returns the existing assignment instead of
+  tripping the unique index) and `remove` resolves the assignment id from the
+  `(label_type_id, labelable_type, labelable_id)` triple the caller actually
+  knows — the API only deletes by an id the caller never sees.
+- List rows hydrate `label_type_id` into the label's name and colour, so a
+  listing reads as names rather than a wall of ids. Hydration failure degrades
+  to ids rather than failing the call.
+
+### Added — Flags (4 tools)
+`/flags` and `/flag_types` are full CRUD in the REST API. The official Hudu MCP
+does not expose them at all.
+- `hudu_manage_flag_definitions` / `hudu_search_flag_definitions`
+- `hudu_manage_flagged_records` / `hudu_search_flagged_records`
+- `flag` refuses to duplicate a marker the record already carries. Unlike
+  labels there is no unique index, so without that check re-flagging would
+  silently pile up duplicates.
+
+### Fixed — [BUG-11] `kickoff`, `duplicate` and `create_from_template` were dead
+- The three member actions on `/procedures` are **POST** routes; the client
+  issued **PUT**. Live check: all three returned `404` with a Rails HTML error
+  page, so the user saw a parse error rather than "not found".
+- They also sent no body, which made them useless even once routed: `kickoff`
+  could not name the run or attach an asset, `duplicate` and
+  `create_from_template` could not name the copy.
+- Fix: POST plus the parameters. Regression test asserts the verb and the body,
+  and pins that `archive`/`unarchive` (genuinely PUT) are left alone.
+
+### Fixed — [BUG-12] Flag colours are names, not hex
+- Live finding: `FlagType` validates `color` against a fixed palette
+  (Red, Blue, Green, Yellow, Purple, Orange, LightPink, LightBlue, LightGreen,
+  LightPurple, LightOrange, LightYellow, White, Grey). Labels take hex. Passing
+  hex — the obvious guess after working with labels — is a 422.
+- Fix: the palette is an `enum` in the schema, the description says which is
+  which, and a hex value is refused locally with a message naming the mistake.
+
+### Fixed — [BUG-13] API refusals reached the model as a bare status code
+- The API answers a rejected write with the reason
+  (`{"error":"Validation failed","details":["Color must be one of: ..."]}`),
+  but axios throws with `message = "Request failed with status code 422"` and
+  the body only on `error.response`. The reason was discarded, leaving the
+  model nothing to correct the call with.
+- Fix: a response interceptor folds `error` + `details` into the thrown
+  message. A Rails HTML error page is summarised ("endpoint não encontrado —
+  verifique o método HTTP e o caminho") rather than quoted back.
+
+### Fixed — Process vs Run were indistinguishable
+- `GET /procedures` returns processes (the definition) and runs (one execution)
+  in the same list. The search tool exposed neither the `type` filter nor the
+  `status` / `completion_percentage` the API already sends, so a finished run
+  and an untouched template rendered alike.
+- Added filters: `type` (process|run), `process_scope` (global|company),
+  `parent_process_id`, `archived`, `slug`, and `created_at`/`updated_at` date
+  ranges.
+- The list now carries a Tipo column (Template global / Processo / Execução),
+  Status and Progresso, and warns in-band when a page mixes the two kinds.
+
+### Fixed — Tasks lost their deadline, owner and subtasks
+- `ProcedureTaskSerializer` has always returned `due_date`, `priority`,
+  `assigned_users`, `completion_notes`, `parent_task_id`, `subtask_ids` and
+  `optional`. The tool handled only name/description/position/completed.
+- All of them are now writable and rendered. Added `complete` / `uncomplete`
+  actions so "marcar como concluída" is one action rather than a hand-built
+  update.
+
+### Fixed — `page_size` capped at 25 on a false premise
+- The shared schema capped `page_size` at 25 and told the model that 25 was
+  "o limite da API Hudu". The API caps at **1000**
+  (`calculate_page_size(max_size: 1000)`); live check returned 200 records in
+  one page. Bulk reads were paginating 40x more than necessary.
+- The cap is now 1000. The default stays 25, because a large page is what
+  actually costs context — and the description now says that instead.
+
+### Changed — Progressive field disclosure on new search tools
+- Adopted the `include`-group pattern from the official MCP on the tools added
+  here: rows ship trimmed to identity and the caller opts into extra groups.
+  Existing search tools are unchanged; migrating them would alter the response
+  shape of 20+ live-validated tools.
+
+### Known limitation
+- `/labels` and `/flags` take no `company_id`, so `HUDU_ALLOWED_COMPANY_IDS`
+  cannot restrict them — scoping falls to the Hudu API key, which the API
+  honours only for company-scoped keys. `FilteredHuduClient` logs a warning
+  once per process when running with an allowlist. Use a company-scoped Hudu
+  key for that deployment.
+
+### Also
+- Four tests in `response-formatter.test.ts` had been failing before this work
+  (verified against HEAD in a scratch worktree): their expectations predated a
+  dedicated global-search formatter and the manage-tool success message.
+  Updated to match documented behaviour.
+
+---
+
 ## [Unreleased] — Live-validation gap fixes (REQ-01, REQ-05, REQ-09)
 
 Found during live validation against a live Hudu instance on 2026-05-21: three

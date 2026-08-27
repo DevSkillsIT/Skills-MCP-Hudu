@@ -64,13 +64,16 @@ Alternative Claude Desktop config:
   - `GET /` (server info)
   - `ALL /mcp` (MCP endpoint)
 - `src/hudu-client.ts` — Hudu API client with typed methods
-- `src/tools/*` — 33 tools com prefixo `hudu_` e padrão `manage/search`:
+- `src/tools/*` — 55 tools com prefixo `hudu_` e padrão `manage/search`:
   - **Core**: articles, companies, assets, passwords (manage + search = 8 tools)
   - **Procedures**: procedures, procedure tasks (manage + search = 4 tools)
   - **Folders**: kb article folders (manage + search = 2 tools)
   - **Networks**: networks, VLANs, VLAN zones, IP addresses (manage + search = 8 tools)
   - **Storage**: uploads, rack storages, rack items, public photos (manage + search = 8 tools)
+  - **Labels**: definições de etiqueta, etiquetas aplicadas (manage + search = 4 tools)
+  - **Flags**: tipos de sinalização, registros sinalizados (manage + search = 4 tools)
   - **Utility**: admin, search global, navigation (3 tools)
+  - **Outros**: folders, websites, asset layouts, activity logs, expirations, relations, magic dash, bridges de resources/prompts
 - `src/types.ts` — TypeScript types from OpenAPI
 - `hudu.json` — OpenAPI/Swagger spec (reference only)
 - `Dockerfile` — Multi-stage build, non-root runtime
@@ -91,7 +94,7 @@ Alternative Claude Desktop config:
 │  ├─ hudu-client.ts
 │  ├─ types.ts
 │  └─ tools/
-│     ├─ working-index.ts   # Registro principal (33 tools)
+│     ├─ working-index.ts   # Registro principal (55 tools)
 │     ├─ index.ts            # Registro secundário
 │     ├─ base.ts             # Helpers de resposta
 │     ├─ schema-utils.ts     # Schemas compartilhados
@@ -99,7 +102,9 @@ Alternative Claude Desktop config:
 │     ├─ companies.ts        # Empresas e organizações
 │     ├─ assets.ts           # Ativos de TI
 │     ├─ passwords.ts        # Senhas e credenciais
-│     ├─ procedures.ts       # Procedimentos e tarefas
+│     ├─ procedures.ts       # Procedimentos, processos, execuções e tarefas
+│     ├─ labels.ts           # Etiquetas: catálogo e aplicações
+│     ├─ flags.ts            # Sinalizações: tipos e registros marcados
 │     ├─ folders.ts          # Pastas de organização
 │     ├─ networks.ts         # Redes, VLANs, IPs
 │     ├─ storage.ts          # Uploads, racks, fotos
@@ -167,7 +172,7 @@ Health check:
 
 ---
 
-## Tool Contracts (33 tools registradas)
+## Tool Contracts (55 tools registradas)
 
 Todas as tools seguem as diretrizes de nomenclatura otimizadas para ToolRAG:
 - **Prefixo**: `hudu_` (namespace do servidor)
@@ -196,6 +201,23 @@ Todas as tools seguem as diretrizes de nomenclatura otimizadas para ToolRAG:
 | `hudu_search_workflow_procedures` | Query | Busca de procedimentos |
 | `hudu_manage_procedure_task_items` | CRUD | Tarefas, etapas, passos |
 | `hudu_search_procedure_task_items` | Query | Busca de tarefas |
+
+### Labels e Flags (8 tools)
+
+| Tool Name | Tipo | Domínio |
+|-----------|------|---------|
+| `hudu_manage_label_definitions` | CRUD | Catálogo de etiquetas, tags, marcadores |
+| `hudu_search_label_definitions` | Query | Busca no catálogo de etiquetas |
+| `hudu_manage_labeled_records` | CRUD | Aplicar/remover etiquetas em registros |
+| `hudu_search_labeled_records` | Query | Etiquetas aplicadas a registros |
+| `hudu_manage_flag_definitions` | CRUD | Tipos de sinalização, motivos de revisão |
+| `hudu_search_flag_definitions` | Query | Busca de tipos de sinalização |
+| `hudu_manage_flagged_records` | CRUD | Sinalizar/dessinalizar registros |
+| `hudu_search_flagged_records` | Query | Registros pendentes de revisão |
+
+Diferença que importa: **etiqueta** categoriza e usa cor **hexadecimal**;
+**sinalização** aponta que algo exige revisão e usa **nome de cor** de uma
+paleta fixa (Red, Blue, Grey...). Trocar uma pela outra devolve HTTP 422.
 
 ### Folders (2 tools)
 
@@ -281,7 +303,7 @@ Todas as tools seguem as diretrizes de nomenclatura otimizadas para ToolRAG:
 2. Environment configuration (.env)
 3. MCP SDK integration com Streamable HTTP Transport
 4. Hudu API client com typed methods
-5. 33 tools com padrão `hudu_manage/search_*` otimizado para ToolRAG
+5. 55 tools com padrão `hudu_manage/search_*` otimizado para ToolRAG
 6. Error handling para acesso parcial à API
 7. Docker configuration + PM2 em produção
 8. Health endpoints (`/health`, `/`)
@@ -291,6 +313,18 @@ Todas as tools seguem as diretrizes de nomenclatura otimizadas para ToolRAG:
 ⚠️ **Known Issues:**
 - Password endpoints requerem permissões elevadas na API
 - Alguns endpoints podem retornar 401 dependendo das permissões do usuário
+- `/labels` e `/flags` não aceitam `company_id`. Com `HUDU_ALLOWED_COMPANY_IDS`
+  diferente de `ALL`, o allowlist do MCP **não** restringe essas tools — o
+  escopo depende da própria chave de API do Hudu. Use uma chave escopada por
+  empresa nesse cenário. As respostas dessas tools carregam o aviso no corpo.
+- **Concluir tarefa de procedimento não é possível pela API pública.** O
+  `permit` de `PUT /procedure_tasks/{id}` não aceita `completed` nem
+  `completion_notes`; o Rails descarta e responde sucesso. As ações
+  `complete`/`uncomplete` recusam explicando isso. O MCP oficial embutido no
+  produto consegue, porque acessa o modelo direto.
+- `FilteredHuduClient` implementa apenas parte dos métodos do `HuduClient`
+  (não tem os writes de procedures, redes e racks). Só é usado quando
+  `HUDU_ALLOWED_COMPANY_IDS != ALL`.
 
 ---
 
@@ -311,7 +345,7 @@ Todas as tools seguem as diretrizes de nomenclatura otimizadas para ToolRAG:
 - ✅ Starts with clear diagnostics if env is incomplete
 - ✅ Health endpoint returns 200 OK
 - ✅ Claude Code connects over HTTP transport
-- ✅ Lists 33 tools via MCP protocol
+- ✅ Lists 55 tools via MCP protocol
 - ✅ Successfully calls `hudu_search_all_resource_types` e demais tools
 - ✅ Errors are typed and user-readable
 - ✅ Handles partial API access gracefully
@@ -331,7 +365,7 @@ Todas as tools seguem as diretrizes de nomenclatura otimizadas para ToolRAG:
 ## Current Status
 
 **Working:**
-- 33 tools registradas e disponíveis (nomenclatura ToolRAG-optimized)
+- 55 tools registradas e disponíveis (nomenclatura ToolRAG-optimized)
 - Streamable HTTP transport na porta 3100
 - Busca global unificada via `hudu_search_all_resource_types`
 - Navegação rápida via `hudu_navigate_to_resource_by_name`
@@ -339,7 +373,7 @@ Todas as tools seguem as diretrizes de nomenclatura otimizadas para ToolRAG:
 - PM2 em produção, Docker disponível
 
 **Diretrizes de Nomenclatura (2026-02):**
-- Prefixo `hudu_` em todas as 33 tools
+- Prefixo `hudu_` em todas as 55 tools
 - Padrão `manage` (CRUD) e `search` (query paginada)
 - Descrições em pt-BR com substantivo-chave primeiro
 - 2-4 sinônimos de domínio nos primeiros 100 caracteres
