@@ -127,6 +127,23 @@ const TASK_PRIORITIES: string[] = ['unsure', 'low', 'normal', 'high', 'urgent'];
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const BR_DATE = /^(\d{2})\/(\d{2})\/(\d{4})$/;
 
+/**
+ * Converts an accepted date to the form the server stores.
+ *
+ * The API takes DD/MM/AAAA and normalises it to ISO, so echoing the request
+ * back against the response reported every Brazilian-format write as "a API
+ * respondeu sucesso mas NÃO gravou" — an alarm on a write that worked
+ * perfectly, with a suggested cause that was also wrong. Normalising before
+ * sending makes the request and the stored value the same string.
+ */
+function normalizeDueDate(value: unknown): string {
+  const s = String(value);
+  const br = BR_DATE.exec(s);
+  if (!br) return s;
+  const [, d, m, y] = br;
+  return `${y}-${m}-${d}`;
+}
+
 function invalidDueDate(value: unknown): string | null {
   const s = String(value);
   if (ISO_DATE.test(s)) {
@@ -371,36 +388,54 @@ export async function executeProceduresQueryTool(args: any, client: HuduClient):
 export async function executeProcedureTasksTool(args: any, client: HuduClient): Promise<ToolResponse> {
   const { action, id, fields } = args;
 
+  // These guards are about what gets WRITTEN. Running them on get/delete
+  // rejected harmless calls with an error about storage, and made the parent
+  // lookup fire an extra GET on an action that writes nothing.
+  const isWrite = action === 'create' || action === 'update';
+
   // Rails drops unpermitted keys without complaining, so sending one of these
   // reads as success. Refuse before the request rather than after.
-  const dropped = API_UNWRITABLE_TASK_FIELDS.filter((f) => fields?.[f] !== undefined);
+  const dropped = isWrite
+    ? API_UNWRITABLE_TASK_FIELDS.filter((f) => fields?.[f] !== undefined)
+    : [];
   if (dropped.length > 0) {
     return createErrorResponse(
       `${dropped.join(' e ')} não pode ser gravado pela API pública do Hudu e seria descartado em silêncio. ${TASK_COMPLETION_UNSUPPORTED}`
     );
   }
 
-  if (fields?.priority !== undefined && !TASK_PRIORITIES.includes(String(fields.priority))) {
+  if (isWrite && fields?.priority !== undefined && !TASK_PRIORITIES.includes(String(fields.priority))) {
     return createErrorResponse(
       `priority inválida: "${fields.priority}". Valores aceitos: ${TASK_PRIORITIES.join(', ')}`
     );
   }
 
-  if (fields?.due_date !== undefined && fields.due_date !== null) {
+  if (isWrite && fields?.due_date !== undefined && fields.due_date !== null) {
     const dateError = invalidDueDate(fields.due_date);
     if (dateError) return createErrorResponse(dateError);
+    // Send what the server will store, so the echo check compares like with like.
+    fields.due_date = normalizeDueDate(fields.due_date);
   }
 
   // parent_task_id: "xyz" is stored as 0, so the task claims to be a child of
   // task 0 — a parent that cannot exist. Measured live, HTTP 200, no warning.
-  if (fields?.parent_task_id !== undefined && fields.parent_task_id !== null) {
-    const parentId = Number(fields.parent_task_id);
-    if (!Number.isInteger(parentId) || parentId <= 0) {
+  if (isWrite && fields?.parent_task_id !== undefined && fields.parent_task_id !== null) {
+    // `Number()` and Ruby's `String#to_i` disagree, and the API uses to_i:
+    //   '1e3'  -> Number 1000, to_i 1
+    //   '0x10' -> Number 16,   to_i 0   <- the very corruption this guards against
+    // Validating with Number() and then forwarding the raw string meant the
+    // guard checked one value and the server stored another, and the existence
+    // check vouched for a task that was never the one written.
+    const raw = String(fields.parent_task_id).trim();
+    const parentId = Number(raw);
+    if (!/^\d+$/.test(raw) || !Number.isInteger(parentId) || parentId <= 0) {
       return createErrorResponse(
-        `parent_task_id inválido: ${JSON.stringify(fields.parent_task_id)}. Informe o ID inteiro da tarefa pai. ` +
-          'Um valor não numérico é convertido para 0 pela API e a tarefa passa a apontar para uma tarefa pai inexistente.'
+        `parent_task_id inválido: ${JSON.stringify(fields.parent_task_id)}. Informe o ID inteiro da tarefa pai, só dígitos. ` +
+          'Formatos como "1e3" ou "0x10" são lidos pela API como 1 e 0, e a tarefa passaria a apontar para uma tarefa pai inexistente.'
       );
     }
+    // Forward the coerced number, never the original string.
+    fields.parent_task_id = parentId;
     try {
       const parent = await client.getProcedureTask(parentId);
       if (!parent || (parent as { id?: number }).id === undefined) {

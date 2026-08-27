@@ -3,9 +3,15 @@ import { z } from 'zod';
 // Base schemas for consistent tool structure
 export const BaseActionSchema = z.enum(['create', 'get', 'update', 'delete', 'archive', 'unarchive']);
 
+/**
+ * Unused. Kept out of the schemas on purpose: the live cap is 1000
+ * (`HUDU_MAX_PAGE_SIZE` in schema-utils.ts), and a second declaration saying 25
+ * is how the wrong number stays alive in the codebase. Delete on sight if it is
+ * still unreferenced.
+ */
 export const PaginationSchema = z.object({
   page: z.number().min(1).default(1).optional(),
-  page_size: z.number().min(1).max(25).default(25).optional()
+  page_size: z.number().min(1).max(1000).default(25).optional()
 });
 
 export const SearchSchema = z.object({

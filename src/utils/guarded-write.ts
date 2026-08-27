@@ -34,9 +34,29 @@ import { diffRequestedVsStored } from './echo-check.js';
  */
 export const VOLATILE_FIELDS = [
   'updated_at',
+  // Derived: the API recomputes these from a field the caller DID send, so
+  // reporting them as collateral fires an alarm on every legitimate write.
+  // Changing assigned_users moves first_assigned_user_*; changing a task's
+  // parent moves the subtask counters; completing one moves the roll-ups.
   'formatted_due_date',
   'completed_date',
+  'first_assigned_user_id',
+  'first_assigned_user_name',
+  'first_assigned_user_initials',
+  'subtask_ids',
+  'subtask_count',
+  'has_subtasks',
+  'completion_percentage',
+  'total',
+  'completed',
+  'url',
+  'share_url',
 ] as const;
+
+/** Ceiling on the warning text. A procedure GET carries every nested task, and
+ *  serialising that into a warning put thousands of characters of payload into
+ *  the model's context for a rename. */
+const MAX_WARNING_CHARS = 500;
 
 export interface IgnoredField {
   field: string;
@@ -51,7 +71,12 @@ export interface CollateralChange {
 }
 
 export interface GuardedWriteReport {
-  applied: string[];
+  /**
+   * Fields the response confirmed with the requested value. A field the
+   * response does not echo is NOT here: the earlier version listed it as
+   * applied, which asserted a write nobody had confirmed.
+   */
+  confirmed: string[];
   ignored: IgnoredField[];
   collateral: CollateralChange[];
   /** Set when the before-read failed, so collateral could not be computed. */
@@ -61,24 +86,48 @@ export interface GuardedWriteReport {
 function sameValue(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (a === null || b === null || a === undefined || b === undefined) return false;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    // The server reorders collections (assigned_users comes back sorted by id).
+    // Comparing serialised order reported every reorder as "did not write".
+    if (a.length !== b.length) return false;
+    const sa = [...a].map((x) => JSON.stringify(x)).sort();
+    const sb = [...b].map((x) => JSON.stringify(x)).sort();
+    return sa.every((x, i) => x === sb[i]);
+  }
   if (typeof a === 'object' || typeof b === 'object') return JSON.stringify(a) === JSON.stringify(b);
   return String(a) === String(b);
 }
 
 /** Fields present in either snapshot that changed, minus the volatile ones. */
+/**
+ * Fields present in BOTH snapshots whose value changed.
+ *
+ * Intersection, not union. A GET and a PUT on the same record do not have to
+ * return the same projection, and treating a key the PUT simply did not echo
+ * as "destroyed" turns this module inside out: it would report a full record
+ * as wiped and then tell the caller to restore it — a defence against
+ * destructive writes inducing one. `echo-check.ts` already documents that
+ * absence is not divergence; this now agrees with it.
+ */
 function changedFields(
   before: Record<string, unknown>,
   after: Record<string, unknown>,
   volatile: readonly string[]
 ): CollateralChange[] {
-  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
   const out: CollateralChange[] = [];
-  for (const field of keys) {
+  for (const field of Object.keys(before)) {
     if (volatile.includes(field)) continue;
+    if (!(field in after)) continue;
     if (sameValue(before[field], after[field])) continue;
     out.push({ field, before: before[field], after: after[field] });
   }
   return out;
+}
+
+/** Keeps one value from dumping a nested collection into the warning. */
+function brief(value: unknown): string {
+  const s = JSON.stringify(value) ?? String(value);
+  return s.length > 60 ? `${s.slice(0, 59)}…` : s;
 }
 
 export interface GuardedWriteInput<T> {
@@ -110,9 +159,10 @@ export async function guardedWrite<T extends Record<string, unknown>>({
   const record = await write();
 
   const ignored = diffRequestedVsStored(requested, record as Record<string, unknown>);
+  const stored = record as Record<string, unknown>;
   const ignoredFields = new Set(ignored.map((d) => d.field));
-  const applied = Object.keys(requested).filter(
-    (f) => requested[f] !== undefined && !ignoredFields.has(f)
+  const confirmed = Object.keys(requested).filter(
+    (f) => requested[f] !== undefined && !ignoredFields.has(f) && f in stored
   );
 
   const collateral = before
@@ -121,7 +171,7 @@ export async function guardedWrite<T extends Record<string, unknown>>({
       )
     : [];
 
-  const report: GuardedWriteReport = { applied, ignored, collateral };
+  const report: GuardedWriteReport = { confirmed, ignored, collateral };
   if (readBackUnavailable) report.readBackUnavailable = readBackUnavailable;
   return { record, report };
 }
@@ -132,12 +182,13 @@ export function describeGuardedWrite(report: GuardedWriteReport): string | null 
 
   if (report.collateral.length) {
     const lista = report.collateral
-      .map((c) => `${c.field}: ${JSON.stringify(c.before)} → ${JSON.stringify(c.after)}`)
+      .map((c) => `${c.field}: ${brief(c.before)} → ${brief(c.after)}`)
       .join('; ');
     parts.push(
-      `A escrita alterou campos que NÃO foram pedidos — ${lista}. ` +
-        'A API do Hudu converte valor ilegível em vazio e grava, respondendo sucesso; ' +
-        'confira se algum desses precisa ser restaurado.'
+      `Campos que NÃO foram pedidos estão diferentes do que estavam antes — ${lista}. ` +
+        'Pode ser efeito colateral do servidor OU edição de outra pessoa entre a leitura e a ' +
+        'escrita (não há bloqueio otimista nesta API). NÃO regrave o valor anterior sem antes ' +
+        'confirmar com quem mexeu: fazer isso apagaria a alteração dela.'
     );
   }
 
@@ -159,5 +210,7 @@ export function describeGuardedWrite(report: GuardedWriteReport): string | null 
     );
   }
 
-  return parts.length ? `ATENÇÃO: ${parts.join(' ')}` : null;
+  if (!parts.length) return null;
+  const msg = `ATENÇÃO: ${parts.join(' ')}`;
+  return msg.length > MAX_WARNING_CHARS ? `${msg.slice(0, MAX_WARNING_CHARS - 1)}…` : msg;
 }

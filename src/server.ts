@@ -25,6 +25,7 @@ import { HuduConfig } from './types.js';
 import { WORKING_TOOLS, WORKING_TOOL_EXECUTORS, type ToolResponse } from './tools/working-index.js';
 import { HUDU_PROMPTS_LIST, getHuduPromptText, validatePromptArgs } from './prompts.js';
 import { formatToolResponse } from './formatters/response-formatter.js';
+import { redactPayload } from './utils/redact.js';
 import { InvalidResourceUriError, listResources, readResource } from './resources.js';
 import {
   normalizeSearchTerm,
@@ -375,7 +376,11 @@ export class HuduMcpServer {
       this.logger.info('Tool execution started', {
         requestId,
         toolName: name,
-        arguments: args
+        // hudu_manage_password_credentials takes fields.password as a plain
+        // string, and this line writes to a DailyRotateFile kept for 14 days —
+        // so every password created through this MCP was landing on disk in the
+        // clear. The success path has masked secrets since forever; this did not.
+        arguments: redactPayload(args)
       });
 
       const startTime = Date.now();
@@ -655,7 +660,7 @@ export class HuduMcpServer {
     this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
 
-      this.logger.info('Prompt requested', { name, arguments: args });
+      this.logger.info('Prompt requested', { name, arguments: redactPayload(args) });
 
       // REQ-01 / BUG-01: Validate required args BEFORE template interpolation
       const validationError = validatePromptArgs(name, args as Record<string, string>);
@@ -1192,7 +1197,10 @@ export class HuduMcpServer {
               toolName: name,
               user: req.user?.email || 'anonymous',
               userGroups: req.user?.groups || [],
-              arguments: JSON.stringify(args).substring(0, 200) // First 200 chars only
+              // Truncating is not redacting: a password sits in the first 200
+              // chars of `{"action":"create","fields":{"password":"..."}}`.
+              // This is the path the Streamable HTTP transport actually serves.
+              arguments: JSON.stringify(redactPayload(args)).substring(0, 200)
             });
 
             const toolResult = await this.runSearchAwareExecutor(name, executor, args, this.huduClient);

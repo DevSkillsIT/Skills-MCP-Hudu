@@ -21,10 +21,20 @@ export interface EchoDivergence {
   stored: unknown;
 }
 
-/** Loose equality: the API restates numbers as strings and vice versa. */
+/**
+ * Loose equality: the API restates numbers as strings, and reorders
+ * collections (assigned_users comes back sorted by id). Comparing serialised
+ * order reported every reorder as "the API did not write this".
+ */
 function sameValue(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (a === null || b === null || a === undefined || b === undefined) return false;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    const sa = [...a].map((x) => JSON.stringify(x)).sort();
+    const sb = [...b].map((x) => JSON.stringify(x)).sort();
+    return sa.every((x, i) => x === sb[i]);
+  }
   if (typeof a === 'object' || typeof b === 'object') {
     return JSON.stringify(a) === JSON.stringify(b);
   }

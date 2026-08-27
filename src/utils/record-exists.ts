@@ -54,20 +54,40 @@ export async function checkRecordExists(
     };
   } catch (error: any) {
     const msg = String(error?.message ?? '');
-    // Hudu answers "this id does not exist" three different ways, verified live:
+
+    // Our own client raises this when it falls back to a list lookup it cannot
+    // scope. The record may exist and simply not be visible to this key — the
+    // FilteredHuduClient allowlist reaches here too. Calling that "does not
+    // exist" would refuse a legitimate write with a false statement.
+    if (/tip: pass company_id/i.test(msg)) {
+      return {
+        state: 'unchecked',
+        reason: `a consulta de ${type} ${id} não pôde ser escopada (pode existir e não estar visível para esta chave)`,
+      };
+    }
+
+    // Hudu answers "this id does not exist" in more than one way, verified live:
     //   GET /articles/999999  -> HTTP 200, body `null`
     //   GET /companies/999999 -> HTTP 404, JSON error
     //   GET /assets/999999    -> HTTP 404, a Rails HTML page
-    // The first reaches us as a TypeError from the getter unwrapping a null
-    // body — which, for these single-record getters, can only mean an empty
-    // response. All three are the same answer.
-    const emptyBody = /Cannot read propert(y|ies) of (null|undefined)/i.test(msg);
-    if (emptyBody || /HTTP 404|not found|não encontrado/i.test(msg)) {
+    if (/HTTP 404|não encontrado/i.test(msg) || /\bnot found\b/i.test(msg)) {
       return {
         state: 'missing',
         message: `${type} ${id} não existe no Hudu (a consulta devolveu 404). A API aceitaria criar a marcação assim mesmo, e ela viraria uma pendência fantasma permanente.`,
       };
     }
+
+    // An empty body reaches us as a TypeError from the getter unwrapping null.
+    // It is the article case above — but a client-side schema change would look
+    // identical, so the message says what was observed instead of asserting a
+    // 404 that did not happen.
+    if (/Cannot read propert(y|ies) of (null|undefined)/i.test(msg)) {
+      return {
+        state: 'missing',
+        message: `${type} ${id} não existe no Hudu: a consulta respondeu com corpo vazio. A API aceitaria criar a marcação assim mesmo, e ela viraria uma pendência fantasma permanente. Se você tem certeza de que o registro existe, isto pode ser incompatibilidade do cliente com a resposta da API — confirme o ID antes de insistir.`,
+      };
+    }
+
     return { state: 'unchecked', reason: msg || 'a consulta de verificação falhou' };
   }
 }

@@ -14,7 +14,10 @@ const envSchema = z.object({
   HUDU_TIMEOUT: z.coerce.number().positive().optional().default(30000),
   HUDU_ALLOWED_COMPANY_IDS: z.string().optional().default('ALL'),
   MCP_SERVER_PORT: z.coerce.number().positive().optional().default(3100),
-  MCP_TRANSPORT: z.enum(['stdio', 'http']).optional(),
+  // MCP_TRANSPORT is deliberately absent. It used to be accepted here and had
+  // no effect: run() goes straight to HTTP (server.ts, "STDIO transport
+  // removed — HTTP ONLY"). Accepting it made `MCP_TRANSPORT=stdio` look
+  // supported, and somebody had already believed it.
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).optional().default('info'),
   NODE_ENV: z.enum(['development', 'production', 'test']).optional().default('development')
 });
@@ -24,10 +27,7 @@ async function main(): Promise<void> {
     // Validate environment variables
     const env = envSchema.parse(process.env);
 
-    // Determine transport type
-    // If MCP_SERVER_PORT is set, default to HTTP transport (for Docker)
-    // Otherwise use stdio for direct CLI usage
-    const transport = env.MCP_TRANSPORT || (env.MCP_SERVER_PORT ? 'http' : 'stdio');
+    // Transport is not configurable: this server is HTTP-only.
 
     // Create MCP server configuration
     const serverConfig: HuduMcpServerConfig = {
