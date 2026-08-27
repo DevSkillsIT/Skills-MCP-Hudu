@@ -23,7 +23,7 @@ import type { HuduIpAddress } from '../../src/types.js';
 // Mirrors the real Hudu API payload for GET /ip_addresses/{id}.
 const realShapeIp: HuduIpAddress = {
   id: 2,
-  address: '172.16.70.1',
+  address: '198.51.100.1',
   status: 'Assigned',
   fqdn: 'fw-example.corp.local',
   description: 'IP LAN Rede Corp',
@@ -98,6 +98,6 @@ describe('formatIpAddressDetail — asset + company context', () => {
 
   it('includes the address in the heading', () => {
     const result = formatIpAddressDetail(realShapeIp);
-    expect(result).toContain('172.16.70.1');
+    expect(result).toContain('198.51.100.1');
   });
 });

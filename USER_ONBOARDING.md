@@ -14,7 +14,7 @@
 
 2. **Login with your work credentials:**
    - You'll be redirected to Microsoft login
-   - Use your Wheelhouse IT email and password
+   - Use your work email and password
    - May require MFA if enabled
 
 3. **Copy your token:**
@@ -102,12 +102,12 @@ Show me all companies in Hudu
 
 **2. Search for a specific company:**
 ```
-Search Hudu for "Bonnet House"
+Search Hudu for "Acme Corp"
 ```
 
 **3. Get company assets:**
 ```
-Show me all assets for Bonnet House
+Show me all assets for Acme Corp
 ```
 
 **Expected:** Claude should query Hudu and return results!
