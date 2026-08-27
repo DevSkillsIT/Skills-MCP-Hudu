@@ -33,14 +33,18 @@ describe('formatToolResponse', () => {
     expect(result).toContain('SKILLS IT');
   });
 
-  test('null data returns empty string', () => {
+  test('null data on a manage tool returns the success message', () => {
     const result = formatToolResponse('hudu_manage_company_information', null, { action: 'delete' });
-    expect(result).toBe('');
+    expect(result).toBe('Operação realizada com sucesso.');
   });
 
-  test('undefined data returns empty string', () => {
+  test('undefined data on a manage tool returns the success message', () => {
     const result = formatToolResponse('hudu_manage_company_information', undefined, { action: 'delete' });
-    expect(result).toBe('');
+    expect(result).toBe('Operação realizada com sucesso.');
+  });
+
+  test('null data on a tool with no formatter returns empty string', () => {
+    expect(formatToolResponse('nonexistent_tool', null, {})).toBe('');
   });
 
   test('string data is returned as-is', () => {
@@ -78,16 +82,16 @@ describe('formatToolResponse', () => {
     expect(result).toContain('"version"');
   });
 
-  test('global search returns JSON', () => {
-    const data = { articles: [{ id: 1 }], companies: [] };
+  test('global search returns markdown, not raw JSON', () => {
+    const data = { articles: [{ id: 1, name: 'Runbook' }], companies: [] };
     const result = formatToolResponse('hudu_search_all_resource_types', data, {});
-    expect(result).toContain('"articles"');
+    expect(result).not.toContain('"articles"');
+    expect(result).toContain('Runbook');
   });
 
   test('manage tool returns success message when data is null for delete', () => {
     const result = formatToolResponse('hudu_manage_knowledge_articles', null, { action: 'delete' });
-    // null data -> '' (empty string per implementation)
-    expect(result).toBe('');
+    expect(result).toBe('Operação realizada com sucesso.');
   });
 
   test('website search tool returns markdown', () => {
