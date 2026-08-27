@@ -78,7 +78,7 @@ Alternative Claude Desktop config:
 - `hudu.json` — OpenAPI/Swagger spec (reference only)
 - `Dockerfile` — Multi-stage build, non-root runtime
 - `.env.example` — Environment template
-- `docker-compose.yml` — Quick local testing
+- `docker-compose.existing-traefik.yml` — Compose for an existing Traefik
 - `package.json` — scripts: `dev`, `build`, `start`, `lint`, `type-check`
 
 ---
@@ -113,7 +113,7 @@ Alternative Claude Desktop config:
 │     └─ navigation.ts       # Navegação rápida por nome
 ├─ .env.example
 ├─ Dockerfile
-├─ docker-compose.yml
+├─ docker-compose.existing-traefik.yml
 ├─ tsconfig.json
 ├─ package.json
 └─ CLAUDE.md
@@ -154,7 +154,7 @@ npm run dev
 **Docker:**
 ```bash
 docker-compose up --build -d
-docker-compose logs -f
+docker-compose -f docker-compose.existing-traefik.yml logs -f
 # or
 docker build -t hudu-mcp-server .
 docker run --rm --env-file .env -p 3100:3100 hudu-mcp-server

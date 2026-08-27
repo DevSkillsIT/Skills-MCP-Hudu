@@ -252,7 +252,7 @@ iptables -A INPUT -p tcp --dport 3100 -j DROP
 
 ### Docker Compose Production Settings
 
-Add to [docker-compose.yml](docker-compose.yml):
+Add to `docker-compose.existing-traefik.yml`:
 ```yaml
 services:
   hudu-mcp-server:
@@ -292,7 +292,7 @@ If you suspect unauthorized access:
 
 1. **Immediately stop the container:**
    ```bash
-   docker-compose down
+   docker-compose -f docker-compose.existing-traefik.yml down
    ```
 
 2. **Review logs for suspicious activity:**

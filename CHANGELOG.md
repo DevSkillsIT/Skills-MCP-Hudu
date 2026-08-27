@@ -5,6 +5,96 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — Auditing the audit: the defences were the defect
+
+Two more audits over the round below — an adversarial review of the new
+utilities and a documentation review. Both found real problems, and the code
+review's were in the modules written to prevent problems. Tests 543 → 581.
+
+### Fixed — the guard cried wolf, and its warning invited the damage
+`guardedWrite` compared the union of keys from the GET and the PUT, and
+`sameValue(x, undefined)` is false — so every field the PUT did not echo was
+reported as destroyed, and the message told the caller to consider restoring
+it. A defence against destructive writes that induces one is worse than none.
+`echo-check.ts` had documented the opposite policy since the day it was written:
+absence is not divergence. They now agree — collateral requires the field in
+BOTH snapshots.
+
+Same class, three more:
+- Derived fields (`first_assigned_user_*`, subtask counters, roll-ups) fired on
+  every legitimate write and put people's names in a warning. They are volatile.
+- An array reordered by the server (`assigned_users` comes back sorted by id)
+  read as "the API did not write this". Comparison is order-insensitive now.
+- The warning had no size cap. A procedure GET carries every nested task, so a
+  rename produced thousands of characters of serialised payload in the model's
+  context.
+
+The collateral message also explained the wrong cause — it blamed unreadable
+input, which by definition belongs to the other bucket. It now names what can
+actually produce it, including a concurrent edit by a person, and says not to
+write the old value back without checking.
+
+### Fixed — the parent guard checked one value and sent another
+`Number()` and Ruby's `String#to_i` disagree, and the API uses `to_i`:
+`'1e3'` is 1000 to JavaScript and 1 to Ruby; `'0x10'` is 16 and 0. The guard
+validated with `Number()`, passed, and forwarded the raw string — so `'0x10'`
+reproduced the exact corruption the guard exists to prevent, after the
+existence check had vouched for a different task entirely. Digits only now, and
+the coerced number is what gets sent.
+
+### Fixed — a correct write reported as a failed one
+The API normalises `31/12/2026` to `2026-12-31`. The echo check compared the
+request string against the stored one and accused every Brazilian-format date
+write of failing, with a suggested cause that was also wrong. The value is
+normalised before sending, so request and response are the same string.
+
+### Fixed — redaction failed in both directions at once
+Masking any word after a trigger word destroyed the actionable half of the
+commonest errors: `api_key is invalid` became `api_key is ****`; a duplicate-name
+422 lost the name that collided. Meanwhile `chave de API invalida: hu_…` passed
+through, because `chave` was not a trigger and the value was under the length
+floor.
+
+Entropy was the wrong instrument. Masking now requires evidence: a trigger word
+with an explicit assignment or quotes, a known secret prefix, a JWT, or
+`Bearer`. Unlabelled prefix-less secrets are not masked — a deliberate gap,
+because the alternative was erasing asset names from the one message that says
+which name collided.
+
+### Fixed — passwords were written to disk in the clear (pre-existing)
+`server.ts` logs the arguments of every tool call to a DailyRotateFile kept for
+14 days, and `hudu_manage_password_credentials` takes `fields.password` as a
+plain string. The HTTP path truncated to 200 characters, which is not
+redaction — the password sits well inside the first 200. Both log paths now
+pass through `redactPayload`. The smaller hole had been patched while this one
+stayed open.
+
+### Fixed — "does not exist" asserted where nothing was checked
+`record-exists` mapped any TypeError to "the query returned 404", so a client
+schema change would refuse every write with a confident false statement, and an
+asset the key cannot scope was reported as nonexistent. Our own client's
+"not found (tip: pass company_id)" now reads as unchecked, and the empty-body
+case says what was observed instead of inventing a status code.
+
+### Fixed — documentation that contradicted the code on the front page
+The public README claimed 43 tools (55) and 179 tests (581), titled a section
+"GLPI Configuration", promised a `docker-compose.yml` that does not exist in six
+places plus four npm scripts, described the Dockerfile as multi-stage (it has
+one stage), and carried an MIT badge linking to a LICENSE file that was never
+committed — so the declared licence did not legally exist. All corrected, the
+licence added, and the 12 undocumented tools given sections.
+
+`Hudu.json.README.md` now states plainly that the bundled spec predates 2.44.3,
+lists what it gets wrong, and points at the running instance as the authority.
+That file produced three confident and wrong audit findings in one day.
+
+`OAUTH_ENABLED` — which makes the server trust `x-auth-request-*` headers — was
+used in production and documented nowhere. `MCP_TRANSPORT` was accepted by the
+env schema and had no effect; it is gone rather than documented, because
+documenting it would have made a promise the code does not keep.
+
+---
+
 ## [Unreleased] — Black-box round: writes that reported success
 
 The third audit ran against the live instance and found a family the two static

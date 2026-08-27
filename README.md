@@ -2,7 +2,7 @@
 
 # 🚀 Skills MCP Hudu
 
-### Complete Hudu MCP Server with 43 Tools, Markdown Output, MCP Resources, and Multi-Tenant Support
+### Complete Hudu MCP Server with 55 Tools, Markdown Output, MCP Resources, and Multi-Tenant Support
 
 [![MCP Protocol](https://img.shields.io/badge/MCP-2024--11--05-blue)](https://modelcontextprotocol.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue)](https://www.typescriptlang.org/)
@@ -14,7 +14,7 @@
 
 **Connect Claude Code, Gemini CLI, ChatGPT, VS Code Copilot, and Cursor to your Hudu instance**
 
-[Features](#-key-features) • [Installation](#-installation) • [43 Tools](#-43-tools) • [Quick Start](#-quick-start) • [Support](#-support)
+[Features](#-key-features) • [Installation](#-installation) • [55 Tools](#-55-tools) • [Quick Start](#-quick-start) • [Support](#-support)
 
 </div>
 
@@ -30,7 +30,7 @@ Built specifically for **MSPs and IT teams** who need AI-powered access to their
 
 | Feature | Description |
 |---------|-------------|
-| **43 Tools** | Complete Hudu API coverage with 10 new tool categories |
+| **55 Tools** | Complete Hudu API coverage, including labels and flags |
 | **Markdown Output** | All responses formatted as Markdown tables (not raw JSON) |
 | **MCP Resources** | 6 native `hudu://` URIs for direct data access |
 | **Tool Annotations** | `readOnlyHint`, `destructiveHint`, `openWorldHint` on all tools |
@@ -155,7 +155,7 @@ cp .env.example .env
 nano .env  # Edit with your Hudu credentials
 
 # Start with Docker Compose
-docker-compose up -d
+docker-compose -f docker-compose.existing-traefik.yml up -d
 
 # Verify it's running
 curl http://localhost:3100/health
@@ -181,7 +181,7 @@ npm start
 npm run dev
 ```
 
-### GLPI Configuration
+### Hudu Configuration
 
 **1. Get your Hudu API Key:**
 - Log in to Hudu
@@ -260,7 +260,7 @@ curl -X POST http://localhost:3100/mcp \
 
 ---
 
-## 🧰 43 Tools
+## 🧰 55 Tools
 
 All tools follow a standardized naming convention optimized for ToolRAG systems:
 - **Prefix:** `hudu_` (server namespace)
@@ -600,13 +600,13 @@ services:
 
 ```bash
 # Build and start
-docker-compose up -d --build
+docker-compose -f docker-compose.existing-traefik.yml up -d --build
 
 # View logs
-docker-compose logs -f hudu-mcp
+docker-compose -f docker-compose.existing-traefik.yml logs -f hudu-mcp
 
 # Stop
-docker-compose down
+docker-compose -f docker-compose.existing-traefik.yml down
 
 # Rebuild without cache
 docker-compose build --no-cache
@@ -643,7 +643,7 @@ LOG_LEVEL=debug
 
 **Docker:**
 ```bash
-docker-compose logs -f hudu-mcp
+docker-compose -f docker-compose.existing-traefik.yml logs -f hudu-mcp
 ```
 
 **Node.js:**
@@ -687,7 +687,7 @@ npm run build
 ### Testing Commands
 
 ```bash
-# Run all tests (179 tests, 12 suites)
+# Run all tests (581 tests, 43 suites)
 npm test
 
 # Run with verbose output
@@ -709,7 +709,7 @@ npm run build
 |-------|-------|-------------|
 | html-stripper | 25 | HTML stripping, truncation, Markdown escaping |
 | markdown formatters | 30 | All 29 formatters + pagination helpers |
-| response-formatter | 13 | Global interceptor for all 43 tools |
+| response-formatter | 13 | Global interceptor for all 55 tools |
 | tools-registry | 8 | Tool count, registration, naming conventions |
 | annotations | 7 | readOnlyHint, destructiveHint, openWorldHint compliance |
 | expirations | 8 | Expiration tracking executor with filters |
@@ -736,9 +736,9 @@ Skills-MCP-Hudu/
 │   │   └── html-stripper.ts  # HTML cleanup: stripHtml, truncate, escapeMarkdown — NEW
 │   ├── formatters/
 │   │   ├── markdown.ts       # 29 Markdown formatters for all entity types — NEW
-│   │   └── response-formatter.ts  # Global interceptor: Markdown for all 43 tools — NEW
+│   │   └── response-formatter.ts  # Global interceptor: Markdown for all 55 tools
 │   └── tools/
-│       ├── working-index.ts  # Primary tool registry (43 tools)
+│       ├── working-index.ts  # Primary tool registry (55 tools)
 │       ├── base.ts           # Response helpers
 │       ├── schema-utils.ts   # Shared schemas and properties
 │       ├── companies.ts      # Company management (2 tools)
@@ -758,7 +758,7 @@ Skills-MCP-Hudu/
 │       ├── admin.ts          # Instance administration (1 tool)
 │       ├── search.ts         # Global unified search (1 tool)
 │       └── navigation.ts     # Quick navigation (1 tool)
-├── src/__tests__/            # 179 tests across 12 suites — NEW
+├── src/__tests__/            # 581 tests across 43 suites
 │   ├── utils/                # html-stripper tests
 │   ├── formatters/           # markdown + response-formatter tests
 │   ├── tools/                # Tool executor tests (6 files)
@@ -767,9 +767,9 @@ Skills-MCP-Hudu/
 ├── dist/                     # Compiled JavaScript (generated)
 ├── jest.config.ts            # Jest configuration (ESM + ts-jest) — NEW
 ├── tsconfig.test.json        # TypeScript config for tests — NEW
-├── hudu.json                 # Hudu OpenAPI spec (reference)
-├── Dockerfile                # Multi-stage Docker build
-├── docker-compose.yml        # Docker Compose configuration
+├── Hudu.json                 # OpenAPI spec — OUTDATED, see Hudu.json.README.md
+├── Dockerfile                # Single-stage build, non-root runtime
+├── docker-compose.existing-traefik.yml  # Compose (Traefik existente)
 ├── package.json              # Node.js dependencies
 ├── tsconfig.json             # TypeScript configuration
 ├── .env.example              # Environment template
@@ -864,7 +864,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 *We are an MSP empowering other MSPs with intelligent automation.*
 
-**Version:** 1.2.0 | **Last Updated:** March 2026
+**Version:** 1.1.0 (see `package.json`) | **Last Updated:** August 2026
 
 🇧🇷 **Proudly Made in Brazil**
 
