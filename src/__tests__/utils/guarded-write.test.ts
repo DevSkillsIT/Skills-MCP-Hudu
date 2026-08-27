@@ -39,7 +39,7 @@ describe('BUG-20 — guardedWrite classifies what really happened', () => {
       write: async () => task({ priority: 'low', updated_at: '2026-02-02T00:00:00Z' }),
       requested: { priority: 'low' },
     });
-    expect(report.applied).toEqual(['priority']);
+    expect(report.confirmed).toEqual(['priority']);
     expect(report.ignored).toEqual([]);
     expect(report.collateral).toEqual([]);
     expect(describeGuardedWrite(report)).toBeNull();
@@ -130,5 +130,102 @@ describe('BUG-20 — guardedWrite classifies what really happened', () => {
       requested: {},
     });
     expect(report.collateral).toEqual([{ field: 'parent_task_id', before: 4, after: 0 }]);
+  });
+});
+
+/**
+ * BUG-21 — the failure modes an adversarial audit found in the first version
+ *
+ * Each of these made the guard cry wolf on a correct write. That is not a
+ * cosmetic problem: the warning tells the caller a value may need restoring, so
+ * a false alarm invites the model to write the old value back over somebody's
+ * real edit. A defence that induces the damage it guards against is worse than
+ * no defence.
+ */
+describe('BUG-21 — the guard does not cry wolf', () => {
+  it('does not report a key the response simply did not echo', () => {
+    // A GET and a PUT need not return the same projection. The union-of-keys
+    // version reported the entire un-echoed record as destroyed and told the
+    // caller to restore it.
+    const before = { id: 3, name: 'x', due_date: '2026-12-31', description: 'passo a passo', url: 'https://h/t' };
+    const after = { id: 3, name: 'y' };
+    return guardedWrite({
+      readBefore: async () => before,
+      write: async () => after,
+      requested: { name: 'y' },
+    }).then(({ report }) => {
+      expect(report.collateral).toEqual([]);
+      expect(describeGuardedWrite(report)).toBeNull();
+    });
+  });
+
+  it('survives a degenerate response body without declaring the record wiped', async () => {
+    const { report } = await guardedWrite({
+      readBefore: async () => ({ id: 9, name: 'x', description: 'faz X', company_id: 4 }),
+      write: async () => ({ success: true } as any),
+      requested: { name: 'y' },
+    });
+    expect(report.collateral).toEqual([]);
+  });
+
+  it('stays quiet when the server reorders an array', async () => {
+    const { report } = await guardedWrite({
+      readBefore: async () => ({ id: 3, assigned_users: [3] }),
+      write: async () => ({ id: 3, assigned_users: [3, 7] }),
+      requested: { assigned_users: [7, 3] },
+    });
+    expect(report.ignored).toEqual([]);
+    expect(describeGuardedWrite(report)).toBeNull();
+  });
+
+  it('stays quiet on the fields the API derives from what was sent', async () => {
+    const { report } = await guardedWrite({
+      readBefore: async () => ({ id: 3, assigned_users: [3], first_assigned_user_id: 3, first_assigned_user_name: 'Ana' }),
+      write: async () => ({ id: 3, assigned_users: [7], first_assigned_user_id: 7, first_assigned_user_name: 'Bruno' }),
+      requested: { assigned_users: [7] },
+    });
+    expect(report.collateral).toEqual([]);
+    // and never puts a person's name in a warning as a side effect
+    expect(describeGuardedWrite(report) ?? '').not.toContain('Bruno');
+  });
+
+  it('still catches a genuine erase, with both keys present', async () => {
+    const { report } = await guardedWrite({
+      readBefore: async () => ({ id: 3, name: 'x', due_date: '2026-12-31' } as Record<string, unknown>),
+      write: async () => ({ id: 3, name: 'y', due_date: null } as Record<string, unknown>),
+      requested: { name: 'y' },
+    });
+    expect(report.collateral).toEqual([{ field: 'due_date', before: '2026-12-31', after: null }]);
+  });
+
+  it('names the concurrent-edit possibility and warns against blind restore', async () => {
+    const { report } = await guardedWrite({
+      readBefore: async () => ({ id: 3, name: 'x', description: 'a' }),
+      write: async () => ({ id: 3, name: 'y', description: 'b' }),
+      requested: { name: 'y' },
+    });
+    const msg = describeGuardedWrite(report)!;
+    expect(msg).toMatch(/outra pessoa/i);
+    expect(msg).toMatch(/NÃO regrave/);
+  });
+
+  it('caps the warning so a nested collection cannot flood the context', async () => {
+    const tasks = Array.from({ length: 40 }, (_, i) => ({ id: i, name: `tarefa numero ${i}`, description: 'x'.repeat(50) }));
+    const { report } = await guardedWrite({
+      readBefore: async () => ({ id: 9, name: 'x', tasks }),
+      write: async () => ({ id: 9, name: 'y', tasks: [] }),
+      requested: { name: 'y' },
+    });
+    const msg = describeGuardedWrite(report)!;
+    expect(msg.length).toBeLessThanOrEqual(500);
+  });
+
+  it('confirmed lists only fields the response actually echoed back', async () => {
+    const { report } = await guardedWrite({
+      readBefore: async () => ({ id: 3, name: 'x' }),
+      write: async () => ({ id: 3, name: 'y' }),
+      requested: { name: 'y', description: 'nao ecoado' },
+    });
+    expect(report.confirmed).toEqual(['name']);
   });
 });

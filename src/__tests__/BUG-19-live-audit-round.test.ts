@@ -154,6 +154,7 @@ describe('BUG-19 — a repeat flag does not swallow a new reason', () => {
       { action: 'flag', flag_type_id: 6, flagable_type: 'Company', flagable_id: 1, description: 'MOTIVO-ORIGINAL' },
       client
     );
+    expect(res.success).toBe(true);
     expect(res.warning).toBeUndefined();
   });
 });

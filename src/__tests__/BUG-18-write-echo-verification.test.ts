@@ -123,6 +123,9 @@ describe('BUG-18 — echo check catches a write the server swallowed', () => {
       { action: 'update', id: 24, fields: { position: 7 } },
       client
     );
+    // The success assertion is the point: `warning` is absent on an error
+    // response too, so the negative alone would stay green if the tool threw.
+    expect(res.success).toBe(true);
     expect(res.warning).toBeUndefined();
   });
 });
@@ -153,7 +156,7 @@ describe('BUG-20 — parent_task_id cannot be corrupted into 0', () => {
       { action: 'update', id: 3, fields: { parent_task_id: 'xyz' } },
       client
     );
-    expect(res.error).toMatch(/convertido para 0/i);
+    expect(res.error).toMatch(/lidos pela API como 1 e 0/i);
   });
 
   it('refuses a parent that does not exist', async () => {
@@ -207,5 +210,105 @@ describe('BUG-20 — a refusal hands over the link', () => {
     const res = await executeProcedureTasksTool({ action: 'complete', id: 3 }, client);
     expect(res.success).toBe(false);
     expect(res.error).toMatch(/API pública/);
+  });
+});
+
+/**
+ * BUG-21 — the guard checked one value and forwarded another
+ *
+ * `Number()` and Ruby's `String#to_i` disagree, and the API uses to_i:
+ *
+ *   '1e3'  -> Number 1000, to_i 1   (existence check vouched for task 1000)
+ *   '0x10' -> Number 16,   to_i 0   (the very corruption the guard exists for)
+ *
+ * Validating with Number and sending the raw string meant the guard approved a
+ * parent that was never the one written.
+ */
+describe('BUG-21 — numeric coercion cannot slip past the parent guard', () => {
+  it.each(['1e3', '0x10', '12.0', '+12', '1_000', '12abc'])('refuses %p', async (bad) => {
+    const { client, calls } = spy({});
+    const res = await executeProcedureTasksTool(
+      { action: 'update', id: 3, fields: { parent_task_id: bad } },
+      client
+    );
+    expect(res.success).toBe(false);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('names the two shapes that silently become 1 and 0', async () => {
+    const { client } = spy({});
+    const res = await executeProcedureTasksTool(
+      { action: 'update', id: 3, fields: { parent_task_id: '1e3' } },
+      client
+    );
+    expect(res.error).toContain('1e3');
+    expect(res.error).toContain('0x10');
+  });
+
+  it('accepts surrounding whitespace, which Ruby reads the same way', async () => {
+    const { client, calls } = spy({ parent_task_id: 12 }, { parent_task_id: 12 });
+    const res = await executeProcedureTasksTool(
+      { action: 'update', id: 3, fields: { parent_task_id: ' 12 ' } },
+      client
+    );
+    expect(res.success).toBe(true);
+    expect((calls[0]![1] as any).parent_task_id).toBe(12);
+  });
+
+  it('forwards the coerced number, never the original string', async () => {
+    const { client, calls } = spy({ parent_task_id: 12 }, { parent_task_id: 12 });
+    await executeProcedureTasksTool(
+      { action: 'update', id: 3, fields: { parent_task_id: '12' } },
+      client
+    );
+    expect((calls[0]![1] as any).parent_task_id).toBe(12);
+  });
+});
+
+describe('BUG-21 — a Brazilian-format date is not reported as a failed write', () => {
+  it('normalises before sending, so the echo matches', async () => {
+    // The server stores 31/12/2026 as 2026-12-31. Comparing the request string
+    // with the stored one accused every correct BR-format write of failing.
+    const { client, calls } = spy({ due_date: '2026-12-31' }, { due_date: null });
+    const res = await executeProcedureTasksTool(
+      { action: 'update', id: 3, fields: { due_date: '31/12/2026' } },
+      client
+    );
+    expect(res.success).toBe(true);
+    expect((calls[0]![1] as any).due_date).toBe('2026-12-31');
+    expect(res.warning).toBeUndefined();
+  });
+
+  it('leaves an ISO date exactly as given', async () => {
+    const { client, calls } = spy({ due_date: '2026-12-31' }, { due_date: null });
+    await executeProcedureTasksTool(
+      { action: 'update', id: 3, fields: { due_date: '2026-12-31' } },
+      client
+    );
+    expect((calls[0]![1] as any).due_date).toBe('2026-12-31');
+  });
+});
+
+describe('BUG-21 — the write guards do not fire on read actions', () => {
+  it('lets get through even when fields carries an unwritable key', async () => {
+    const client = { getProcedureTask: async (id: number) => ({ id, name: 'x' }) } as any;
+    const res = await executeProcedureTasksTool(
+      { action: 'get', id: 3, fields: { completed: true } },
+      client
+    );
+    expect(res.success).toBe(true);
+  });
+
+  it('does not fire an existence lookup for the parent on a delete', async () => {
+    const calls: string[] = [];
+    const client = {
+      getProcedureTask: async (id: number) => { calls.push('get' + id); return { id }; },
+      deleteProcedureTask: async () => { calls.push('delete'); },
+    } as any;
+    await executeProcedureTasksTool(
+      { action: 'delete', id: 3, fields: { parent_task_id: 99 } },
+      client
+    );
+    expect(calls).toEqual(['delete']);
   });
 });
