@@ -22,7 +22,8 @@ import axios from 'axios';
 import { HuduClient } from './hudu-client.js';
 import { FilteredHuduClient } from './filtered-hudu-client.js';
 import { HuduConfig } from './types.js';
-import { WORKING_TOOLS, WORKING_TOOL_EXECUTORS, type ToolResponse } from './tools/working-index.js';
+import { WORKING_TOOL_EXECUTORS, listActiveTools, type ToolResponse } from './tools/working-index.js';
+import { setPasswordRevealAuditSink, isPasswordRevealEnabled } from './tools/password-reveal.js';
 import { HUDU_PROMPTS_LIST, getHuduPromptText, validatePromptArgs } from './prompts.js';
 import { formatToolResponse } from './formatters/response-formatter.js';
 import { redactPayload } from './utils/redact.js';
@@ -65,6 +66,7 @@ Recursos principais:
 - hudu_manage_company_information / hudu_search_company_information
 - hudu_manage_it_asset_inventory / hudu_search_it_asset_inventory
 - hudu_manage_password_credentials / hudu_search_password_credentials
+- hudu_get_password_secret_by_id (opcional; so aparece quando habilitada)
 
 Monitoramento e auditoria:
 - hudu_search_expiration_tracking
@@ -126,10 +128,17 @@ Utilitarios:
   algo que exige revisao e usa NOME de cor de uma paleta fixa. Nao troque uma
   pela outra.
 - page_size aceita ate 1000; o padrao 25 existe para poupar contexto, nao por
-  limite da API.`;
+  limite da API.
+- Senhas: busca e action=get devolvem a senha MASCARADA. Para USAR uma
+  credencial (conectar, autenticar), chame hudu_get_password_secret_by_id com
+  o ID vindo de hudu_search_password_credentials: devolve o valor em texto puro
+  e o codigo TOTP atual, uma credencial por chamada, com auditoria. Nao repita
+  a senha ao usuario a menos que ele peca.`;
 
 function listRegisteredTools() {
-  return Object.values(WORKING_TOOLS);
+  // Not Object.values(WORKING_TOOLS): the plaintext password reveal is listed
+  // only when HUDU_ALLOW_PASSWORD_REVEAL=true.
+  return listActiveTools();
 }
 
 function toJsonRpcError(error: unknown): { code: number; message: string } {
@@ -202,12 +211,17 @@ export class HuduMcpServer {
       }
     );
 
+    // One audit line per plaintext password reveal, in the same rotated log
+    // as every tool call. The entry carries id/name/company, never the value.
+    setPasswordRevealAuditSink((entry) => this.logger.warn('Password revealed', entry));
+
     this.setupHandlers();
     this.logger.info('Hudu MCP Server initialized', {
       version: '1.1.0',
       huduBaseUrl: config.huduConfig.baseUrl,
       logLevel: config.logLevel || 'info',
-      transport: 'http' // HTTP-only as per CLAUDE.md
+      transport: 'http', // HTTP-only as per CLAUDE.md
+      passwordReveal: isPasswordRevealEnabled()
     });
   }
 

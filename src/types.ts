@@ -74,6 +74,11 @@ export interface HuduAssetPassword {
   passwordable_type?: string;
   passwordable_id?: number;
   password_type?: string;
+  /** TOTP seed. Never rendered: the reveal tool turns it into the current code. */
+  otp_secret?: string;
+  login_url?: string;
+  password_folder_id?: number | null;
+  password_folder_name?: string | null;
   in_portal: boolean;
   created_at: string;
   updated_at: string;

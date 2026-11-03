@@ -411,8 +411,10 @@ export class HuduClient {
   }
 
   async getAssetPassword(id: number): Promise<HuduAssetPassword> {
-    const response = await this.client.get<{ asset_password: HuduAssetPassword }>(`/asset_passwords/${id}`);
-    const password = response.data.asset_password;
+    const response = await this.client.get<{ asset_password: HuduAssetPassword } | null>(`/asset_passwords/${id}`);
+    // Hudu answers `200 null` for an id that does not exist (e.g. deleted).
+    const password = response.data?.asset_password;
+    if (!password) throw new Error(`Senha ${id} não encontrada no Hudu.`);
     // REQ-07 / BUG-07: hydrate company_name for single password
     if (password.company_id && !password.company_name) {
       const name = await this.resolveCompanyName(password.company_id);

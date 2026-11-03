@@ -35,7 +35,10 @@ module.exports = {
       HUDU_TIMEOUT: process.env.HUDU_TIMEOUT || '30000',
       MCP_SERVER_PORT: process.env.MCP_SERVER_PORT || '3100',
       LOG_LEVEL: process.env.LOG_LEVEL || 'info',
-      HUDU_ALLOWED_COMPANY_IDS: process.env.HUDU_ALLOWED_COMPANY_IDS || 'ALL'
+      HUDU_ALLOWED_COMPANY_IDS: process.env.HUDU_ALLOWED_COMPANY_IDS || 'ALL',
+      // Plaintext password reveal kill switch: anything but "true" keeps
+      // hudu_get_password_secret_by_id unlisted and refused.
+      HUDU_ALLOW_PASSWORD_REVEAL: process.env.HUDU_ALLOW_PASSWORD_REVEAL || 'false'
     },
     error_file: '/opt/mcp-servers/_shared/logs/mcp-hudu-error.log',
     out_file: '/opt/mcp-servers/_shared/logs/mcp-hudu-out.log',

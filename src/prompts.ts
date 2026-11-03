@@ -578,7 +578,7 @@ ${RULES_BLOCK}` }
 ### Credenciais encontradas ([passwords.length])
 | ID | Nome | Usuário | URL | Empresa ID | Pasta |
 |---|---|---|---|---|---|
-[cada password — campo \`password\` vem mascarado como \`****\` da API; NUNCA tente adivinhar ou exibir]
+[cada password — a busca NAO traz o valor da senha; NUNCA tente adivinhar ou exibir]
 
 ### Observações de Segurança
 - Senhas sem URL definida: **[count]**
@@ -586,7 +586,7 @@ ${RULES_BLOCK}` }
 - Senhas vinculadas a asset (\`passwordable_type=Asset\`): **[count]**
 
 ### Ação para o usuário
-Para ver o valor de uma senha específica, use a interface do Hudu (URL em cada linha). O MCP expõe apenas metadados — valores de senha são sempre mascarados na API.
+A busca devolve apenas metadados. Para USAR uma credencial específica (conectar, autenticar), chame \`hudu_get_password_secret_by_id\` com o ID da linha: devolve o valor em texto puro e o código TOTP atual, uma senha por chamada, com auditoria — se a tool não estiver disponível, a revelação está desativada neste servidor e o valor só é visível na interface do Hudu. Não exiba a senha ao usuário a menos que ele peça.
 
 ${RULES_BLOCK}` }
         }]

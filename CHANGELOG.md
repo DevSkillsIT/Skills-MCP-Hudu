@@ -5,6 +5,51 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — Reveal one password, on purpose, on the record
+
+### Added — `hudu_get_password_secret_by_id` (opt-in)
+Every path masked the secret — search has no password column, global search
+blanks it, `manage action=get` renders `****` — so the model could find a
+credential but never use it to log in anywhere on the operator's behalf. One
+dedicated read-only tool now returns ONE password in plain text by ID, with
+name, company, username, URL and, when the entry has 2FA, the current TOTP
+code and the seconds it has left.
+
+- **Kill switch:** `HUDU_ALLOW_PASSWORD_REVEAL`. Anything but exactly `true`
+  leaves the tool out of `tools/list` and refuses a direct call before any API
+  request. Read at call time, not at import.
+- **Single record only.** No search, list or bulk variant. Search, global
+  search and `manage action=get` are unchanged and still masked — tests now
+  assert that with the flag ON.
+- **Audit:** one line per reveal (`event: password_reveal`, timestamp, ID,
+  name, company, whether a TOTP code was produced) through the winston logger.
+  Never the value, never the OTP. Written before the value is returned; if it
+  cannot be written, the reveal is refused.
+- **Not through the redact layer.** The value is printed inside a code fence
+  longer than any backtick run in it, unescaped, so a `|` or a backtick in a
+  password survives intact. It is not cached and not logged.
+- **OTP seed never returned.** A seed is a permanent second factor and would
+  escape the audit trail after one read; a TOTP code (RFC 6238, computed in
+  `src/utils/totp.ts`, `otpauth://` URIs accepted) expires in seconds.
+- **Allowlist honoured.** `FilteredHuduClient.getAssetPassword` never checked
+  the company of a single record; the reveal does, via the new
+  `FilteredHuduClient.isCompanyAllowed`.
+- A masked or missing value from the API is reported as the missing
+  "Password access" permission on the Hudu API key, not shown as a password.
+- `hudu_search_password_credentials`, the server instructions and the
+  `hudu_password_lookup` prompt now say that search is masked and point to the
+  reveal tool for actually using a credential; the prompt no longer claims the
+  MCP can only ever expose metadata.
+
+### Fixed — a deleted password crashed instead of saying "not found"
+Found during the live validation of the reveal: for an id that does not exist
+Hudu answers `200 null`, and `HuduClient.getAssetPassword` threw
+`Cannot read properties of null (reading 'asset_password')` — in the reveal and
+in `hudu_manage_password_credentials action=get`. It now says
+`Senha <id> não encontrada no Hudu.`
+
+---
+
 ## [Unreleased] — Auditing the audit: the defences were the defect
 
 Two more audits over the round below — an adversarial review of the new

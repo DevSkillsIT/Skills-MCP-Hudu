@@ -90,6 +90,9 @@ import {
 import { 
   passwordsTool, passwordsQueryTool, executePasswordsTool, executePasswordsQueryTool 
 } from './passwords.js';
+import {
+  passwordRevealTool, executePasswordRevealTool, isPasswordRevealEnabled, PASSWORD_REVEAL_TOOL_NAME
+} from './password-reveal.js';
 import { 
   proceduresTool, proceduresQueryTool, procedureTasksTool, procedureTasksQueryTool,
   executeProceduresTool, executeProceduresQueryTool, executeProcedureTasksTool, executeProcedureTasksQueryTool
@@ -191,6 +194,10 @@ export const WORKING_TOOLS: Record<string, Tool> = {
   'hudu_search_it_asset_inventory': assetsQueryTool,
   'hudu_manage_password_credentials': passwordsTool,
   'hudu_search_password_credentials': passwordsQueryTool,
+  // Opt-in plaintext reveal of ONE password. Always registered here so the
+  // registry-wide contract tests audit it; listActiveTools() hides it and the
+  // executor refuses unless HUDU_ALLOW_PASSWORD_REVEAL=true.
+  'hudu_get_password_secret_by_id': passwordRevealTool,
 
   // Specialized resources
   'hudu_manage_workflow_procedures': proceduresTool,
@@ -272,6 +279,7 @@ export const WORKING_TOOL_EXECUTORS: Record<string, ToolExecutor> = {
   'hudu_search_it_asset_inventory': executeAssetsQueryTool,
   'hudu_manage_password_credentials': executePasswordsTool,
   'hudu_search_password_credentials': executePasswordsQueryTool,
+  'hudu_get_password_secret_by_id': executePasswordRevealTool,
 
   // Specialized resources
   'hudu_manage_workflow_procedures': executeProceduresTool,
@@ -341,3 +349,14 @@ export const WORKING_TOOL_EXECUTORS: Record<string, ToolExecutor> = {
   'hudu_list_resources': executeListResourcesTool,
   'hudu_read_resource': executeReadResourceTool,
 };
+
+/**
+ * The tools this process advertises in tools/list. Same as WORKING_TOOLS
+ * except that the plaintext password reveal is left out unless its kill
+ * switch is on. Evaluated per call, so the env is read after .env loaded.
+ */
+export function listActiveTools(env: NodeJS.ProcessEnv = process.env): Tool[] {
+  return Object.values(WORKING_TOOLS).filter(
+    (tool) => tool.name !== PASSWORD_REVEAL_TOOL_NAME || isPasswordRevealEnabled(env)
+  );
+}

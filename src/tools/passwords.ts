@@ -44,7 +44,7 @@ export const passwordsTool: Tool = {
 // Passwords query tool
 export const passwordsQueryTool: Tool = {
   name: 'hudu_search_password_credentials',
-  description: 'Senhas, credenciais e acessos armazenados no cofre do Hudu — busca e filtragem com paginação. Use quando precisar localizar logins ou chaves de acesso por texto ou empresa no Hudu. Requer permissões elevadas de API. Consulta somente leitura. Retorna lista paginada em Markdown com metadados das credenciais.',
+  description: 'Senhas, credenciais e acessos armazenados no cofre do Hudu — busca e filtragem com paginação. Use quando precisar localizar logins ou chaves de acesso por texto ou empresa no Hudu. Consulta somente leitura. Retorna lista paginada em Markdown sem o valor da senha; para usar uma credencial, passe o ID a hudu_get_password_secret_by_id.',
   inputSchema: createQuerySchema({
     company_id: commonProperties.company_id
   }),

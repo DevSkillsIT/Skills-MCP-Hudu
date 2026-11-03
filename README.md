@@ -56,6 +56,10 @@ Manage companies, assets, articles, and knowledge base with AI assistance.
 
 ### 2. 🔐 Secure Password Management
 Access and manage credentials safely through AI with proper authentication.
+Search and detail views always mask the secret. One opt-in tool
+(`hudu_get_password_secret_by_id`, behind `HUDU_ALLOW_PASSWORD_REVEAL=true`)
+reveals a single credential by ID — with the current TOTP code when the entry
+has 2FA — and writes an audit line per reveal.
 
 ### 3. 🔄 Procedures & Workflows
 Create, update, and manage procedures and tasks with AI-driven automation.
@@ -290,12 +294,30 @@ All tools follow a standardized naming convention optimized for ToolRAG systems:
 | `hudu_manage_knowledge_articles` | Create, update, delete articles |
 | `hudu_search_knowledge_articles` | Search articles by company, folder, name |
 
-### 🔐 Passwords & Credentials (2 tools)
+### 🔐 Passwords & Credentials (2 tools + 1 opt-in)
 
 | Tool | Description |
 |------|-------------|
-| `hudu_manage_password_credentials` | Secure password management (CRUD operations) |
-| `hudu_search_password_credentials` | Search credentials by company, name |
+| `hudu_manage_password_credentials` | Secure password management (CRUD operations); `get` renders the password as `****` |
+| `hudu_search_password_credentials` | Search credentials by company, name — no password column |
+| `hudu_get_password_secret_by_id` | **Opt-in.** Reveals ONE password in plain text by ID, plus the current TOTP code (never the OTP seed). Listed only when `HUDU_ALLOW_PASSWORD_REVEAL=true` |
+
+**How the reveal tool is fenced in:**
+- Off by default. Unless `HUDU_ALLOW_PASSWORD_REVEAL` is exactly `true`, the
+  tool is left out of `tools/list` and a direct call is refused before any
+  Hudu API request.
+- One record per call, by numeric ID. There is no search or bulk variant;
+  every search path keeps masking.
+- One audit line per reveal in the server log (`event: password_reveal`, with
+  timestamp, password ID, name and company — never the value or the OTP). If
+  the audit line cannot be written, the value is not returned.
+- Honours `HUDU_ALLOWED_COMPANY_IDS`: a credential of a company outside the
+  allowlist is refused.
+- The Hudu API key needs the **Password access** permission; without it the
+  tool says so instead of returning a masked value.
+- The value is printed inside a code fence, unescaped, so it can be used as is.
+  The OTP seed is never returned: a seed is a permanent second factor, a TOTP
+  code expires in seconds.
 
 ### ✅ Procedures & Checklists (4 tools)
 
@@ -408,6 +430,7 @@ Hudu, search for articles about "firewall configuration"
 Hudu, list all passwords for company "Acme Corporation"
 Hudu, create a new password entry for "Office WiFi"
 Hudu, search credentials containing "admin"
+Hudu, connect to the firewall using the credential with ID 77   # needs HUDU_ALLOW_PASSWORD_REVEAL=true
 ```
 
 ### Procedures & Workflows
@@ -513,6 +536,7 @@ Run the hudu_security_audit prompt for our infrastructure
 | `MCP_BEARER_TOKEN` | No | - | Bearer token for authentication (recommended) |
 | `HUDU_TIMEOUT` | No | 30000 | API timeout in milliseconds |
 | `HUDU_ALLOWED_COMPANY_IDS` | No | ALL | Company filtering: ALL or comma-separated IDs |
+| `HUDU_ALLOW_PASSWORD_REVEAL` | No | (off) | `true` enables `hudu_get_password_secret_by_id` (plaintext reveal of one password by ID, audited). Any other value keeps it unlisted and refused |
 | `LOG_LEVEL` | No | info | Logging level: debug, info, warn, error |
 
 ### Multi-Tenant Configuration (MSPs)

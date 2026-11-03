@@ -67,6 +67,20 @@ export class FilteredHuduClient {
   }
 
   /**
+   * Whether a single record's company is inside HUDU_ALLOWED_COMPANY_IDS.
+   *
+   * The get-by-id methods below delegate without checking, so a caller that
+   * knows an id can read outside the allowlist. The plaintext password reveal
+   * cannot afford that and checks here. A record with no company is outside
+   * any explicit allowlist.
+   */
+  isCompanyAllowed(companyId: number | null | undefined): boolean {
+    if (this.isAllAccess) return true;
+    if (companyId === null || companyId === undefined) return false;
+    return this.allowedCompanyIds.includes(String(companyId));
+  }
+
+  /**
    * Helper para injetar company_id nos parâmetros (API aceita apenas um ID por requisição)
    */
   private injectCompanyFilter(params?: any, companyId?: string): any {
